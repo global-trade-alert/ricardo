@@ -1,0 +1,37 @@
+# LOAD PACKAGES
+require(shiny)
+library(shinyjs)
+library(shinyalert)
+library(openxlsx)
+library(DT)
+library(shinyWidgets)
+library(gtalibrary)
+library(data.table)
+library(sass)
+# library(mailR)
+library(pool)
+library(tidyverse)
+library(splitstackshape)
+library(gtasql)
+library(sodium)
+
+# DEFINE GLOBAL STARTUP VALUES
+
+# IMPORT DEFINITIONS
+source(paste0(path,"code/functions/functions.R"), local = F)
+
+# IMPORT MODULES
+source(paste0(path,"code/modules/pop_up.R"))
+
+# IMPORT APPS
+source(paste0(path, "apps/dashboard/ui.R"))
+source(paste0(path, "apps/dashboard/server.R"))
+source(paste0(path, "apps/user/ui.R"))
+source(paste0(path, "apps/user/server.R"))
+source(paste0(path, "apps/settings/ui.R"))
+source(paste0(path, "apps/settings/server.R"))
+source(paste0(path, "apps/b221/ui.R"))
+source(paste0(path, "apps/b221/server.R"))
+source(paste0(path, "apps/b221/setup.R"))
+source(paste0(path, "code/modules/testentry.R"))
+

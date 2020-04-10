@@ -1,0 +1,51 @@
+# APP
+rm(list=ls())
+gtasql::gta_sql_kill_connections()
+
+# SET PATHS
+# setwd("/home/rstudio/Dropbox/GTA cloud")
+# setwd("C:/Users/jfrit/Desktop/Dropbox/GTA cloud")
+# setwd("C:/Users/Piotr Lukaszuk/Dropbox/GTA cloud")
+
+setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
+path <<- "17 Shiny/8 ricardo app/"
+
+# APP SETUP
+source(paste0(path,"code/setup.R"), local = F)
+
+# LOAD UI AND SERVER
+source(paste0(path,"code/ui.R"), local = T)
+source(paste0(path,"code/server.R"), local = F)
+
+# runApp(paste0(path,"code"))
+shinyApp(ui = ui, 
+         server = server, 
+         onStart = function() {
+           gta_sql_pool_open(db.title="ricardomain",
+                             db.host = gta_pwd("ricardomain")[['host']],
+                             db.name = gta_pwd("ricardomain")[['name']],
+                             db.user = gta_pwd("ricardomain")[['user']],
+                             db.password = gta_pwd("ricardomain")[['password']],
+                             table.prefix = "ric_")
+           
+           onStop(function() {
+             gta_sql_pool_close()
+           })
+         },
+         options = list(launch.browser=F)
+)
+
+
+#LOAD NECESSARY FILES
+
+# shinyApp(ui,
+#          server,
+#          onStart = function() {
+#            gta_sql_pool_open(table.prefix = 'delta_',got.keyring = F)
+#            cat("Opening SQL connection\n")
+#            onStop(function() {
+#              gta_sql_pool_close()
+#              cat("Closing SQL connection\n")
+#            })
+#          }
+# )
