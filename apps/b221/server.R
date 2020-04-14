@@ -118,6 +118,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       pull.end = prm$dateend
       pull.agency = prm$actingagency
       
+      # SQL INSERT HERE: USE KAMRAN'S PULL FUNCTIONS
+      # THERE SHOULD BE A NEW COLUMN FOR COLLECTION IDS AS WELL, IF A HINT IS PART OF A COLLECTION, ELSE IT SHOULD BE NULL
+      
       # KS: use bt_attribute_hint_processing(user.id = user.id, hint.state = NULL) where hint.state is for example 'B221 - freelancer desk'
       # bt_attribute_hint_processing(user.id = user$id, hint.state = "B221 - freelancer desk")
       # Then run to retrieve a dataframe to display: 
@@ -170,7 +173,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       if (prm$autosubmit == 1){ # check current state of the app
         
         # SQL INSERT HERE: SAVE DISMISSED STATUS FOR HINT ID
-        # hint.id is serve via id
+        # hint.id is served via id
         
         # OLD QUERY:
         # gta_sql_update_table(sqlInterpolate(pool, "UPDATE bt_leads_core SET bin_check = true, bin_recovered = false, relevant = false, sent_out = false, evaluation = false WHERE lead_id = ?leadsID;", leadsID = id))
@@ -419,7 +422,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       #   validateSubmit(session, changes, input)
       # )
 
-      # SQL, INSERT HERE ONLY MARKED AS RELEVANT VALUES ARE INSERTED HERE
+      # SQL INSERT HERE: ONLY MARKED AS RELEVANT VALUES ARE INSERTED HERE
       # THIS DATA NEEDS TO BE CHECKED AGAINST EXISTING CLASSIFICATIONS AND ONLY UPDATED IF THE VALUES HAVE CHANGED:
       # data comes in the form data.frame(id = 33227, ¨
       #                                    clicked = 1, 
