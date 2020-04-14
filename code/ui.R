@@ -7,6 +7,7 @@ ui <- fluidPage(
   # START UI
   useShinyjs(),
   theme = "www/main/style.css",
+  tags$head(tags$link(rel="stylesheet",href="https://fonts.googleapis.com/icon?family=Material+Icons")),
   tags$div(class="wrap",
            tags$div(class="main-menu-wrap",
                      tags$div(id="nav", class="main-menu",
