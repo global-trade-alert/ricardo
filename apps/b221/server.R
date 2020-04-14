@@ -204,7 +204,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       hintId <- as.numeric(gsub("leadsID_","", input$collectionAdd))
       currenthintId <<- hintId
       
-      # TO DO: CHECK IF HINT IS PART OF COLLECTION ALREADY, IF YES, GET COLLECTION VALUES, IF NO, GET HINT VALUES AND ADD TO INITIALXXX VARIABLES
+      # SQL INSERT HERE: CHECK IF HINT IS PART OF COLLECTION ALREADY, IF YES, GET COLLECTION VALUES, IF NO, GET HINT VALUES AND ADD TO initialXYZ VARIABLES
       initialHint <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title 
                                                                           FROM bt_hint_text
                                                                           WHERE hint_id = ",hintId,";"))))
