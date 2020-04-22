@@ -19,7 +19,7 @@ bt_attribute_hint_processing = function(user.id = NULL, hint.state = NULL, db.co
                             JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
                             AND NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id)
                           ) unique_hints
-                          LIMIT 50;")
+                          LIMIT 10;")
   
   hints <<- na.omit(data.frame(hint.id = gta_sql_get_value(sql.pull.hints), user.id = user.id, start.time = substr(as.POSIXct(Sys.time(), tz = "CET"),1,19)))
 
