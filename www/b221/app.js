@@ -98,7 +98,11 @@ function hintsBasicUI() {
     event.stopPropagation(); // prevent bubbling to .leads-item
   });
 
-  $('#b221-leadsTable').on('change','input',function (event) {
+  $('#b221-leadsTable').on('change','.selectize-input input',function (event) {
+    $(this.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
+  });
+  
+  $('#b221-leadsTable').on('change','.is-official input',function (event) {
     $(this.parentNode.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
   });
   
@@ -107,7 +111,7 @@ function hintsBasicUI() {
   });
   
   $('#b221-leadsTable').on('change keyup paste','.comment input',function (event) {
-    $(this.parentNode.parentNode.parentNode).addClass('show-submission');
+    $(this.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
   });
 
   $('#b221-leadsTable').on('mouseenter', '.leads-item', function(event){

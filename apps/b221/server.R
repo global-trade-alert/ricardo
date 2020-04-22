@@ -46,9 +46,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     # USE TO SELECT WHEN SEARCH FIELD IS ACTIVE
     options = list(
       pageLength = 50,
-      columnDefs = list(list(visible = FALSE, targets = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)), list(sortable=FALSE, targets = c(0))),
+      columnDefs = list(list(visible = FALSE, targets = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)), list(sortable=FALSE, targets = c(0))),
       language = list(
-      zeroRecords = "No more leads available."),
+        zeroRecords = "No more leads available."),
       rowCallback = JS("function ( row, data ) {
                             if (data[6]==null) {
                               var collection = '<div class=\\'noPartOfCollection collection-add no-touch\\'><img src=\\'www/b221/collection.svg\\' class=\\'svg no-touch\\'></div>'
@@ -74,13 +74,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                               var urlimage = '<div class=\\'background-url no-touch\\'><a class=\\'no-touch\\' href=\\''+url+'\\' target=\\'_blank\\'><img src=\\'www/b221/url.svg\\' class=\\'svg no-touch\\'></a></div>';
                             }
                             
-                            let country = data[12];
-                            let product = data[13];
-                            let intervention = data[14];
+                            let country = data[13];
+                            let product = data[14];
+                            let intervention = data[15];
                             let submit = '<div class=\\'submission\\'><button id=\\'submit_'+data[5]+'\\' type=\"button\" class=\"btn btn-default action-button\">Save changes</button></div>';
-                            let official = '<div class=\\'is-official\\'><label for=\"official\">URL official</label><div class=\\'checkbox\\'><input type=\"checkbox\" id=\\'official_'+data[5]+'\\' name=\"official\" value=\"non-official\"></div></div>';
-                            let assessment = data[15];
-                            let comment = data[16];
+                            let checkboxCheck = data[12] == 1 ? ' checked' : '';
+                            let official = '<div class=\\'is-official\\'><label for=\"official\">URL official</label><div class=\\'checkbox\\'><input type=\"checkbox\" id=\\'official_'+data[5]+'\\' name=\"official\" value=\"non-official\"'+checkboxCheck+'></div></div>';
+                            let assessment = data[16];
+                            let comment = data[17];
                             
                             
                             var actingAgency = '<div class=\\'acting-agency\\'><label>Acting Agency</label><div class=\\'value\\'>'+data[1]+'</div></div>';
@@ -116,8 +117,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       }); hintsBasicUI(); submitSingleHint();",if(prm$autosubmit==1){"callLeadsDismiss(); checkLeads();"} else {"checkLeadsManual();"})),
     extensions = "Select",
     selection = "none"
-    ),
-    server = T)
+  ),
+  server = T)
 
   observe({
     print(paste0("table.on('click.dt','tr', function() {
@@ -157,7 +158,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         showNotification("No hints are available at this stage", duration = 5)
         leads.output <- data.frame()
       } else {
-        leads.output <- b221_pull_display_info(user.id = user$id, is.freelancer = ifelse(prm$freelancer == 1, T, F)) # needs to be reversed when live, i put it opposite way for testing purposes
+        pre.sorted.table <- b221_pull_display_info(user.id = user$id, is.freelancer = ifelse(prm$freelancer == 1, T, F)) # needs to be reversed when live, i put it opposite way for testing purposes
+        leads.output <- pre.sorted.table[match(processing.hints,pre.sorted.table$hint.id),]
+        rm('pre.sorted.table')
       }
       
       print(length(leads.output))
