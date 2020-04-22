@@ -1,0 +1,120 @@
+/* FREELANCER UPDATES */
+CREATE INDEX src ON osc_temp_changes_data_1 (url(300));
+
+INSERT INTO bt_url_log(url)
+SELECT DISTINCT url FROM osc_temp_changes_data_1 srces
+WHERE srces.url IS NOT NULL
+AND NOT EXISTS
+(SELECT NULL FROM bt_url_log WHERE bt_url_log.url = srces.url);
+
+UPDATE osc_temp_changes_data_1
+INNER JOIN bt_url_log ON osc_temp_changes_data_1.url = bt_url_log.url
+INNER JOIN bt_url_type_list ON osc_temp_changes_data_1.url_type_name = bt_url_type_list.url_type_name
+SET osc_temp_changes_data_1.url_id = bt_url_log.url_id, osc_temp_changes_data_1.url_type_id = bt_url_type_list.url_type_id;
+
+CREATE INDEX hint_src ON osc_temp_changes_data_1 (hint_id, url_id, url_type_id);
+
+INSERT INTO bt_classification_log(classification_id, user_id, classify_option_id, time_stamp)
+SELECT DISTINCT @search_id AS classification_id, 1 AS user_id, (SELECT classify_option_id FROM bt_classify_option_list WHERE classify_option_name = 'OSC') AS classify_option_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp FROM (SELECT NULL FROM osc_temp_changes_data_1 changes WHERE changes.was_modified = 1) editor_search_id;
+
+SET @search_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+INSERT INTO bt_classification_log(classification_id, user_id, classify_option_id, time_stamp)
+SELECT @search_id AS search_id, 1 AS user_id, (SELECT classify_option_id FROM bt_classify_option_list WHERE classify_option_name = 'OSC') AS classify_option_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
+
+INSERT INTO osc_file_log(file_path)
+SELECT file_path FROM osc_temp_changes_data_1 changes WHERE changes.was_modified = 1 AND changes.file_path IS NOT NULL AND NOT EXISTS (SELECT NULL FROM osc_file_log WHERE osc_file_log.file_path = changes.file_path);
+
+INSERT INTO osc_hint_file(hint_id, file_id)
+SELECT changes.hint_id, osc_file_log.file_id FROM osc_temp_changes_data_1 changes
+JOIN osc_file_log ON changes.file_path = osc_file_log.file_path
+AND NOT EXISTS (SELECT NULL FROM osc_hint_file WHERE changes.hint_id = osc_hint_file.hint_id AND osc_file_log.file_id = osc_hint_file.file_id);
+
+INSERT INTO osc_hint_comment_log(hint_id, user_id, comment, time_stamp)
+SELECT DISTINCT(changes.hint_id), 1 AS user_id, new_comment AS comment, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp FROM osc_temp_changes_data_1 changes
+WHERE changes.new_comment IS NOT NULL;
+
+/* insert new hint + url + url type pairs and leave url_accepted and validation_user as NULL */
+INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, search_id, url_accepted, validation_user)
+SELECT changes.hint_id, bt_url_log.url_id, bt_url_type_list.url_type_id, @search_id AS search_id, NULL AS url_accepted, NULL AS validation_user
+FROM (SELECT * FROM osc_temp_changes_data_1 WHERE url_id IS NOT NULL) changes
+WHERE NOT EXISTS
+(SELECT NULL FROM bt_hint_url WHERE bt_hint_url.hint_id = changes.hint_id AND bt_hint_url.url_id = changes.url_id AND bt_url_type_list.url_type_id = changes.url_type_id);
+
+/* search_id: keep the same search_id as in the db, unless: freelancer picks up url that bastiat proposed (search_id = null), or for those which were accepted by editor but freelancer kills (disagrees)
+ * validation_user: null if url provided by freelancer was previously not accepted by editor, or if freelancer removes url that was previously added by editor (pending approval)
+ * url_accepted: 1 if editor or freelancer previously added it correctly and new upload confirms it, 0 if new upload removes a url which was previously evaluated (validation_user is then set to NULL), NULL otherwise
+ *  */ 
+UPDATE bt_hint_url
+JOIN osc_temp_changes_data_1 changed_hints ON bt_hint_url.hint_id = changed_hints.hint_id
+LEFT JOIN osc_temp_changes_data_1 changes ON changed_hints.hint_id = changes.hint_id AND bt_hint_url.url_id = changes.url_id AND bt_hint_url.url_type_id = changes.url_type_id
+SET bt_hint_url.search_id = (CASE WHEN ((changes.url_id IS NOT NULL AND bt_hint_url.search_id IS NULL) OR (changes.url_id IS NULL AND bt_hint_url.url_accepted = 1)) THEN @search_id ELSE bt_hint_url.search_id END),
+	bt_hint_url.url_accepted = (CASE WHEN (changes.url_id IS NOT NULL AND bt_hint_url.url_accepted = 1) THEN 1
+									 WHEN (changes.url_id IS NULL AND bt_hint_url.url_accepted IS NOT NULL) THEN 0 ELSE NULL END),
+	bt_hint_url.validation_user = (CASE WHEN ((changes.url_id IS NOT NULL AND bt_hint_url.url_accepted = 0) OR (changes.url_id IS NULL AND bt_hint_url.url_accepted = 1)) THEN NULL ELSE bt_hint_url.validation_user END);
+
+UPDATE bt_hint_log
+JOIN (SELECT DISTINCT(osc_temp_changes_data_1.hint_id) FROM osc_temp_changes_data_1) changes ON changes.hint_id = bt_hint_log.hint_id
+SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'OSC - editor desk');
+
+
+
+/* EDITOR UPDATES */
+CREATE INDEX src ON osc_temp_changes_data_1 (url(300));
+
+INSERT INTO bt_url_log(url)
+SELECT DISTINCT url FROM osc_temp_changes_data_1 srces
+WHERE srces.url IS NOT NULL AND srces.was_modified = 1
+AND NOT EXISTS
+(SELECT NULL FROM bt_url_log WHERE bt_url_log.url = srces.url);
+
+UPDATE osc_temp_changes_data_1
+INNER JOIN bt_url_log ON osc_temp_changes_data_1.url = bt_url_log.url
+INNER JOIN bt_url_type_list ON osc_temp_changes_data_1.url_type_name = bt_url_type_list.url_type_name
+SET osc_temp_changes_data_1.url_id = bt_url_log.url_id, osc_temp_changes_data_1.url_type_id = bt_url_type_list.url_type_id;
+
+CREATE INDEX hint_src ON osc_temp_changes_data_1 (hint_id, url_id, url_type_id);
+
+/* give editor a search_id only if they added a source to an entry in one of the hints they processed, otherwise don't */
+SET @search_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+INSERT INTO bt_classification_log(classification_id, user_id, classify_option_id, time_stamp)
+SELECT DISTINCT @search_id AS classification_id, 1 AS user_id, (SELECT classify_option_id FROM bt_classify_option_list WHERE classify_option_name = 'OSC') AS classify_option_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp FROM (SELECT NULL FROM osc_temp_changes_data_1 changes WHERE changes.was_modified = 1) editor_search_id;
+
+INSERT INTO osc_file_log(file_path)
+SELECT file_path FROM osc_temp_changes_data_1 changes WHERE changes.was_modified = 1 AND changes.file_path IS NOT NULL AND NOT EXISTS (SELECT NULL FROM osc_file_log WHERE osc_file_log.file_path = changes.file_path);
+
+INSERT INTO osc_hint_file(hint_id, file_id)
+SELECT changes.hint_id, osc_file_log.file_id FROM osc_temp_changes_data_1 changes
+JOIN osc_file_log ON changes.file_path = osc_file_log.file_path
+WHERE changes.was_modified = 1
+AND NOT EXISTS (SELECT NULL FROM osc_hint_file WHERE changes.hint_id = osc_hint_file.hint_id AND osc_file_log.file_id = osc_hint_file.file_id);
+
+INSERT INTO osc_hint_comment_log(hint_id, user_id, comment, time_stamp)
+SELECT DISTINCT(changes.hint_id), 1 AS user_id, new_comment AS comment, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp FROM osc_temp_changes_data_1 changes
+WHERE changes.new_comment IS NOT NULL;
+
+/* insert new hint + url + url type pairs and update url_accepted and validation_user to 1 and editor_user_id */ 
+INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, search_id, url_accepted, validation_user)
+SELECT changes.hint_id, changes.url_id, changes.url_type_id, @search_id AS search_id, 1 AS url_accepted, 1 AS validation_user
+FROM (SELECT * FROM osc_temp_changes_data_1 WHERE was_modified = 1 AND url_id IS NOT NULL) changes
+WHERE NOT EXISTS
+(SELECT NULL FROM bt_hint_url WHERE bt_hint_url.hint_id = changes.hint_id AND bt_hint_url.url_id = changes.url_id AND bt_hint_url.url_type_id = changes.url_type_id);
+
+/* those urls which bastiat suggests and the freelancer did not are attributed the editor's search_id
+ * those urls which were found and the editor discarded are marked as url_accepted = 0 and validation_user is the editor's user_id
+ * when match but search id is empty -> attribute editor search_id
+ * when match but non-empty then keep same search_id
+ * when no match, leave search_id untouched */
+UPDATE bt_hint_url
+JOIN osc_temp_changes_data_1 changed_hints ON bt_hint_url.hint_id = changed_hints.hint_id
+LEFT JOIN osc_temp_changes_data_1 changes ON changed_hints.hint_id = changes.hint_id AND bt_hint_url.url_id = changes.url_id AND bt_hint_url.url_type_id = changes.url_type_id
+SET bt_hint_url.search_id = (CASE WHEN (changes.url_id IS NOT NULL AND bt_hint_url.search_id IS NULL) THEN @search_id ELSE bt_hint_url.search_id END),
+	bt_hint_url.url_accepted = (CASE WHEN (changes.url_id IS NOT NULL) THEN 1 ELSE 0 END),
+	bt_hint_url.validation_user = 1;
+
+/* 'OSC - freelancer desk' change state to this if was_accepted = 0 (assigned on hint level in-app) 
+ * 'lead - sent out' change state to this if was_accepted = 1 (assigned on hint level in-app)
+ * for editor hints are either accepted or refused was_accepted = 1/0, no neutral option permissible */
+UPDATE bt_hint_log
+JOIN (SELECT DISTINCT osc_temp_changes_data_1.hint_id, osc_temp_changes_data_1.was_accepted FROM osc_temp_changes_data_1) changes ON changes.hint_id = bt_hint_log.hint_id
+SET bt_hint_log.hint_state_id = (CASE WHEN changes.was_accepted = 0 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'OSC - editor desk') 
+									  WHEN changes.was.accepted = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'lead - sent out') END);
