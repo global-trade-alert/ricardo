@@ -20,12 +20,30 @@ b221ui <- function(id) {
                                                  style="visibility:hidden; pointer-events: none;")) # Initialize selectize),
                       ),
                       tags$div(class="control-bar",
-                               tags$div(id="loadMoreButton"),
+                               tags$div(id="loadMoreButton",
+                                        actionButton(ns("loadMoreLeads"),
+                                                     "Refresh",
+                                                     class="blue")),
                                tags$div(id="submitButton")),
                       tags$div(id=ns("slideInRight"),
-                               tags$div(class="removeslideinui"))
+                               tags$div(class="outer-wrap",
+                                        tags$div(id=paste0("hintSlideIn"),
+                                                 class="inner-wrap",
+                                                 tags$div(id = "collectionValues"),
+                                                 tags$div(class="lower-tables",
+                                                          tags$div(class="collectionTable",
+                                                                   tags$h3("Add to existing collection"),
+                                                                   dataTableOutput(ns("collectionTable"))),
+                                                          tags$div(class="singleHintTable",
+                                                                   tags$h3("Add Hints to collection"),
+                                                                   dataTableOutput(ns("singleHintsTable")))
+                                                          
+                                                 )
+                                        )
+                                        )
              )
              )
+  )
   )
   )
   

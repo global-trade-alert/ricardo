@@ -17,6 +17,12 @@ source(paste0(path,"code/setup.R"), local = F)
 source(paste0(path,"code/ui.R"), local = T)
 source(paste0(path,"code/server.R"), local = F)
 
+# LOAD FUNCTIONS
+source(paste0(path,"code/functions/bt_attribute_hint_processing.R"))
+
+# COOKIE SETTINGS
+sessionid <<- as.character(floor(runif(1)*1e20))
+
 # runApp(paste0(path,"code"))
 shinyApp(ui = ui, 
          server = server, 
@@ -29,10 +35,10 @@ shinyApp(ui = ui,
                              table.prefix = "ric_")
            
            onStop(function() {
-             gta_sql_pool_close()
+             cat("Launching application cleanup\n")
            })
          },
-         options = list(launch.browser=F)
+         options = list(launch.browser=T)
 )
 
 

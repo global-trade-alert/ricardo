@@ -6,8 +6,32 @@ addResourcePath(prefix = 'www', directoryPath = paste0(path,'www'))
 ui <- fluidPage(
   # START UI
   useShinyjs(),
+  extendShinyjs(text='
+                
+  shinyjs.getcookie = function(params) {
+    var cookie = Cookies.get("ricardo");
+    console.log(cookie);
+    if (typeof cookie !== "undefined") {
+      Shiny.setInputValue("jscookie", cookie, {priority: "event"});
+      console.log(cookie);
+    } else {
+      var cookie = "";
+      Shiny.setInputValue("jscookie", cookie, {priority: "event"});
+    }
+  }
+  shinyjs.setcookie = function(params) {
+    Cookies.set("ricardo", escape(params), { expires: 0.5 });  
+    Shiny.onInputChange("jscookie", params);
+    console.log("cookie set");
+  }
+  shinyjs.rmcookie = function(params) {
+    Cookies.remove("ricardo");
+    Shiny.onInputChange("jscookie", "");
+  }
+                '),
   theme = "www/main/style.css",
-  tags$head(tags$link(rel="stylesheet",href="https://fonts.googleapis.com/icon?family=Material+Icons")),
+  tags$head(tags$link(rel="stylesheet",href="https://fonts.googleapis.com/icon?family=Material+Icons"),
+            tags$script(src="www/main/js.cookie.js")),
   tags$div(class="wrap",
            tags$div(class="main-menu-wrap",
                      tags$div(id="nav", class="main-menu",
