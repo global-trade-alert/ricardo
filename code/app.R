@@ -2,12 +2,13 @@
 rm(list=ls())
 gtasql::gta_sql_kill_connections()
 
+
 # SET PATHS
-# setwd("/home/rstudio/Dropbox/GTA cloud")
+setwd("/home/rstudio/Dropbox/GTA cloud/")
 # setwd("C:/Users/jfrit/Desktop/Dropbox/GTA cloud")
 # setwd("C:/Users/Piotr Lukaszuk/Dropbox/GTA cloud")
 
-setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
+# setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
 path <<- "17 Shiny/8 ricardo app/"
 
 # APP SETUP
@@ -24,9 +25,10 @@ source(paste0(path,"code/functions/bt_attribute_hint_processing.R"))
 sessionid <<- as.character(floor(runif(1)*1e20))
 
 # runApp(paste0(path,"code"))
-shinyApp(ui = ui, 
-         server = server, 
+shinyApp(ui = ui,
+         server = server,
          onStart = function() {
+           gta_sql_kill_connections()
            gta_sql_pool_open(db.title="ricardomain",
                              db.host = gta_pwd("ricardomain")[['host']],
                              db.name = gta_pwd("ricardomain")[['name']],
@@ -36,6 +38,7 @@ shinyApp(ui = ui,
            
            onStop(function() {
              cat("Launching application cleanup\n")
+             gta_sql_pool_close()
            })
          },
          options = list(launch.browser=T)
