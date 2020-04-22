@@ -165,7 +165,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       # Adding option fields for output (selected = x[] defines the value currently selected and will be defined by the data pull function)
       leads.output$select_country = apply(leads.output,1, function(x){
         as.character(selectizeInput(gsub(" ","",paste0('country_',x['hint.id'])),
-                                    selected = unlist(strsplit(na.omit(as.character(x['jurisdiction_name'])), split=" ; ")), 
+                                    selected = unlist(strsplit(na.omit(as.character(x['jurisdiction.name'])), split=" ; ")), 
                                     label = 'Implementing country',
                                     choices = country.list$jurisdiction.name,
                                     multiple = TRUE)
@@ -174,7 +174,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       leads.output$select_product = apply(leads.output,1, function(x){
         as.character(selectizeInput(gsub(" ","",paste0('product_',x['hint.id'])),
                                     label = 'Product',
-                                    selected = unlist(strsplit(na.omit(as.character(x['product_group_name'])), split=" ; ")),
+                                    selected = unlist(strsplit(na.omit(as.character(x['product.group.name'])), split=" ; ")),
                                     choices = product.list$product.group.name,
                                     multiple = TRUE)
         )
@@ -182,7 +182,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       leads.output$select_intervention = apply(leads.output,1, function(x){
         as.character(selectizeInput(gsub(" ","",paste0('intervention_',x['hint.id'])),
                                     label = 'Intervention Type',
-                                    selected = unlist(strsplit(na.omit(as.character(x['intervention_type_name'])), split=" ; ")),
+                                    selected = unlist(strsplit(na.omit(as.character(x['intervention.type.name'])), split=" ; ")),
                                     choices = type.list$intervention.type.name,
                                     multiple = TRUE)
         )
@@ -190,7 +190,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       leads.output$select_assessment = apply(leads.output,1, function(x){
         as.character(selectizeInput(gsub(" ","",paste0('assessment_',x['hint.id'])),
                                     label = 'Assessment',
-                                    selected = unlist(strsplit(na.omit(as.character(x['assessment_name'])), split=" ; ")),
+                                    selected = unlist(strsplit(na.omit(as.character(x['assessment.name'])), split=" ; ")),
                                     choices = assessment.list$assessment.name,
                                     multiple = FALSE)
         )
