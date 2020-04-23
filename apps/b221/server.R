@@ -518,15 +518,24 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       options = list(
         pagingType = 'simple_numbers',
         pageLength = 20,
-        columnDefs = list(list(visible = FALSE, targets = c(0,1,2)), list(sortable=TRUE, targets = c(0))),
+        columnDefs = list(list(visible = FALSE, targets = c(0:19)), list(sortable=TRUE, targets = c(0))),
         language = list(
           paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
           zeroRecords = "No more leads available.",
           search = "_INPUT_",
           searchPlaceholder = "Filter"),
         rowCallback = JS("function ( row, data ) {
+                            let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
+                            let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[7]+'</div></div>';
+                            let product = data[18];
+                            let type = data[19];
+                            let jurisdiction = data[17];
+                            
+                            let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+'</div>';
+                            let tags2 = '<div class=\\'tags-lower\\'>'+type+product+'</div>';
+                            
                            $(row)
-                           .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item\\'><div class=\\'date\\'>'+data[2]+'</div><div class=\\'hint-title\\'>'+data[1]+'</div></div>');
+                           .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item\\'>'+tags+tags2+'<div class=\\'hint-title\\'>'+data[5]+'</div></div>');
                            return row; }")),
       
       callback = JS(""),
@@ -538,9 +547,40 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     # LOAD SINGLE HINTS FOR COLLECTIONS SLIDE IN
     singleHints <- eventReactive(input$loadSingleHints, {
       print("SingleHintRefresh refresh")
-      singleHintOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT bt_hint_text.hint_id, bt_hint_text.hint_title, bt_hint_log.hint_date FROM bt_hint_text JOIN bt_hint_log ON bt_hint_log.hint_id = bt_hint_text.hint_id WHERE bt_hint_text.hint_id NOT IN (SELECT hint_id FROM b221_hint_collection) ORDER BY hint_id DESC;"))
-        Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
-        print(singleHintOutput)
+      singleHintOutput <- gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT * FROM
+                                                                        (SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_name, user_prio_impl.jurisdiction_id AS prio_cty, cltn_log.collection_id, cltn_log.collection_name,
+                                                                        GROUP_CONCAT(DISTINCT int_list.intervention_type_name SEPARATOR ' ; ')  AS intervention_type, 
+                                                                        GROUP_CONCAT(DISTINCT prod_list.product_group_name SEPARATOR ' ; ')  AS product_group_name,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
+                                                                        FROM bt_hint_log ht_log 
+                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                                        LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
+                                                                        LEFT JOIN (SELECT jurisdiction_id FROM ric_user_implementers WHERE user_id = ",user$id," AND app_id = 4) user_prio_impl ON user_prio_impl.jurisdiction_id = ht_jur.jurisdiction_id
+                                                                        LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
+                                                                        LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
+                                                                        LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = ht_log.hint_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = ht_int.apparent_intervention_id
+                                                                        LEFT JOIN b221_hint_product_group ht_prod_grp ON ht_prod_grp.hint_id = ht_log.hint_id LEFT JOIN b221_product_group_list prod_list ON prod_list.product_group_id = ht_prod_grp.product_group_id
+                                                                        LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
+                                                                        GROUP BY ht_log.hint_id) unsorted_hints
+                                                                        ORDER BY prio_cty DESC, hint_date DESC;")))
+      Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
+      
+      
+      
+      singleHintOutput$tag_country = apply(singleHintOutput,1, function(x){
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+      })
+      singleHintOutput$tag_product = apply(singleHintOutput,1, function(x){
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag product'>",substr(strsplit(x['product.group.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['product.group.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+      })
+      singleHintOutput$tag_type = apply(singleHintOutput,1, function(x){
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),ifelse(nchar(x['intervention.type'])>20,"...",""),"</div>",collapse=""),"</div>"))
+      })
+      
+      print(singleHintOutput)
       singleHintOutput <<- singleHintOutput
     })
     

@@ -500,21 +500,70 @@
 
 #b221-singleHintsTable .hint-item{
 	background-color:#FFFFFF;
-	padding:10px;
 	color:#333333;
 	font-weight:400;
 	border:1px solid #dadada;
 }
 
-#b221-singleHintsTable .hint-item .date {
-		display: inline-block;
-		font-size: 0.9em;
-    padding: 1px 10px;
-    border: 1px solid #dadada;
-    border-radius: 20px;
-    background-color: #f9f9f9;
-    margin-bottom: 10px;
+#b221-singleHintsTable .hint-item .tags,
+#b221-singleHintsTable .hint-item .tags-lower {
+		display:grid;
+		background-color: #f9f9f9;
+    border-bottom: 1px solid #dadada;
+    grid-gap: 10px;
 }
+
+#b221-singleHintsTable .hint-item .tags {
+		grid-template-columns:1fr 1fr 1fr;
+}
+
+#b221-singleHintsTable .hint-item .tags-lower {
+		grid-template-columns:1fr 1fr;
+}
+
+#b221-singleHintsTable .hint-item .tags-lower .grid-row {
+		padding: 10px;
+    border-right: 1px solid #dadada;
+}
+
+#b221-singleHintsTable .hint-item .tags .grid-row {
+	padding: 10px;
+	border:none;
+}
+
+#b221-singleHintsTable .hint-item .tags .grid-row {
+	text-align: center;
+}
+
+#b221-singleHintsTable .hint-item .tags .grid-row:first-child {
+	text-align: left;
+}
+
+#b221-singleHintsTable .hint-item .tags .grid-row:last-child {
+	text-align: right;
+}
+
+
+
+#b221-singleHintsTable .hint-item .tags-lower .grid-row:last-child {
+    border-right: none;
+}
+
+#b221-singleHintsTable .hint-item .tag {
+	display: inline-block;
+	font-size: 0.9em;
+	padding: 1px 10px;
+	border: 1px solid #d2d2d2;
+	border-radius: 3px;
+	background-color: #efefef;
+	margin-bottom: 10px;
+}
+
+#b221-singleHintsTable .hint-item .hint-title {
+		padding: 15px;
+    font-weight: 700;
+}
+
 
 #b221-singleHintsTable .hint-item:hover,
 #b221-collectionTable .collection-item:hover {

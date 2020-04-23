@@ -125,7 +125,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           /* give editor a classification_id only if they actually modified something that they put forward to process */
                           SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                          SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp FROM (SELECT NULL FROM b221_temp_changes_data_",user.id," changes WHERE changes.was_modified = 1) editor_search_id;
+                          SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                            
                           CREATE INDEX idx_cmt ON b221_temp_changes_data_",user.id,"(comment(20));
 
@@ -142,9 +142,9 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           
                           /* validate / refuse assessment from freelancer */
                           UPDATE b221_hint_assessment ht_ass
-                          JOIN b221_temp_changes_data_",user.id," changed_hints ON ht_ass.hint_id = changed_hints.hint_id
-                          JOIN b221_assessment_list ass_list ON ht_ass.hint_id = ass_list.assessment_id
-                          LEFT JOIN b221_temp_changes_data_",user.id," changes ON ht_ass.hint_id = changes.hint_id AND changes.assessment_name = ass_list.assessment_name
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_ass.hint_id = changed_hints.hint_id
+                          JOIN b221_assessment_list ass_list ON ht_ass.assessment_id = ass_list.assessment_id
+                          LEFT JOIN (SELECT DISTINCT hint_id, assessment_name FROM b221_temp_changes_data_",user.id,") changes ON ht_ass.hint_id = changes.hint_id AND changes.assessment_name = ass_list.assessment_name
                           SET ht_ass.validation_user = ",user.id,",
                           	ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
@@ -157,9 +157,9 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           
                           /* validate / refuse product group from freelancer */
                           UPDATE b221_hint_product_group prod_grp 
-                          JOIN b221_temp_changes_data_",user.id," changed_hints ON prod_grp.hint_id = changed_hints.hint_id
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON prod_grp.hint_id = changed_hints.hint_id
                           JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp.product_group_id
-                          LEFT JOIN b221_temp_changes_data_",user.id," changes ON changes.hint_id = prod_grp.hint_id AND prod_grp.product_group_id = prod_grp.product_group_id
+                          LEFT JOIN (SELECT DISTINCT hint_id, product_group_name FROM b221_temp_changes_data_",user.id,") changes ON changes.hint_id = prod_grp.hint_id AND changes.product_group_name = prod_grp_list.product_group_name
                           SET prod_grp.validation_user = ",user.id,",
                           	prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
@@ -168,13 +168,13 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, int_type_list.intervention_type_id, 1 AS product_group_assessment, ",user.id," as validation_user
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN b221_intervention_type_list int_type_list ON int_type_list.intervention_type_name = changes.intervention_type_name
-                          WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = changes.hint_id AND int_type_list.intervention_type_id = ht_int.apparent_intervention_id)
+                          WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = changes.hint_id AND int_type_list.intervention_type_id = ht_int.apparent_intervention_id);
                           
                           /* validate / refuse intervention type from freelancer */
                           UPDATE b221_hint_intervention ht_int 
-                          JOIN b221_temp_changes_data_",user.id," changed_hints ON ht_int.hint_id = changed_hints.hint_id
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_int.hint_id = changed_hints.hint_id
                           JOIN b221_intervention_type_list int_type_list ON int_type_list.intervention_type_id = ht_int.apparent_intervention_id
-                          LEFT JOIN b221_temp_changes_data_",user.id," changes ON ht_int.hint_id = changes.hint_id AND changes.intervention_type_name = int_type_list.intervention_type_name
+                          LEFT JOIN (SELECT DISTINCT hint_id, intervention_type_name FROM b221_temp_changes_data_",user.id,") changes ON ht_int.hint_id = changes.hint_id AND changes.intervention_type_name = int_type_list.intervention_type_name
                           SET ht_int.validation_user = ",user.id,", 
                           	ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
@@ -184,20 +184,19 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           */
                           INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_user)
                           SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, 1 AS url_accepted, ",user.id," AS validation_user FROM 
-                          (SELECT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                          (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
                           FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
                           JOIN bt_url_log ON changes_w_url_type.url = bt_url_log.url
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id);
                           
                           UPDATE bt_hint_url ht_url 
-                          JOIN b221_temp_changes_data_",user.id," changed_hints ON ht_url.hint_id = changed_hints.hint_id
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_url.hint_id = changed_hints.hint_id
                           JOIN bt_url_log ON bt_url_log.url_id = ht_url.url_id
-                          LEFT JOIN (SELECT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                          LEFT JOIN (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
                           		   FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
                           ON ht_url.hint_id = changes_w_url_type.hint_id AND changes_w_url_type.url = bt_url_log.url AND changes_w_url_type.url_type_id = ht_url.url_type_id
                           SET ht_url.validation_user = ",user.id,", 
                           	ht_url.url_accepted = (CASE WHEN changes_w_url_type.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                          
                           
                           /* SAME APPROACH WITH BT_HINT_JURISDICTION */
                           INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
@@ -207,9 +206,9 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_jurisdiction ht_jur WHERE ht_jur.hint_id = changes.hint_id AND jur_list.jurisdiction_id = ht_jur.jurisdiction_id);
                           
                           UPDATE bt_hint_jurisdiction ht_jur 
-                          JOIN b221_temp_changes_data_",user.id," changed_hints ON ht_jur.hint_id = changed_hints.hint_id
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_jur.hint_id = changed_hints.hint_id
                           JOIN gta_jurisdiction_list jur_list ON ht_jur.jurisdiction_id = jur_list.jurisdiction_id
-                          LEFT JOIN b221_temp_changes_data_",user.id," changes ON ht_jur.hint_id = changes.hint_id AND changes.implementer_name = jur_list.jurisdiction_name
+                          LEFT JOIN (SELECT DISTINCT hint_id, implementer_name FROM b221_temp_changes_data_",user.id,") changes ON ht_jur.hint_id = changes.hint_id AND changes.implementer_name = jur_list.jurisdiction_name
                           SET ht_jur.validation_user = ",user.id,", 
                           	ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                            
@@ -220,8 +219,8 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_relevance ht_rel WHERE ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance);
                           
                           UPDATE bt_hint_relevance ht_rel
-                          JOIN b221_temp_changes_data_",user.id," changed_hints ON ht_rel.hint_id = changed_hints.hint_id
-                          LEFT JOIN b221_temp_changes_data_",user.id," changes ON ht_rel.hint_id = changes.hint_id AND changes.relevance = ht_rel.relevance
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_rel.hint_id = changed_hints.hint_id
+                          LEFT JOIN (SELECT DISTINCT hint_id, relevance FROM b221_temp_changes_data_",user.id,") changes ON ht_rel.hint_id = changes.hint_id AND changes.relevance = ht_rel.relevance
                           SET ht_rel.validation_user = ",user.id,", 
                           	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           	
@@ -233,6 +232,6 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   }
   
   gta_sql_multiple_queries(push.updates, output.queries = 1, show.time = T, db.connection = 'pool')
-  gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
+  # gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
   
 }
