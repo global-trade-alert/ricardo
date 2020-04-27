@@ -609,6 +609,12 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                     JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
                                                                     GROUP BY cltn.collection_id;"))
       
+      collectionsOutput$intervention.type <- gsub("export subsidy","ES",collectionsOutput$intervention.type)
+      collectionsOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","DS",collectionsOutput$intervention.type)
+      collectionsOutput$intervention.type <- gsub("import barrier","IB",collectionsOutput$intervention.type)
+      collectionsOutput$intervention.type <- gsub("export barrier","EB",collectionsOutput$intervention.type)
+      collectionsOutput$intervention.type <- gsub("uncertain","UN",collectionsOutput$intervention.type)
+      
       collectionsOutput$tag_country = apply(collectionsOutput,1, function(x){
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
       })
@@ -718,8 +724,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
       Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
       
-      
+      singleHintOutput$intervention.type <- gsub("export subsidy","ES",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","DS",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("import barrier","IB",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("export barrier","EB",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("uncertain","UN",singleHintOutput$intervention.type)
       
       singleHintOutput$tag_country = apply(singleHintOutput,1, function(x){
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
