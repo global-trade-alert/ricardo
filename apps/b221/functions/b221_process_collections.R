@@ -369,5 +369,3 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
     }
   }
 }
-
-

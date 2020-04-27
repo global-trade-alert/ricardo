@@ -296,11 +296,11 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         slideInState = paste0("existingCollection_",collectionId)
         
-        maxHint <- gta_sql_get_value(paste0("SELECT MAX(hint_state_id) AS max_state FROM 
+        maxHint <- gta_sql_get_value(paste0("SELECT DISTINCT(hint_state_id) AS max_state FROM 
                                             (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collectionId,") ht_cltn 
                                             JOIN bt_hint_log ht_log ON ht_log.hint_id = ht_cltn.hint_id;"))
         
-        locked <- ifelse(maxHint>2, " locked","")
+        locked <- ifelse(any(maxHint %in% c(3:7,9)), " locked","")
         
       } else {
         
@@ -443,15 +443,47 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         if (colState == "newCollection") {
           
-          #b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1)
+          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
           
         } else {
           
           collectionId <- as.numeric(gsub("existingCollection_","", colState))
-          #b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1)
-        
+          
+          # get old collections attributes to compare
+          query = paste0("SELECT cltn_log.collection_id, cltn_log.collection_name, 
+                        GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) SEPARATOR ' ; ') AS jurisdiction_name,
+                        GROUP_CONCAT(DISTINCT(ass_list.assessment_name) SEPARATOR ' ; ') AS assessment_name,
+                        GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
+                        GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
+                        cltn_rel.relevance
+                        FROM b221_collection_log cltn_log
+                        JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                        JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
+                        JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
+                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
+                        JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
+                        GROUP BY cltn_log.collection_id;")
+          collectionStats <- gta_sql_get_value(query)
+          
+          if (length(c(
+            setdiff(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]]),
+            setdiff(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),
+            setdiff(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),
+            setdiff(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]])
+          )) > 0 ) {
+            collectionChanged = T
+          } else {
+            collectionChanged = F
           }
+          
+          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = collectionChanged)
+        
+        }
+        
+        print(paste0("THIS IS THE COUNTRY HINT ID country_",hintId))
       
+        
+        
       updateSelectInput(session = session, inputId = paste0("country_",hintId), selected = colImplementer)
       updateSelectInput(session = session, inputId = paste0("product_",hintId), selected = colProduct)
       updateSelectInput(session = session, inputId = paste0("intervention_",hintId), selected = colType)
@@ -460,6 +492,26 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       collectionId <- gta_sql_get_value(paste0("SELECT collection_id FROM b221_hint_collection WHERE hint_id = ",hintId,";"))
       print(collectionId)
       if(is.na(collectionId)==F) {
+        runjs(paste0("$('#leadsID_",hintId," .selectize-input .item').remove();"))
+        insertCountry <- paste0('<div class="item" data-value=',colImplementer,'>',colImplementer,'</div>',collapse="")
+        insertCountryOptions <- paste0('<option value=',colImplementer,' selected="selected">',colImplementer,'</option>')
+        insertProduct <- paste0('<div class="item" data-value=',colProduct,'>',colProduct,'</div>',collapse="")
+        insertProductOptions <- paste0('<option value=',colProduct,' selected="selected">',colProduct,'</option>')
+        insertType <- paste0('<div class="item" data-value=',colType,'>',colType,'</div>',collapse="")
+        insertTypeOptions <- paste0('<option value=',colType,' selected="selected">',colType,'</option>')
+        insertAssessment <- paste0('<div class="item" data-value=',colAssessment,'>',colAssessment,'</div>',collapse="")
+        insertAssessmentOptions <- paste0('<option value=',colAssessment,' selected="selected">',colAssessment,'</option>')
+        
+        runjs(paste0("$('select#country_",hintId,"').append('",insertCountryOptions,"');"))
+        runjs(paste0("$('",insertCountry,"').hide().insertBefore('input#country_",hintId,"-selectized').fadeIn(300);"))
+        runjs(paste0("$('select#product_",hintId,"').append('",insertProductOptions,"');"))
+        runjs(paste0("$('",insertProduct,"').hide().insertBefore('input#product_",hintId,"-selectized').fadeIn(300);"))
+        runjs(paste0("$('select#intervention_",hintId,"').append('",insertTypeOptions,"');"))
+        runjs(paste0("$('",insertType,"').hide().insertBefore('input#intervention_",hintId,"-selectized').fadeIn(300);"))
+        runjs(paste0("$('select#assessment_",hintId,"').append('",insertAssessmentOptions,"');"))
+        runjs(paste0("$('",insertAssessment,"').hide().insertBefore('input#assessment_",hintId,"-selectized').fadeIn(300);"))
+        
+        runjs(paste0("$('#leadsID_",hintId,"').addClass('locked');"))
         runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('noPartOfCollection');"))
         runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('partOfCollection');"))
         runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = 'collection_",collectionId,"';"))
@@ -487,16 +539,53 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       options = list(
         pagingType = 'simple_numbers',
         pageLength = 10,
-        columnDefs = list(list(visible = FALSE, targets = c(0,1)), list(sortable=TRUE, targets = c(0))),
+        columnDefs = list(list(visible = FALSE, targets = c(0:9)), list(sortable=TRUE, targets = c(0))),
         language = list(
           paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
           zeroRecords = "No more leads available.",
           search = "_INPUT_",
           searchPlaceholder = "Filter"),
         rowCallback = JS("function ( row, data ) {
+        
+                            let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
+                            let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[2]+'</div></div>';
+                            let product = data[8];
+                            let type = data[9];
+                            let jurisdiction = data[7];
+                            
+                            let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
+
+                            let tpdate = '<div><label>Date</label>'+data[3]+'</div>';
+                            let tpimplementer = '<div><label>Implementer</label>'+data[7]+'</div>';
+                            let tpassessment = '<div><label>Assessment</label>'+data[2]+'</div>';
+                            let tpproduct = '<div><label>Product</label>'+data[8]+'</div>';
+                            let tptype = '<div><label>Intervention type</label>'+data[9]+'</div>';
+
+                            let tpcontent = '<div id=\\'coltooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpimplementer+tpassessment+tptype+tpproduct+'</div></div>';
+                            
+                            let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
+        
                            $(row)
-                           .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'collection-title\\'>'+data[1]+'</div></div>');
-                           return row; }")),
+                           .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'left\\'>'+tags+'<div class=\\'collection-title\\'>'+data[1]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#coltooltip_'+data[0]+'\\' class=\\'coltooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
+
+                           return row; }"),
+        initComplete = JS("function createTipped() {
+                              $('.coltooltip-create').tooltipster({
+                                theme: 'tooltipster-noir',
+                                contentCloning: true,
+                                maxWidth: 600,
+                                arrow:false,
+                                animationDuration: 150,
+                                trigger: 'hover',
+                                triggerOpen: {
+                                    mouseenter: true
+                                },
+                                triggerClose: {
+                                    click: true,
+                                    scroll: true
+                                }
+                              })
+                            }")),
       callback = JS(""),
       extensions = "Select",
       selection = "single"
@@ -506,7 +595,30 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     # LOAD COLLECTIONS FOR COLLECTIONS SLIDE IN
     collections <- eventReactive(input$loadCollections, {
       print("Collections refresh")
-      collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT collection_id, collection_name FROM b221_collection_log;"))
+      
+      # collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT collection_id, collection_name FROM b221_collection_log;"))
+      collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT cltn.collection_id, cltn.collection_name, ass_list.assessment_name, MIN(bt_hint_log.hint_date) AS hint_date,
+                                                                    GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
+                                                                    GROUP_CONCAT(DISTINCT(prod_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
+                                                                    GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) SEPARATOR ' ; ') AS jurisdiction_name
+                                                                    FROM b221_collection_log cltn
+                                                                    JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
+                                                                    JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn.collection_id JOIN b221_intervention_type_list int_list ON cltn_int.intervention_type_id = int_list.intervention_type_id
+                                                                    JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn.collection_id JOIN b221_product_group_list prod_list ON cltn_prod.product_group_id = prod_list.product_group_id
+                                                                    JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn.collection_id JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                                                                    JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
+                                                                    GROUP BY cltn.collection_id;"))
+      
+      collectionsOutput$tag_country = apply(collectionsOutput,1, function(x){
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+      })
+      collectionsOutput$tag_product = apply(collectionsOutput,1, function(x){
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag product'>",substr(strsplit(x['product.group.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['product.group.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+      })
+      collectionsOutput$tag_type = apply(collectionsOutput,1, function(x){
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),ifelse(nchar(x['intervention.type'])>20,"...",""),"</div>",collapse=""),"</div>"))
+      })
+      
       collectionsOutput <<- collectionsOutput
     })
     
@@ -525,20 +637,59 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           search = "_INPUT_",
           searchPlaceholder = "Filter"),
         rowCallback = JS("function ( row, data ) {
+                            
+                            if (! [2,8].includes(data[1])) {
+                            console.log('YES LOCK');
+                            var lock = ' locked';
+                            } else {
+                            console.log('NO LOCK');
+                            var lock = '';
+                            } 
+                            
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[7]+'</div></div>';
                             let product = data[18];
                             let type = data[19];
                             let jurisdiction = data[17];
                             
-                            let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+'</div>';
+                            let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
                             let tags2 = '<div class=\\'tags-lower\\'>'+type+product+'</div>';
                             
+                            let tpdate = '<div><label>Date</label>'+data[3]+'</div>';
+                            let tpactingAgency = '<div><label>Acting Agency</label>'+data[2]+'</div>';
+                            let tpimplementer = '<div><label>Implementer</label>'+data[4]+'</div>';
+                            let tpdescription = '<div><label>Description</label>'+data[6]+'</div>';
+                            let tpassessment = '<div><label>Assessment</label>'+data[7]+'</div>';
+                            let tpproduct = '<div><label>Product</label>'+data[12]+'</div>';
+                            let tptype = '<div><label>Intervention type</label>'+data[11]+'</div>';
+                            let tpofficial = '<div><label>URL official</label>'+data[13]+'</div>';
+                            let tpnews = '<div><label>URL news</label>'+data[14]+'</div>';
+                            
+                            let tpcontent = '<div id=\\'tooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpactingAgency+tpimplementer+tpassessment+tptype+tpproduct+'</div><div class=\\'tipped-description\\'>'+tpdescription+'</div><div class=\\'tipped-url\\'>'+tpofficial+tpnews+'</div></div>';
+                            
+                            let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
+                            
                            $(row)
-                           .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item\\'>'+tags+tags2+'<div class=\\'hint-title\\'>'+data[5]+'</div></div>');
-                           return row; }")),
-      
-      callback = JS(""),
+                           .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item'+lock+'\\'><div class=\\'left\\'>'+tags+'<div class=\\'hint-title\\'>'+data[5]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#tooltip_'+data[0]+'\\' class=\\'tooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons lock\\'>lock</span><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
+                           return row; }"),
+        initComplete = JS("function createTipped() {
+                              $('.tooltip-create').tooltipster({
+                                theme: 'tooltipster-noir',
+                                contentCloning: true,
+                                maxWidth: 600,
+                                arrow:false,
+                                animationDuration: 150,
+                                trigger: 'hover',
+                                triggerOpen: {
+                                    mouseenter: true
+                                },
+                                triggerClose: {
+                                    click: true,
+                                    scroll: true
+                                }
+                              })
+                            }")),
+      callback = JS("console.log('TEST');"),
       extensions = "Select",
       selection = "single"
     ),
@@ -586,10 +737,16 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
     # SELECT ROWS MECHANISM HITNS TABLE
     observeEvent(input$singleHintsTable_rows_selected, { 
-      moveHint <- singleHintOutput[input$singleHintsTable_rows_selected,c(1,2)]
+      moveHint <- singleHintOutput[input$singleHintsTable_rows_selected,]
+      rowtest <<- moveHint
+      print(moveHint)
       addHint <- paste0('<div id="hintId_',moveHint$hint.id,'" class="hint-item added"><div class="hint-title">',moveHint$hint.title,'</div><div class="remove" value="',moveHint$hint.id,'"><img src="www/b221/cancel.svg"></div></div>')
-      
-      runjs(paste0("$('",addHint,"').hide().appendTo('#hintContainer').fadeIn(300);"))
+      reassign <- paste0("$('",addHint,"').hide().appendTo('#hintContainer').fadeIn(300);")
+      if (moveHint$hint.state.id %in% c(2,8)) {
+          runjs(reassign)
+        } else {
+            showNotification("This hint is part of a collection already. You are not allowed to reassign it.", duration = 3)
+        }
       runjs("removeHint();")
     })
     
@@ -602,8 +759,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       for(r in 1:nrow(collectionHints)) {
         addHint <- paste0(addHint, '<div id="hintId_',collectionHints$hint.id[r],'" class="hint-item added"><div class="hint-title">',gsub("'", "\"", collectionHints$hint.title[r]),'</div><div class="remove" value="',collectionHints$hint.id[r],'"><img src="www/b221/cancel.svg"></div></div>')
       }
-      
-      # TO DO: GET COLLECTION VALUES (IMPLEMENTER, PRODUCT ETC.) AND UPDATE INPUT FIELDS HERE
       
       updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
       
@@ -682,4 +837,3 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     })
     
 }
-
