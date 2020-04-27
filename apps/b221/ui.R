@@ -35,7 +35,7 @@ b221ui <- function(id) {
                                                                    tags$h3("Add to existing collection"),
                                                                    dataTableOutput(ns("collectionTable"))),
                                                           tags$div(class="singleHintTable",
-                                                                   tags$h3("Add Hints to collection"),
+                                                                   tags$h3("Add hints to active collection"),
                                                                    dataTableOutput(ns("singleHintsTable")))
                                                           
                                                  )

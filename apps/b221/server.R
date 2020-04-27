@@ -726,11 +726,11 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
       Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
       
-      singleHintOutput$intervention.type <- gsub("export subsidy","ES",singleHintOutput$intervention.type)
-      singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","DS",singleHintOutput$intervention.type)
-      singleHintOutput$intervention.type <- gsub("import barrier","IB",singleHintOutput$intervention.type)
-      singleHintOutput$intervention.type <- gsub("export barrier","EB",singleHintOutput$intervention.type)
-      singleHintOutput$intervention.type <- gsub("uncertain","UN",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("import barrier","Import barrier",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("export barrier","Export barrier",singleHintOutput$intervention.type)
+      singleHintOutput$intervention.type <- gsub("uncertain","Unclear",singleHintOutput$intervention.type)
       
       singleHintOutput$tag_country = apply(singleHintOutput,1, function(x){
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
@@ -741,6 +741,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       singleHintOutput$tag_type = apply(singleHintOutput,1, function(x){
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),ifelse(nchar(x['intervention.type'])>20,"...",""),"</div>",collapse=""),"</div>"))
       })
+      
+      
       
       print(singleHintOutput)
       singleHintOutput <<- singleHintOutput
