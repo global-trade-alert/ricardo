@@ -1,5 +1,8 @@
 // FUNCTIONS
 
+
+
+
 // REACTIVATING LEADS ITEM
 function checkLeads() {
   $('#b221-leadsTable').on('click', '.leads-item .right-col .evaluate',function (e) {
