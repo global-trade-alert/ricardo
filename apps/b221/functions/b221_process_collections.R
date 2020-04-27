@@ -2,7 +2,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, collection.unchanged = NULL){
   
   if(is.null(is.freelancer) | length(is.freelancer)!= 1 | !is.logical(is.freelancer) | is.na(is.freelancer)) stop('is.freelancer must be false if you are an editor, or true if you are a freelancer, no other value permitted')
-  if(is.null(hints.id) | length(hints.id)< 1) stop('hints.id must be numeric and at least length 1, expected is a vector')
+  if(is.null(hints.id) | length(hints.id)< 1) stop('hints.id must be numeric or NA and at least length 1, expected is a vector')
   if(!xor(is.null(new.collection.name), is.null(collection.id))) stop('either collection.id or new.collection.name must be a provided, not both, not neither')
   if(!is.numeric(collection.id) & !is.character(new.collection.name)) stop('collection.id or new.collection.name must be numeric or character respectively (only one can be provided)')
   
@@ -66,7 +66,18 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   }
   
   original.hints = gta_sql_get_value(paste0("SELECT hint_id FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,";"))
-
+  # states which need to be confirmed for editor-side
+  state.2or8.hints = gta_sql_get_value(paste0("SELECT b221_hint_collection.hint_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND (bt_hint_log.hint_state_id = 2 OR bt_hint_log.hint_state_id = 8) AND bt_hint_log.hint_id = b221_hint_collection.hint_id;"))
+  
+  # state for hints to be converted to when collection updates
+  states = gta_sql_get_value(paste0("SELECT DISTINCT hint_state_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id;"))
+  if(relevance == 0){
+    editor.new.state = 9
+  } else {
+    editor.new.state = ifelse(max(states)==2, 3, max(states[!states %in% 8:9]))
+    if(length(editor.new.state)==0 | editor.new.state == -Inf) editor.new.state = 3
+  }
+  
   if(!any(is.na(hints.id))){
     gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
     gta_sql_get_value(paste0("INSERT INTO b221_hint_collection VALUES ",paste0("(",hints.id,",",collection.id,")", collapse = ',')))
@@ -78,12 +89,11 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   # 2nd case: reassign new hint's collection + values
   # original.hints = 1:3
   # hints.id = 1:3
-  # new.hints = hints.id[!hints.id %in% original.hints]
-  
-  select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
-  if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
-
   if(is.freelancer == T){
+    new.hints = unique(hints.id[!hints.id %in% original.hints])
+    
+    select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
+    if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
     if(collection.unchanged==F & is.null(new.collection.name)){
       
       update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
@@ -186,6 +196,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
                                         SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
                                                             (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+    
     gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
     
       }
@@ -193,6 +204,12 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   } else {
     # editor side 
     
+    # on the editor side even if the collection already contains the hint but it was submitted by a freelancer, a confirmation needs to occur
+    if(!is.na(state.2or8.hints)) new.hints = unique(c(state.2or8.hints,hints.id[!hints.id %in% original.hints])) else new.hints = unique(hints.id[!hints.id %in% original.hints])
+    
+    select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
+    if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
+
     if(collection.unchanged==F & is.null(new.collection.name)){
     update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
                                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
@@ -261,10 +278,16 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
                                           ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance
                                           SET ht_rel.validation_user = ",user.id,", 
-                                          	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+                                          	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                      
+                                          UPDATE bt_hint_log
+                                          JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
+                                          SET bt_hint_log.hint_state_id = ",editor.new.state,";")
     
     gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
     } else {
+      
+      if(!any(is.na(new.hints)) & length(new.hints) != 0){
       #editor reassigned hints
       update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
                                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
@@ -333,7 +356,15 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
                                           ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance
                                           SET ht_rel.validation_user = ",user.id,", 
-                                          	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+                                          	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        
+                                          UPDATE bt_hint_log
+                                          JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
+                                          SET bt_hint_log.hint_state_id = ",editor.new.state,";")
+      
+      gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
+      
+      }
       
     }
   }
