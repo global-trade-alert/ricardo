@@ -190,7 +190,8 @@
 	box-shadow:none;
 }
 
-#b221-leadsTable .leads-item.locked .top-row .selectize-input {
+#b221-leadsTable .leads-item.locked .top-row .selectize-input,
+#b221-leadsTable .leads-item.locked .right {
 	pointer-events: none !important;
 }
 
@@ -547,7 +548,7 @@
 
 #b221-singleHintsTable .hint-item .right .info span,
 #b221-collectionTable .collection-item .right .info span {
-	color:#dadada;
+	color:#2485e6;
 }
 
 
