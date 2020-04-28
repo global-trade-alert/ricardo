@@ -14,6 +14,7 @@ library(tidyverse)
 library(splitstackshape)
 library(gtasql)
 library(sodium)
+library(stringi)
 
 # DEFINE GLOBAL STARTUP VALUES
 

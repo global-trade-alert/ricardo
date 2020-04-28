@@ -296,9 +296,43 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         print(initialAssessment)
         print(initialJurisdictions)
         
-        initialHints <- unique(gta_sql_get_value(paste0("SELECT ht_text.hint_title, ht_text.hint_id FROM b221_hint_collection col_log JOIN bt_hint_text ht_text ON ht_text.hint_id = col_log.hint_id WHERE ht_text.language_id = 1 AND col_log.collection_id = ",collectionId)))
+        initialHints <- unique(gta_sql_get_value(paste0("SELECT * FROM
+                                                          (SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_name, cltn_log.collection_id, cltn_log.collection_name,
+                                                          GROUP_CONCAT(DISTINCT int_list.intervention_type_name SEPARATOR ' ; ')  AS intervention_type, 
+                                                          GROUP_CONCAT(DISTINCT prod_list.product_group_name SEPARATOR ' ; ')  AS product_group_name,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
+                                                          FROM bt_hint_log ht_log 
+                                                          JOIN b221_hint_collection ht_col ON ht_col.hint_id = ht_log.hint_id AND ht_col.collection_id = ",collectionId,"
+                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                          LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
+                                                          LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
+                                                          LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
+                                                          LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = ht_log.hint_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = ht_int.apparent_intervention_id
+                                                          LEFT JOIN b221_hint_product_group ht_prod_grp ON ht_prod_grp.hint_id = ht_log.hint_id LEFT JOIN b221_product_group_list prod_list ON prod_list.product_group_id = ht_prod_grp.product_group_id
+                                                          LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
+                                                          GROUP BY ht_log.hint_id) unsorted_hints;")))
+                                                          
+                                                          
         initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
-        initialHints = paste0('<div id="hintId_',initialHints$hint.id,'" class="hint-item added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div></div>')
+        
+        initialHints$tpcontent = paste0('<div id="top-tooltip_',initialHints$hint.id,'" class="tipped-content"><div class="tipped-grid"">',
+                                        '<div><label>Date</label>',initialHints$hint.date,'</div>',
+                                        '<div><label>Acting Agency</label>',initialHints$acting.agency,'</div>',
+                                        '<div><label>Implementer</label>',initialHints$jurisdiction.name,'</div>',
+                                        '<div><label>Assessment</label>',initialHints$assessment,'</div>',
+                                        '<div><label>Intervention type</label>',initialHints$intervention.type,'</div>',
+                                        '<div><label>Product</label>',initialHints$product.group.name,'</div>',
+                                        '</div><div class="tipped-description">',
+                                        '<div><label>Description</label>',initialHints$hint.description,'</div>',
+                                        '</div><div class="tipped-url">',
+                                        '<div><label>URL official</label>',initialHints$official,'</div>',
+                                        '<div><label>URL news</label>',initialHints$news,'</div>',
+                                        '</div></div>')
+        
+        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',initialHints$tpcontent)
         
         slideInState = paste0("existingCollection_",collectionId)
         
@@ -320,8 +354,60 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         initialHint <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title 
                                                                           FROM bt_hint_text
                                                                           WHERE hint_id = ",hintId,";"))))
+        
+        
         initialHint$hint.title <- paste(initialHint$hint.id, initialHint$hint.title, sep=" - ")
-        initialHints = paste0('<div id="hintId_',initialHint$hint.id,'" class="hint-item initial"><div class="hint-title">',initialHint$hint.title,'</div></div>')
+        
+        # MOUSE OVER
+        initSingleHint <- gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT * FROM
+                                                                        (SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_name, cltn_log.collection_id, cltn_log.collection_name,
+                                                                        GROUP_CONCAT(DISTINCT int_list.intervention_type_name SEPARATOR ' ; ')  AS intervention_type, 
+                                                                        GROUP_CONCAT(DISTINCT prod_list.product_group_name SEPARATOR ' ; ')  AS product_group_name,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
+                                                                        FROM bt_hint_log ht_log 
+                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                                        LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
+                                                                        LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
+                                                                        LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
+                                                                        LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = ht_log.hint_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = ht_int.apparent_intervention_id
+                                                                        LEFT JOIN b221_hint_product_group ht_prod_grp ON ht_prod_grp.hint_id = ht_log.hint_id LEFT JOIN b221_product_group_list prod_list ON prod_list.product_group_id = ht_prod_grp.product_group_id
+                                                                        LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
+                                                                        WHERE ht_log.hint_id = ",hintId,"
+                                                                        GROUP BY ht_log.hint_id) unsorted_hints;")))
+        
+        initSingleHint$intervention.type <- gsub("export subsidy","Export subsidy",initSingleHint$intervention.type)
+        initSingleHint$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",initSingleHint$intervention.type)
+        initSingleHint$intervention.type <- gsub("import barrier","Import barrier",initSingleHint$intervention.type)
+        initSingleHint$intervention.type <- gsub("export barrier","Export barrier",initSingleHint$intervention.type)
+        initSingleHint$intervention.type <- gsub("uncertain","Unclear",initSingleHint$intervention.type)
+        
+        initSingleHint$product.group.name <- gsub("uncertain","Uncertain",initSingleHint$product.group.name)
+        initSingleHint$product.group.name <- gsub("medical consumables","Medical consumables",initSingleHint$product.group.name)
+        initSingleHint$product.group.name <- gsub("medical equipment","Medical equipment",initSingleHint$product.group.name)
+        initSingleHint$product.group.name <- gsub("medicines or drugs","Medicines or drugs",initSingleHint$product.group.name)
+        initSingleHint$product.group.name <- gsub("food","Food",initSingleHint$product.group.name)
+        initSingleHint$product.group.name <- gsub("other","Other",initSingleHint$product.group.name)
+        
+        initSingleHint$jurisdiction.name[is.na(initSingleHint$jurisdiction.name)] <- "Unspecified"
+        initSingleHint$intervention.type[is.na(initSingleHint$intervention.type)] <- "Unspecified"
+        initSingleHint$product.group.name[is.na(initSingleHint$product.group.name)] <- "Unspecified"
+        
+        tpdate = paste0('<div><label>Date</label>',initSingleHint$hint.date,'</div>')
+        tpimplementer = paste0('<div><label>Implementer</label>',initSingleHint$jurisdiction.name,'</div>')
+        tpactingAgency = paste0('<div><label>Acting Agency</label>',initSingleHint$acting.agency,'</div>')
+        tpassessment = paste0('<div><label>Assessment</label>',initSingleHint$assessment,'</div>')
+        tpproduct = paste0('<div><label>Product</label>',initSingleHint$product.group.name,'</div>')
+        tptype = paste0('<div><label>Intervention type</label>',initSingleHint$intervention.type,'</div>')
+        tpofficial = paste0('<div><label>URL official</label>',initSingleHint$official,'</div>')
+        tpnews = paste0('<div><label>URL news</label>',initSingleHint$news,'</div>')
+        tpdescription = paste0('<div><label>Description</label>',initSingleHint$hint.description,'</div>')
+        
+        
+        tpcontent = paste0('<div id="top-tooltip_',hintId,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>')
+        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div></div>',tpcontent)
         
         slideInState = "newCollection"
         
@@ -370,6 +456,21 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       runjs(paste0(" slideInBasicUI(); removeHint();"))
       runjs("$('#b221-slideInRight').addClass('open');")
       runjs("$('#b221-slideInRight').trigger('loadCollectionSlideIn');console.log('2 loading collection slide in');")
+      runjs("$('.tooltip-create-top').tooltipster({
+                                theme: 'tooltipster-noir',
+                                contentCloning: true,
+                                maxWidth: 600,
+                                arrow:false,
+                                animationDuration: 150,
+                                trigger: 'hover',
+                                triggerOpen: {
+                                    mouseenter: true
+                                },
+                                triggerClose: {
+                                    click: true,
+                                    scroll: true
+                                }
+                              })")
       })
     
     observeEvent(input$saveCollection, {
@@ -449,8 +550,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         if (colState == "newCollection") {
           
-          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
-          print('colState new collection')
+          collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
+          if(collection.save!='successful') showNotification(collection.save, duration = 3)
           
         } else {
           print('not new collection')
@@ -607,10 +708,11 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     ),
     server = T)
     
+    
+    
     # LOAD COLLECTIONS FOR COLLECTIONS SLIDE IN
     collections <- eventReactive(input$loadCollections, {
       print("Collections refresh")
-      
       # collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT collection_id, collection_name FROM b221_collection_log;"))
       collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT cltn.collection_id, cltn.collection_name, ass_list.assessment_name, MIN(bt_hint_log.hint_date) AS hint_date,
                                                                     GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
@@ -623,6 +725,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                     JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn.collection_id JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                                                                     JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
                                                                     GROUP BY cltn.collection_id;"))
+      collectionsOutput[["collection.name"]] = stri_trans_general(collectionsOutput[["collection.name"]], "Any-ascii")
       
       collectionsOutput$intervention.type.name <- gsub("export subsidy","Export subsidy", collectionsOutput$intervention.type.name)
       collectionsOutput$intervention.type.name <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy", collectionsOutput$intervention.type.name)
@@ -640,6 +743,28 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       collectionsOutput$jurisdiction.name[is.na(collectionsOutput$jurisdiction.name)] <- "Unspecified"
       collectionsOutput$intervention.type.name[is.na(collectionsOutput$intervention.type.name)] <- "Unspecified"
       collectionsOutput$product.group.name[is.na(collectionsOutput$product.group.name)] <- "Unspecified"
+      
+      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM bt_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      
+      initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
+      initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
+      initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
+      initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
+      
+      initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
+      initialType <- ifelse(is.null(initialType),character(0),initialType)
+      initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
+      initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
+      
+      # I gave equal weight, can weight which matches matter most by multiplying a scalar
+      # collectionsOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(collectionsOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) +
+      #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * 3 +
+      #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) +
+      #                                       do.call(rbind, lapply(collectionsOutput$assessment.name, function(x) sum(x %in% initialAssessment))))
+      # collectionsOutput = collectionsOutput[sort(collectionsOutput$order, decreasing = T),]
       
       collectionsOutput$tag_country = apply(collectionsOutput,1, function(x){
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
@@ -662,7 +787,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       options = list(
         pagingType = 'simple_numbers',
         pageLength = 20,
-        columnDefs = list(list(visible = FALSE, targets = c(0:19)), list(sortable=TRUE, targets = c(0))),
+        columnDefs = list(list(visible = FALSE, targets = c(0:20)), list(sortable=TRUE, targets = c(0))),
         language = list(
           paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
           zeroRecords = "No more leads available.",
@@ -748,16 +873,16 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
       
+      singleHintOutput[["hint.title"]] = stri_trans_general(singleHintOutput[["hint.title"]], "Any-ascii")
+      singleHintOutput[["hint.description"]] = stri_trans_general(singleHintOutput[["hint.description"]], "Any-ascii")
+      singleHintOutput[["acting.agency"]] = stri_trans_general(singleHintOutput[["acting.agency"]], "Any-ascii")
+      singleHintOutput[["official"]] = stri_trans_general(singleHintOutput[["official"]], "Any-ascii")
+      singleHintOutput[["news"]] = stri_trans_general(singleHintOutput[["news"]], "Any-ascii")
+      singleHintOutput[["consultancy"]] = stri_trans_general(singleHintOutput[["consultancy"]], "Any-ascii")
+      singleHintOutput[["others"]] = stri_trans_general(singleHintOutput[["others"]], "Any-ascii")
+      singleHintOutput[["intervention.type"]] = stri_trans_general(singleHintOutput[["intervention.type"]], "Any-ascii")
+      singleHintOutput[["product.group.name"]] = stri_trans_general(singleHintOutput[["product.group.name"]], "Any-ascii")
       singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
-      Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["acting.agency"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["assessment.name"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["jurisdiction.name"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["product.group.name"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["intervention.type"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["official"]]) <- "UTF-8"
-      Encoding(singleHintOutput[["news"]]) <- "UTF-8"
       
       singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
       singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",singleHintOutput$intervention.type)
@@ -786,7 +911,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
       
-      print(singleHintOutput)
+      # print(singleHintOutput)
       singleHintOutput <<- singleHintOutput
     })
     
@@ -795,8 +920,59 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       moveHint <- singleHintOutput[input$singleHintsTable_rows_selected,]
       rowtest <<- moveHint
       print(moveHint)
-      addHint <- paste0('<div id="hintId_',moveHint$hint.id,'" class="hint-item added"><div class="hint-title">',moveHint$hint.title,'</div><div class="remove" value="',moveHint$hint.id,'"><img src="www/b221/cancel.svg"></div></div>')
-      reassign <- paste0("$('",addHint,"').hide().appendTo('#hintContainer').fadeIn(300);")
+      
+      # MOUSE OVER
+      initSingleHint <- gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT * FROM
+                                                                        (SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_name, cltn_log.collection_id, cltn_log.collection_name,
+                                                                        GROUP_CONCAT(DISTINCT int_list.intervention_type_name SEPARATOR ' ; ')  AS intervention_type, 
+                                                                        GROUP_CONCAT(DISTINCT prod_list.product_group_name SEPARATOR ' ; ')  AS product_group_name,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
+                                                                        FROM bt_hint_log ht_log 
+                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                                        LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
+                                                                        LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
+                                                                        LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
+                                                                        LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = ht_log.hint_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = ht_int.apparent_intervention_id
+                                                                        LEFT JOIN b221_hint_product_group ht_prod_grp ON ht_prod_grp.hint_id = ht_log.hint_id LEFT JOIN b221_product_group_list prod_list ON prod_list.product_group_id = ht_prod_grp.product_group_id
+                                                                        LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
+                                                                        WHERE ht_log.hint_id = ",moveHint$hint.id,"
+                                                                        GROUP BY ht_log.hint_id) unsorted_hints;")))
+      
+      initSingleHint$intervention.type <- gsub("export subsidy","Export subsidy",initSingleHint$intervention.type)
+      initSingleHint$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",initSingleHint$intervention.type)
+      initSingleHint$intervention.type <- gsub("import barrier","Import barrier",initSingleHint$intervention.type)
+      initSingleHint$intervention.type <- gsub("export barrier","Export barrier",initSingleHint$intervention.type)
+      initSingleHint$intervention.type <- gsub("uncertain","Unclear",initSingleHint$intervention.type)
+      
+      initSingleHint$product.group.name <- gsub("uncertain","Uncertain",initSingleHint$product.group.name)
+      initSingleHint$product.group.name <- gsub("medical consumables","Medical consumables",initSingleHint$product.group.name)
+      initSingleHint$product.group.name <- gsub("medical equipment","Medical equipment",initSingleHint$product.group.name)
+      initSingleHint$product.group.name <- gsub("medicines or drugs","Medicines or drugs",initSingleHint$product.group.name)
+      initSingleHint$product.group.name <- gsub("food","Food",initSingleHint$product.group.name)
+      initSingleHint$product.group.name <- gsub("other","Other",initSingleHint$product.group.name)
+      
+      initSingleHint$jurisdiction.name[is.na(initSingleHint$jurisdiction.name)] <- "Unspecified"
+      initSingleHint$intervention.type[is.na(initSingleHint$intervention.type)] <- "Unspecified"
+      initSingleHint$product.group.name[is.na(initSingleHint$product.group.name)] <- "Unspecified"
+      
+      tpdate = paste0('<div><label>Date</label>',initSingleHint$hint.date,'</div>')
+      tpimplementer = paste0('<div><label>Implementer</label>',initSingleHint$jurisdiction.name,'</div>')
+      tpactingAgency = paste0('<div><label>Acting Agency</label>',initSingleHint$acting.agency,'</div>')
+      tpassessment = paste0('<div><label>Assessment</label>',initSingleHint$assessment,'</div>')
+      tpproduct = paste0('<div><label>Product</label>',initSingleHint$product.group.name,'</div>')
+      tptype = paste0('<div><label>Intervention type</label>',initSingleHint$intervention.type,'</div>')
+      tpofficial = paste0('<div><label>URL official</label>',initSingleHint$official,'</div>')
+      tpnews = paste0('<div><label>URL news</label>',initSingleHint$news,'</div>')
+      tpdescription = paste0('<div><label>Description</label>',initSingleHint$hint.description,'</div>')
+      
+      
+      tpcontent = paste0('<div id="top-tooltip_',hintId,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>')
+      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div></div>',tpcontent)
+      
+      reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
       if (moveHint$hint.state.id %in% c(2,8)) {
           runjs(reassign)
         } else {
@@ -853,11 +1029,45 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     observeEvent(input$collectionTable_rows_selected, { 
       chooseCollection <- collectionsOutput[input$collectionTable_rows_selected,c(1,2)]
       collectionId = chooseCollection$collection.id
-      collectionHints <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title FROM bt_hint_text WHERE hint_id IN (SELECT hint_id FROM b221_hint_collection WHERE collection_id = ",chooseCollection$collection.id,");"))))
-      addHint <- ""
-      for(r in 1:nrow(collectionHints)) {
-        addHint <- paste0(addHint, '<div id="hintId_',collectionHints$hint.id[r],'" class="hint-item added"><div class="hint-title">',gsub("'", "\"", collectionHints$hint.title[r]),'</div><div class="remove" value="',collectionHints$hint.id[r],'"><img src="www/b221/cancel.svg"></div></div>')
-      }
+      collectionHints <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title FROM bt_hint_text WHERE hint_id IN (SELECT hint_id FROM b221_hint_collection WHERE collection_id = ",collectionId,");"))))
+      
+      initialHints <- unique(gta_sql_get_value(paste0("SELECT * FROM
+                                                          (SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_name, cltn_log.collection_id, cltn_log.collection_name,
+                                                          GROUP_CONCAT(DISTINCT int_list.intervention_type_name SEPARATOR ' ; ')  AS intervention_type, 
+                                                          GROUP_CONCAT(DISTINCT prod_list.product_group_name SEPARATOR ' ; ')  AS product_group_name,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
+                                                          GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
+                                                          FROM bt_hint_log ht_log 
+                                                          JOIN b221_hint_collection ht_col ON ht_col.hint_id = ht_log.hint_id AND ht_col.collection_id = ",collectionId,"
+                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                          LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
+                                                          LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
+                                                          LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
+                                                          LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = ht_log.hint_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = ht_int.apparent_intervention_id
+                                                          LEFT JOIN b221_hint_product_group ht_prod_grp ON ht_prod_grp.hint_id = ht_log.hint_id LEFT JOIN b221_product_group_list prod_list ON prod_list.product_group_id = ht_prod_grp.product_group_id
+                                                          LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
+                                                          GROUP BY ht_log.hint_id) unsorted_hints;")))
+      
+      
+      initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
+      
+      initialHints$tpcontent = paste0('<div id="top-tooltip_',initialHints$hint.id,'" class="tipped-content"><div class="tipped-grid"">',
+                                      '<div><label>Date</label>',initialHints$hint.date,'</div>',
+                                      '<div><label>Acting Agency</label>',initialHints$acting.agency,'</div>',
+                                      '<div><label>Implementer</label>',initialHints$jurisdiction.name,'</div>',
+                                      '<div><label>Assessment</label>',initialHints$assessment,'</div>',
+                                      '<div><label>Intervention type</label>',initialHints$intervention.type,'</div>',
+                                      '<div><label>Product</label>',initialHints$product.group.name,'</div>',
+                                      '</div><div class="tipped-description">',
+                                      # '<div><label>Description</label>',initialHints$hint.description,'</div>',
+                                      '</div><div class="tipped-url">',
+                                      '<div><label>URL official</label>',initialHints$official,'</div>',
+                                      '<div><label>URL news</label>',initialHints$news,'</div>',
+                                      '</div></div>')
+      
+      initialHints = gsub("'","\"",paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top-col added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',initialHints$tpcontent))
       
       updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
       
@@ -871,19 +1081,35 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                         JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
-                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
+                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
                         JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
                         GROUP BY cltn_log.collection_id;")
+      
       collectionStats <- gta_sql_get_value(query)
       
       updateSelectInput(session = session, inputId = "initImplementer", selected = unlist(strsplit(collectionStats$jurisdiction.name, " ; ")))
       updateSelectInput(session = session, inputId = "initType", selected = unlist(strsplit(collectionStats$intervention.type.name, " ; ")))
       updateSelectInput(session = session, inputId = "initProduct", selected = unlist(strsplit(collectionStats$product.group.name, " ; ")))
       updateSelectInput(session = session, inputId = "initAssessment", selected = unlist(strsplit(collectionStats$assessment.name, " ; ")))
-      
+      print(initialHints)
       runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
       runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))
-      runjs(paste0("$('",addHint,"').hide().appendTo('#hintContainer').fadeIn(300);"))
+      runjs(paste0("$('",paste0(initialHints, collapse=""),"').hide().appendTo('#hintContainer').fadeIn(300);"))
+      runjs("$('.tooltip-create-top-col').tooltipster({
+                                theme: 'tooltipster-noir',
+                                contentCloning: true,
+                                maxWidth: 600,
+                                arrow:false,
+                                animationDuration: 150,
+                                trigger: 'hover',
+                                triggerOpen: {
+                                    mouseenter: true
+                                },
+                                triggerClose: {
+                                    click: true,
+                                    scroll: true
+                                }
+                              })")
       runjs("removeHint();")
     })
     

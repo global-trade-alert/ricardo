@@ -75,20 +75,20 @@ function hintsBasicUI() {
     } else if ($(this).hasClass('noPartOfCollection')) {
       var collectionID = "FALSE";
       var collection = "FALSE";
-    } {
-      
     }
     console.log([elementID, collectionID, collection]);
+    
     Shiny.setInputValue("b221-collectionAdd", [elementID, collectionID, collection], {priority: "event"});
+    Shiny.setInputValue("b221-loadCollections", elementID.replace("leadsID_",""), {priority: "event"});
+    Shiny.setInputValue("b221-loadSingleHints", elementID, {priority: "event"});
+
   });
   
   
   $('#b221-slideInRight').on('loadCollectionSlideIn',function () {
     var elementID = $(this)[0].children[0].id
     console.log("LOAD COLLECTIONS SLIDE IN")
-    Shiny.setInputValue("b221-loadSingleHints", elementID, {priority: "event"});
-    Shiny.setInputValue("b221-loadCollections", elementID, {priority: "event"});
-    // console.log("COLLECTIONS ITEM:"+$('#b221-leadsTable #b221-loadCollections'));
+    console.log(elementID);
     $('.backdrop-nav').addClass('open');
   });
   
