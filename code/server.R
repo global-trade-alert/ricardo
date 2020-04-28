@@ -11,7 +11,10 @@ server <- function(input, output, session) {
   #   print(paste0("USER LOGGED IN: ", active.user$name))
   #   removeClass(class = "inactive", selector = "#placeholderUI")
   # })
-
+  
+  # Set encoding for all tables, to make filtering in DT work
+  gta_sql_get_value('SET NAMES utf8;')
+  
   
   observe({
     js$getcookie()

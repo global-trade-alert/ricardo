@@ -616,7 +616,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                     JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn.collection_id JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                                                                     JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
                                                                     GROUP BY cltn.collection_id;"))
-    
+    collectionsOutput[["collection.name"]] = stri_trans_general(collectionsOutput[["collection.name"]], "Any-ascii")
+
     collectionsOutput$intervention.type.name <- gsub("export subsidy","ES",collectionsOutput$intervention.type.name)
     collectionsOutput$intervention.type.name <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","DS",collectionsOutput$intervention.type.name)
     collectionsOutput$intervention.type.name <- gsub("import barrier","IB",collectionsOutput$intervention.type.name)
@@ -732,12 +733,17 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
     
-    Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
-    Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
+    singleHintOutput[["hint.title"]] = stri_trans_general(singleHintOutput[["hint.title"]], "Any-ascii")
+    singleHintOutput[["hint.description"]] = stri_trans_general(singleHintOutput[["hint.description"]], "Any-ascii")
+    singleHintOutput[["acting.agency"]] = stri_trans_general(singleHintOutput[["acting.agency"]], "Any-ascii")
+    singleHintOutput[["official"]] = stri_trans_general(singleHintOutput[["official"]], "Any-ascii")
+    singleHintOutput[["news"]] = stri_trans_general(singleHintOutput[["news"]], "Any-ascii")
+    singleHintOutput[["consultancy"]] = stri_trans_general(singleHintOutput[["consultancy"]], "Any-ascii")
+    singleHintOutput[["others"]] = stri_trans_general(singleHintOutput[["others"]], "Any-ascii")
+    singleHintOutput[["intervention.type"]] = stri_trans_general(singleHintOutput[["intervention.type"]], "Any-ascii")
+    singleHintOutput[["product.group.name"]] = stri_trans_general(singleHintOutput[["product.group.name"]], "Any-ascii")
+    singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
     
-    
-    
-
     singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
     singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",singleHintOutput$intervention.type)
     singleHintOutput$intervention.type <- gsub("import barrier","Import barrier",singleHintOutput$intervention.type)
