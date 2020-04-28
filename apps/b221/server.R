@@ -17,6 +17,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       # gta_sql_pool_close()
     })
 
+    # Set reactive value to check whether first or second hint (state 3:7,9) is added to collection
+    lockHint <- reactiveVal(FALSE)
   
   ns <- NS("b221")
   
@@ -52,8 +54,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       rowCallback = JS("function ( row, data ) {
                             if (data[6]==null) {
                               var collection = '<div class=\\'noPartOfCollection collection-add no-touch\\'><img src=\\'www/b221/collection.svg\\' class=\\'svg no-touch\\'></div>'
+                              var locked = '';
                             } else {
                               var collection = '<div id=\\'collection_'+data[6]+'\\' class=\\'partOfCollection collection-add no-touch\\'><img src=\\'www/b221/collection-added.svg\\' class=\\'svg no-touch\\'></div>'
+                              var locked = ' locked';
                             }
                             if (data[3]==null) {
                               var description = 'No description available';
@@ -92,7 +96,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             var middle = '<div class=\\'middle-col'+readMore+'\\'>'+descr+'</div>';
                             var right = '<div class=\\'right-col\\'><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
                            $(row)
-                           .append('<div id=\\'leadsID_'+data[5]+'\\' class=\\'leads-item\\'><div class=\\'left\\'>'+title+middle+options+buttons+submit+'</div><div class=\\'right\\'>'+right+'</div>')
+                           .append('<div id=\\'leadsID_'+data[5]+'\\' class=\\'leads-item'+locked+'\\'><div class=\\'left\\'>'+title+middle+options+buttons+submit+'</div><div class=\\'right\\'>'+right+'</div>')
                            .append('</div>');
                            return row; }"),
       initComplete = JS("function(settings) {
@@ -159,6 +163,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         leads.output <- data.frame()
       } else {
         pre.sorted.table <- b221_pull_display_info(user.id = user$id, is.freelancer = ifelse(prm$freelancer == 1, T, F)) # needs to be reversed when live, i put it opposite way for testing purposes
+        pre.sorted.table$hint.title = paste(pre.sorted.table$hint.id, pre.sorted.table$hint.title, sep = ' - ')
         leads.output <- pre.sorted.table[match(processing.hints,pre.sorted.table$hint.id),]
         rm('pre.sorted.table')
       }
@@ -292,6 +297,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         print(initialJurisdictions)
         
         initialHints <- unique(gta_sql_get_value(paste0("SELECT ht_text.hint_title, ht_text.hint_id FROM b221_hint_collection col_log JOIN bt_hint_text ht_text ON ht_text.hint_id = col_log.hint_id WHERE ht_text.language_id = 1 AND col_log.collection_id = ",collectionId)))
+        initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
         initialHints = paste0('<div id="hintId_',initialHints$hint.id,'" class="hint-item added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div></div>')
         
         slideInState = paste0("existingCollection_",collectionId)
@@ -300,8 +306,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                             (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collectionId,") ht_cltn 
                                             JOIN bt_hint_log ht_log ON ht_log.hint_id = ht_cltn.hint_id;"))
         
-        locked <- ifelse(any(maxHint %in% c(3:7,9)), " locked","")
-        
+        locked <- ifelse(any(maxHint %in% c(3:7,9)) & prm$freelancer == 1, " locked","")
+        lockHint <- lockHint(TRUE)
       } else {
         
         initialPlaceholder <- "Enter new Collection Name"
@@ -314,12 +320,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         initialHint <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title 
                                                                           FROM bt_hint_text
                                                                           WHERE hint_id = ",hintId,";"))))
-        
+        initialHint$hint.title <- paste(initialHint$hint.id, initialHint$hint.title, sep=" - ")
         initialHints = paste0('<div id="hintId_',initialHint$hint.id,'" class="hint-item initial"><div class="hint-title">',initialHint$hint.title,'</div></div>')
         
         slideInState = "newCollection"
         
         locked = ""
+        lockHint <- lockHint(FALSE)
       }
       
       insertUI(immediate = T, selector = "#collectionValues",ui = tagList(
@@ -363,7 +370,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       runjs(paste0(" slideInBasicUI(); removeHint();"))
       runjs("$('#b221-slideInRight').addClass('open');")
       runjs("$('#b221-slideInRight').trigger('loadCollectionSlideIn');console.log('2 loading collection slide in');")
-      
       })
     
     observeEvent(input$saveCollection, {
@@ -444,8 +450,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         if (colState == "newCollection") {
           
           b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
+          print('colState new collection')
           
         } else {
+          print('not new collection')
           
           collectionId <- as.numeric(gsub("existingCollection_","", colState))
           
@@ -466,18 +474,24 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           collectionStats <- gta_sql_get_value(query)
           
           if (length(c(
-            setdiff(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]]),
-            setdiff(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),
-            setdiff(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),
-            setdiff(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]])
+            setdiff(union(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]]),intersect(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]])),
+            setdiff(union(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),intersect(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]])),
+            setdiff(union(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),intersect(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]])),
+            setdiff(union(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]),intersect(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]))
           )) > 0 ) {
             collectionChanged = T
           } else {
             collectionChanged = F
           }
           
-          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = collectionChanged)
-        
+          cat(paste0("collection changed val: ",collectionChanged,
+                "\ncollection impl val: ",paste0(colImplementer,collapse=','),
+                "\ncollection inttype val: ",paste0(colType,collapse=','),
+                "\ncollection assessment val: ",paste0(colAssessment,collapse=','),
+                "\ncollection product val: ",paste0(colProduct,collapse=',')))
+          
+          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = !collectionChanged)
+          
         }
         
         print(paste0("THIS IS THE COUNTRY HINT ID country_",hintId))
@@ -512,6 +526,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         runjs(paste0("$('",insertAssessment,"').hide().insertBefore('input#assessment_",hintId,"-selectized').fadeIn(300);"))
         
         runjs(paste0("$('#leadsID_",hintId,"').addClass('locked');"))
+        runjs(paste0("$('#leadsID_",hintId,"').addClass('reactivate');"))
         runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('noPartOfCollection');"))
         runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('partOfCollection');"))
         runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = 'collection_",collectionId,"';"))
@@ -609,22 +624,33 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                     JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
                                                                     GROUP BY cltn.collection_id;"))
       
-      collectionsOutput$intervention.type <- gsub("export subsidy","ES",collectionsOutput$intervention.type)
-      collectionsOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","DS",collectionsOutput$intervention.type)
-      collectionsOutput$intervention.type <- gsub("import barrier","IB",collectionsOutput$intervention.type)
-      collectionsOutput$intervention.type <- gsub("export barrier","EB",collectionsOutput$intervention.type)
-      collectionsOutput$intervention.type <- gsub("uncertain","UN",collectionsOutput$intervention.type)
+      collectionsOutput$intervention.type.name <- gsub("export subsidy","Export subsidy", collectionsOutput$intervention.type.name)
+      collectionsOutput$intervention.type.name <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy", collectionsOutput$intervention.type.name)
+      collectionsOutput$intervention.type.name <- gsub("import barrier","Import barrier", collectionsOutput$intervention.type.name)
+      collectionsOutput$intervention.type.name <- gsub("export barrier","Export barrier", collectionsOutput$intervention.type.name)
+      collectionsOutput$intervention.type.name <- gsub("uncertain","Unclear", collectionsOutput$intervention.type.name)
+      
+      collectionsOutput$product.group.name <- gsub("uncertain","Uncertain",collectionsOutput$product.group.name)
+      collectionsOutput$product.group.name <- gsub("medical consumables","Medical consumables",collectionsOutput$product.group.name)
+      collectionsOutput$product.group.name <- gsub("medical equipment","Medical equipment",collectionsOutput$product.group.name)
+      collectionsOutput$product.group.name <- gsub("medicines or drugs","Medicines or drugs",collectionsOutput$product.group.name)
+      collectionsOutput$product.group.name <- gsub("food","Food",collectionsOutput$product.group.name)
+      collectionsOutput$product.group.name <- gsub("other","Other",collectionsOutput$product.group.name)
+      
+      collectionsOutput$jurisdiction.name[is.na(collectionsOutput$jurisdiction.name)] <- "Unspecified"
+      collectionsOutput$intervention.type.name[is.na(collectionsOutput$intervention.type.name)] <- "Unspecified"
+      collectionsOutput$product.group.name[is.na(collectionsOutput$product.group.name)] <- "Unspecified"
       
       collectionsOutput$tag_country = apply(collectionsOutput,1, function(x){
-        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
       collectionsOutput$tag_product = apply(collectionsOutput,1, function(x){
-        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag product'>",substr(strsplit(x['product.group.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['product.group.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag product'>",substr(strsplit(x['product.group.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
       collectionsOutput$tag_type = apply(collectionsOutput,1, function(x){
-        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),ifelse(nchar(x['intervention.type'])>20,"...",""),"</div>",collapse=""),"</div>"))
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
-      
+    
       collectionsOutput <<- collectionsOutput
     })
     
@@ -644,11 +670,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           searchPlaceholder = "Filter"),
         rowCallback = JS("function ( row, data ) {
                             
-                            if (! [2,8].includes(data[1])) {
-                            console.log('YES LOCK');
+                            if (! [2,8].includes(data[1]) && data[9] != null ) {
                             var lock = ' locked';
                             } else {
-                            console.log('NO LOCK');
                             var lock = '';
                             } 
                             
@@ -723,8 +747,17 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
+      
+      singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
       Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
       Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["acting.agency"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["assessment.name"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["jurisdiction.name"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["product.group.name"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["intervention.type"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["official"]]) <- "UTF-8"
+      Encoding(singleHintOutput[["news"]]) <- "UTF-8"
       
       singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
       singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",singleHintOutput$intervention.type)
@@ -732,17 +765,26 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       singleHintOutput$intervention.type <- gsub("export barrier","Export barrier",singleHintOutput$intervention.type)
       singleHintOutput$intervention.type <- gsub("uncertain","Unclear",singleHintOutput$intervention.type)
       
+      singleHintOutput$product.group.name <- gsub("uncertain","Uncertain",singleHintOutput$product.group.name)
+      singleHintOutput$product.group.name <- gsub("medical consumables","Medical consumables",singleHintOutput$product.group.name)
+      singleHintOutput$product.group.name <- gsub("medical equipment","Medical equipment",singleHintOutput$product.group.name)
+      singleHintOutput$product.group.name <- gsub("medicines or drugs","Medicines or drugs",singleHintOutput$product.group.name)
+      singleHintOutput$product.group.name <- gsub("food","Food",singleHintOutput$product.group.name)
+      singleHintOutput$product.group.name <- gsub("other","Other",singleHintOutput$product.group.name)
+      
+      singleHintOutput$jurisdiction.name[is.na(singleHintOutput$jurisdiction.name)] <- "Unspecified"
+      singleHintOutput$intervention.type[is.na(singleHintOutput$intervention.type)] <- "Unspecified"
+      singleHintOutput$product.group.name[is.na(singleHintOutput$product.group.name)] <- "Unspecified"
+      
       singleHintOutput$tag_country = apply(singleHintOutput,1, function(x){
-        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['jurisdiction.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag country'>",substr(strsplit(x['jurisdiction.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
       singleHintOutput$tag_product = apply(singleHintOutput,1, function(x){
-        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag product'>",substr(strsplit(x['product.group.name'],split=" ; ")[[1]],1,20),ifelse(nchar(x['product.group.name'])>20,"...",""),"</div>",collapse=""),"</div>"))
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag product'>",substr(strsplit(x['product.group.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
       singleHintOutput$tag_type = apply(singleHintOutput,1, function(x){
-        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),ifelse(nchar(x['intervention.type'])>20,"...",""),"</div>",collapse=""),"</div>"))
+        as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
-      
-      
       
       print(singleHintOutput)
       singleHintOutput <<- singleHintOutput
@@ -758,7 +800,51 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       if (moveHint$hint.state.id %in% c(2,8)) {
           runjs(reassign)
         } else {
-            showNotification("This hint is part of a collection already. You are not allowed to reassign it.", duration = 3)
+          
+          initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM bt_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",moveHint$hint.id,");"))))
+          initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",moveHint$hint.id,");"))))
+          initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",moveHint$hint.id,");"))))
+          initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",moveHint$hint.id,");"))))
+          
+          initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
+          initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
+          initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
+          initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
+          
+          initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
+          initialType <- ifelse(is.null(initialType),character(0),initialType)
+          initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
+          initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
+          
+          if (lockHint()) {
+            
+            colImplementer <- input$initImplementer
+            colType <- input$initType
+            colProduct <- input$initProduct
+            colAssessment <- input$initAssessment
+            
+            if (length(c(
+              setdiff(union(colImplementer, initialJurisdictions),intersect(colImplementer, initialJurisdictions)),
+              setdiff(union(colType, initialType),intersect(colType, initialType)),
+              setdiff(union(colAssessment, initialAssessment),intersect(colAssessment, initialAssessment)),
+              setdiff(union(colProduct,initialProduct),intersect(colProduct,initialProduct))
+            )) > 0 & prm$freelancer == 1) {
+              showNotification("This hint cannot be added, as it stands in conflict with an included hint.", duration = 3)
+            } else {
+              runjs(reassign)
+              }
+          } else {
+          runjs(reassign)
+          
+          updateSelectInput(session = session, inputId = "initImplementer", selected = initialJurisdictions)
+          updateSelectInput(session = session, inputId = "initType", selected = initialType)
+          updateSelectInput(session = session, inputId = "initProduct", selected = initialProduct)
+          updateSelectInput(session = session, inputId = "initAssessment", selected = initialAssessment)
+          
+          runjs(paste0("$('.initialValues').addClass('locked')"))
+          lockHint <- lockHint(TRUE)
+          }
+          
         }
       runjs("removeHint();")
     })
