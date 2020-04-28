@@ -346,7 +346,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         initialPlaceholder <- "Enter new Collection Name"
         initialName = NULL
-        initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM bt_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",hintId,");"))))
+        initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",hintId,");"))))
         initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",hintId,");"))))
         initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",hintId,");"))))
         initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",hintId,");"))))
@@ -744,7 +744,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       collectionsOutput$intervention.type.name[is.na(collectionsOutput$intervention.type.name)] <- "Unspecified"
       collectionsOutput$product.group.name[is.na(collectionsOutput$product.group.name)] <- "Unspecified"
       
-      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM bt_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
       initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
       initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
       initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
@@ -787,7 +787,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       options = list(
         pagingType = 'simple_numbers',
         pageLength = 20,
-        columnDefs = list(list(visible = FALSE, targets = c(0:20)), list(sortable=TRUE, targets = c(0))),
+        columnDefs = list(list(visible = FALSE, targets = c(0:19)), list(sortable=TRUE, targets = c(0))),
         language = list(
           paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
           zeroRecords = "No more leads available.",
@@ -911,7 +911,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
       })
       
-      # print(singleHintOutput)
+      print("LENGTH OF SINGLE HINT OUTPUT")
+      print(nrow(singleHintOutput))
       singleHintOutput <<- singleHintOutput
     })
     
@@ -969,15 +970,15 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       tpdescription = paste0('<div><label>Description</label>',initSingleHint$hint.description,'</div>')
       
       
-      tpcontent = paste0('<div id="top-tooltip_',hintId,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>')
-      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div></div>',tpcontent)
+      tpcontent = gsub("'","\"",paste0('<div id="top-tooltip_',moveHint$hint.id,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description"></div><div class="tipped-url">',tpofficial,tpnews,'</div></div>'))
+      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',moveHint$hint.id,'" id="hintId_',moveHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',moveHint$hint.title,'</div></div>',tpcontent)
       
       reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
       if (moveHint$hint.state.id %in% c(2,8)) {
           runjs(reassign)
         } else {
           
-          initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM bt_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",moveHint$hint.id,");"))))
+          initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",moveHint$hint.id,");"))))
           initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",moveHint$hint.id,");"))))
           initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",moveHint$hint.id,");"))))
           initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",moveHint$hint.id,");"))))
@@ -1022,6 +1023,22 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           }
           
         }
+      
+      runjs("$('.tooltip-create-top').tooltipster({
+                                theme: 'tooltipster-noir',
+                                contentCloning: true,
+                                maxWidth: 600,
+                                arrow:false,
+                                animationDuration: 150,
+                                trigger: 'hover',
+                                triggerOpen: {
+                                    mouseenter: true
+                                },
+                                triggerClose: {
+                                    click: true,
+                                    scroll: true
+                                }
+                              })")
       runjs("removeHint();")
     })
     
