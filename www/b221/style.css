@@ -448,7 +448,7 @@
 }
 
 #b221-slideInRight .tipped-content {
-	display:none;
+	display:none !important;
 }
 
 #b221-slideInRight .lower-tables {
@@ -663,6 +663,10 @@
   font-weight: 700;
 }
 
+
+.tipped-content {
+	opacity:1 !important;
+}
 
 .tipped-content .tipped-grid {
 	display:grid;
