@@ -6,6 +6,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   if(!xor(is.null(new.collection.name), is.null(collection.id))) stop('either collection.id or new.collection.name must be a provided, not both, not neither')
   if(!is.numeric(collection.id) & !is.character(new.collection.name)) stop('collection.id or new.collection.name must be numeric or character respectively (only one can be provided)')
   
+  hints.id = unique(hints.id)
+  
   # i expect vectors for: country / product / intervention 
   # single values: is.freelancer(T/F not 1/0) / user.id / relevance(1/0) / assessment / user.id 
   # i want everything in ids already, use plyr::mapvalues with lines 28-32 of server.R to convert to ids 
@@ -69,16 +71,21 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   # states which need to be confirmed for editor-side
   state.2or8.hints = gta_sql_get_value(paste0("SELECT b221_hint_collection.hint_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND (bt_hint_log.hint_state_id = 2 OR bt_hint_log.hint_state_id = 8) AND bt_hint_log.hint_id = b221_hint_collection.hint_id;"))
   
-  # state for hints to be converted to when collection updates
-  states = gta_sql_get_value(paste0("SELECT DISTINCT hint_state_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id;"))
-  if(relevance == 0){
-    editor.new.state = 9
-  } else {
-    editor.new.state = ifelse(max(states)==2, 3, max(states[!states %in% 8:9]))
-    if(length(editor.new.state)==0 | editor.new.state == -Inf) editor.new.state = 3
-  }
+
   
   if(!any(is.na(hints.id))){
+    # state for hints to be converted to when collection updates
+    states = gta_sql_get_value(paste0("SELECT DISTINCT * FROM 
+                                    (SELECT hint_state_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
+                                    UNION 
+                                    SELECT hint_state_id FROM bt_hint_log WHERE hint_id IN (",paste0(hints.id, collapse=','),")) states"))
+    if(relevance == 0){
+      editor.new.state = 9
+    } else {
+      editor.new.state = ifelse(max(states)==2, 3, max(states[!states %in% 8:9]))
+      if(length(editor.new.state)==0 | editor.new.state == -Inf | is.na(editor.new.state)) editor.new.state = 3
+    }
+    
     gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
     gta_sql_get_value(paste0("INSERT INTO b221_hint_collection VALUES ",paste0("(",hints.id,",",collection.id,")", collapse = ',')))
   } else {
@@ -139,7 +146,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id;
                                         
                                           UPDATE bt_hint_log
-                                          JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = 1) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
+                                          JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
                                           JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
                                           SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
                                                               (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
