@@ -732,12 +732,12 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
     
-    singleHintOutput[["hint.title"]]=stringi::stri_trans_general(singleHintOutput[["hint.title"]], "Any-ascii")
-    singleHintOutput[["hint.description"]]=stringi::stri_trans_general(singleHintOutput[["hint.description"]], "Any-ascii")
-    
     Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
     Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
     
+    
+    
+
     singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
     singleHintOutput$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",singleHintOutput$intervention.type)
     singleHintOutput$intervention.type <- gsub("import barrier","Import barrier",singleHintOutput$intervention.type)
