@@ -47,6 +47,9 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       
     } else {
       
+      if(length(gta_sql_get_value(paste0("SELECT collection_id FROM b221_collection_log WHERE collection_name = '",new.collection.name,"'")))>0) return('New collection was not saved! Another collection already has this name')
+      
+      
       new.collection <<- data.frame(collection.name = new.collection.name, user.id = user.id, last.change = substr(as.POSIXct(format(Sys.time()),tz="CET"),1,19))
       collection.id = gta_sql_append_table(table.prefix = '', append.table = 'b221.collection.log', append.by.df = "new.collection", get.id = "collection.id", db.connection = "pool")
       
@@ -375,4 +378,5 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       
     }
   }
+  return('successful')
 }

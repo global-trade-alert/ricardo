@@ -445,9 +445,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       if (colState == "newCollection") {
         
-        b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
-        
-        print('new collection if clause was triggered')
+        collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
+        if(collection.save!='successful') showNotification(collection.save, duration = 3)
       } else {
         
         collectionId <- as.numeric(gsub("existingCollection_","", colState))
