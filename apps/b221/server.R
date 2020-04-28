@@ -731,6 +731,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
+    
+    singleHintOutput[["hint.title"]]=stringi::stri_trans_general(singleHintOutput[["hint.title"]], "Any-ascii")
+    singleHintOutput[["hint.description"]]=stringi::stri_trans_general(singleHintOutput[["hint.description"]], "Any-ascii")
+    
     Encoding(singleHintOutput[["hint.title"]]) <- "UTF-8"
     Encoding(singleHintOutput[["hint.description"]]) <- "UTF-8"
     
