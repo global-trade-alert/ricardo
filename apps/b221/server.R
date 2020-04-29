@@ -48,7 +48,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     # USE TO SELECT WHEN SEARCH FIELD IS ACTIVE
     options = list(
       pageLength = 50,
-      columnDefs = list(list(visible = FALSE, targets = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17)), list(sortable=FALSE, targets = c(0))),
+      columnDefs = list(list(visible = FALSE, targets = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)), list(sortable=FALSE, targets = c(0)),
+                        list(targets = c(19), render = JS("
+                                                        function(data, type, row, meta){
+                                                          return '';
+                                                        }
+                                                      "))),
+      order = list(list(19, 'asc')),
       language = list(
         zeroRecords = "No more leads available."),
       rowCallback = JS("function ( row, data ) {
@@ -92,7 +98,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             var title = '<div class=\\'title-row\\'><div class=\\'act-title\\'>'+data[2]+'</div></div>';
                             var descr = '<div class=\\'middle-row\\'><div class=\\'act-description\\'>'+description+'</div><div class=\\'gradient-bottom\\'><div class=\\'gradient-inner\\'></div></div><div class=\\'show-more no-touch\\'><img src=\\''+image+'\\' class=\\'svg no-touch\\'></div></div>';
                             var buttons = '<div class=\\'bottom-row no-touch\\'>'+urlimage+collection+'</div>';
-                            var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+'</div><div class=\\'comment\\'>'+comment+'</div>';
+                            var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+'</div><div class=\\'comment\\'>'+comment+data[18]+'</div>';
                             var middle = '<div class=\\'middle-col'+readMore+'\\'>'+descr+'</div>';
                             var right = '<div class=\\'right-col\\'><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
                            $(row)
@@ -168,8 +174,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         rm('pre.sorted.table')
       }
       
-      print(length(leads.output))
-      
       # Adding option fields for output (selected = x[] defines the value currently selected and will be defined by the data pull function)
       leads.output$select_country = apply(leads.output,1, function(x){
         as.character(selectizeInput(gsub(" ","",paste0('country_',x['hint.id'])),
@@ -210,8 +214,22 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     placeholder = "Add new comment here...")
         )
       })
+
+      # comments
+      leads.output$comments = apply(leads.output,1, function(x){
+        ifelse(is.na(x['comment']),
+               yes = "",
+               no = as.character(paste0("<div class='comment-list'>",paste0("<div class='comment-item'>",strsplit(x['comment'],split=" ; ")[[1]],"</div>",collapse=""),"</div>")))
+      })
+            
+      #order by date
+      leads.output$order <- ifelse(is.na(leads.output$registration.date), yes = leads.output$hint.date, no = leads.output$registration.date)
+      leads.output <- leads.output[with(leads.output, order(order, hint.date, decreasing = T)),]
+      leads.output$order <- seq(1,nrow(leads.output),1)
+      leads.output[,c("registration.date","hint.date")] <- NULL
+
+      
       leads.output <- leads.output
-      test <<- head(leads.output)
       leads.output <<- leads.output
     })
     
@@ -368,7 +386,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
                                                                         GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
                                                                         FROM bt_hint_log ht_log 
-                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
                                                                         LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                                                                         LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
                                                                         LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
@@ -407,7 +425,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         
         tpcontent = paste0('<div id="top-tooltip_',hintId,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>')
-        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div></div>',tpcontent)
+        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div><div class="remove" value="',initialHint$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',tpcontent)
         
         slideInState = "newCollection"
         
@@ -655,7 +673,15 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       options = list(
         pagingType = 'simple_numbers',
         pageLength = 10,
-        columnDefs = list(list(visible = FALSE, targets = c(0:9)), list(sortable=TRUE, targets = c(0))),
+        columnDefs = list(list(visible = FALSE, targets = c(0,2,4:10)), list(sortable=FALSE, targets = c(0)),
+                          list(targets = c(1,3), render = JS("
+                                                        function(data, type, row, meta){
+                                                          return '';
+                                                        }
+                                                      ")),
+                          list(title="Title", targets=c(1)),
+                          list(title="Date", targets=c(3))),
+        order = list(list(7, 'desc')),
         language = list(
           paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
           zeroRecords = "No more leads available.",
@@ -665,17 +691,17 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[2]+'</div></div>';
-                            let product = data[8];
-                            let type = data[9];
-                            let jurisdiction = data[7];
+                            let product = data[9];
+                            let type = data[10];
+                            let jurisdiction = data[8];
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
 
                             let tpdate = '<div><label>Date</label>'+data[3]+'</div>';
-                            let tpimplementer = '<div><label>Implementer</label>'+data[7]+'</div>';
+                            let tpimplementer = '<div><label>Implementer</label>'+data[8]+'</div>';
                             let tpassessment = '<div><label>Assessment</label>'+data[2]+'</div>';
-                            let tpproduct = '<div><label>Product</label>'+data[8]+'</div>';
-                            let tptype = '<div><label>Intervention type</label>'+data[9]+'</div>';
+                            let tpproduct = '<div><label>Product</label>'+data[9]+'</div>';
+                            let tptype = '<div><label>Intervention type</label>'+data[10]+'</div>';
 
                             let tpcontent = '<div id=\\'coltooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpimplementer+tpassessment+tptype+tpproduct+'</div></div>';
                             
@@ -685,7 +711,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                            .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'left\\'>'+tags+'<div class=\\'collection-title\\'>'+data[1]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#coltooltip_'+data[0]+'\\' class=\\'coltooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
 
                            return row; }"),
-        initComplete = JS("function createTipped() {
+        drawCallback = JS("function createTipped() {
                               $('.coltooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
                                 contentCloning: true,
@@ -712,6 +738,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
     # LOAD COLLECTIONS FOR COLLECTIONS SLIDE IN
     collections <- eventReactive(input$loadCollections, {
+      
+      runjs('console.log("test");')
       print("Collections refresh")
       # collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT collection_id, collection_name FROM b221_collection_log;"))
       collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT cltn.collection_id, cltn.collection_name, ass_list.assessment_name, MIN(bt_hint_log.hint_date) AS hint_date,
@@ -812,7 +840,16 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       options = list(
         pagingType = 'simple_numbers',
         pageLength = 20,
-        columnDefs = list(list(visible = FALSE, targets = c(0:19)), list(sortable=TRUE, targets = c(0))),
+        columnDefs = list(list(visible = FALSE, targets = c(0:2,4,6:20)), list(sortable=FALSE, targets = c(0)),
+                          list(targets = c(5,3), render = JS("
+                                                        function(data, type, row, meta){
+                                                          return '';
+                                                        }
+                                                      ")),
+                          list(title="Title", targets=c(5)),
+                          list(title="Date", targets=c(3))),
+        order = list(list(17, 'desc')),
+        colnames = c("Title","Date"),
         language = list(
           paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
           zeroRecords = "No more leads available.",
@@ -828,9 +865,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[7]+'</div></div>';
-                            let product = data[18];
-                            let type = data[19];
-                            let jurisdiction = data[17];
+                            let product = data[19];
+                            let type = data[20];
+                            let jurisdiction = data[18];
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
                             let tags2 = '<div class=\\'tags-lower\\'>'+type+product+'</div>';
@@ -852,7 +889,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                            $(row)
                            .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item'+lock+'\\'><div class=\\'left\\'>'+tags+'<div class=\\'hint-title\\'>'+data[5]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#tooltip_'+data[0]+'\\' class=\\'tooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons lock\\'>lock</span><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
                            return row; }"),
-        initComplete = JS("function createTipped() {
+        drawCallback = JS("function createTipped() {
                               $('.tooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
                                 contentCloning: true,
@@ -931,39 +968,39 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       ### SORTING FOR RELEVANCE
       
-      # initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      # initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      # initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      # initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      # 
-      # initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
-      # initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
-      # initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
-      # initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
-      # 
-      # initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
-      # initialType <- ifelse(is.null(initialType),character(0),initialType)
-      # initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
-      # initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
-      # 
-      # initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
-      # 
-      # weight.jur=100
-      # weight.int.type=1
-      # weight.assessment=1
-      # weight.date=.1
-      # weight.product=1
-      # 
-      # singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(singleHintOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
-      #                                      do.call(rbind, lapply(as.list(strsplit(singleHintOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
-      #                                      do.call(rbind, lapply(as.list(strsplit(singleHintOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
-      #                                      do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-      #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
-      # 
-      # singleHintOutput$order[singleHintOutput$order<0]=0
-      # 
-      # singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
-      
+      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+
+      initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
+      initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
+      initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
+      initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
+
+      initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
+      initialType <- ifelse(is.null(initialType),character(0),initialType)
+      initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
+      initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
+
+      initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
+
+      weight.jur=100
+      weight.int.type=1
+      weight.assessment=1
+      weight.date=.1
+      weight.product=1
+
+      singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
+                                           do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
+                                           do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
+                                           do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
+                                           do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+
+      singleHintOutput$order[singleHintOutput$order<0]=0
+
+      singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+
       
       ## generate HTML
       
@@ -1037,7 +1074,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       
       tpcontent = gsub("'","\"",paste0('<div id="top-tooltip_',moveHint$hint.id,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description"></div><div class="tipped-url">',tpofficial,tpnews,'</div></div>'))
-      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',moveHint$hint.id,'" id="hintId_',moveHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',moveHint$hint.title,'</div></div>',tpcontent)
+      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',moveHint$hint.id,'" id="hintId_',moveHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',moveHint$hint.title,'</div><div class="remove" value="',moveHint$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',tpcontent)
       
       reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
       if (moveHint$hint.state.id %in% c(2,8)) {

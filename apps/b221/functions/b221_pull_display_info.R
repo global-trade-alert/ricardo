@@ -4,7 +4,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
   
   if(is.freelancer == T){
     # attach only those urls in the bt_hint_url which are suggested by bastiat OR accepted by editor on the other end (on back feed from editor)
-    pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency,  ht_txt.hint_title, ht_txt.hint_description, bt_url_log.url, attributed_hints.hint_id,
+    pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date,  ht_txt.hint_title, ht_txt.hint_description, bt_url_log.url, attributed_hints.hint_id,
                           GROUP_CONCAT(DISTINCT(cltn_log.collection_id) SEPARATOR ' ; ') AS collection_id,
                           ass_list.assessment_name, 
                           GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
@@ -32,7 +32,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
   } else {
     #attach only those urls which are non-dormant, i.e. those hints @b221 editor desk & search_id non null & was_accepted null (pending decision) or 1
     # OR bt_hint_state_list.hint_state_name = 'trash bin - entered' in attributed_hints if we want to pull up trash bin too
-    pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_txt.hint_title, ht_txt.hint_description, bt_url_log.url, attributed_hints.hint_id, 
+    pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date, ht_txt.hint_title, ht_txt.hint_description, bt_url_log.url, attributed_hints.hint_id, 
                             GROUP_CONCAT(DISTINCT(cltn_log.collection_id) SEPARATOR ' ; ') AS collection_id,
                             ass_list.assessment_name, 
                             GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
