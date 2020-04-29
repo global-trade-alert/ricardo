@@ -85,7 +85,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
     if(relevance == 0){
       editor.new.state = 9
     } else {
-      editor.new.state = ifelse(max(states)==2, 3, max(states[!states %in% 8:9]))
+      editor.new.state = ifelse(max(states[!states %in% 8:9])==2, 3, max(states[!states %in% 8:9]))
       if(length(editor.new.state)==0 | editor.new.state == -Inf | is.na(editor.new.state)) editor.new.state = 3
     }
     
