@@ -7,6 +7,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   if(!is.numeric(collection.id) & !is.character(new.collection.name)) stop('collection.id or new.collection.name must be numeric or character respectively (only one can be provided)')
   
   hints.id = unique(hints.id)
+  hints.id=hints.id[!is.na(hints.id)]
   
   # i expect vectors for: country / product / intervention 
   # single values: is.freelancer(T/F not 1/0) / user.id / relevance(1/0) / assessment / user.id 
@@ -76,7 +77,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   
 
   
-  if(!any(is.na(hints.id))){
+  if(length(hints.id)>0){
     # state for hints to be converted to when collection updates
     states = gta_sql_get_value(paste0("SELECT DISTINCT * FROM 
                                     (SELECT hint_state_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
