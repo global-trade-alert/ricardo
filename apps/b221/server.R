@@ -174,8 +174,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         rm('pre.sorted.table')
       }
       
-      leads.output$comment <- "comment 1 ; comment 2 ; comment 3"
-      
       # Adding option fields for output (selected = x[] defines the value currently selected and will be defined by the data pull function)
       leads.output$select_country = apply(leads.output,1, function(x){
         as.character(selectizeInput(gsub(" ","",paste0('country_',x['hint.id'])),
