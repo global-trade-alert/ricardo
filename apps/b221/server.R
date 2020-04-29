@@ -926,40 +926,43 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       singleHintOutput$intervention.type[is.na(singleHintOutput$intervention.type)] <- "Unspecified"
       singleHintOutput$product.group.name[is.na(singleHintOutput$product.group.name)] <- "Unspecified"
       
+      # removing active hint
+      singleHintOutput=subset(singleHintOutput, ! hint.id %in% as.numeric(input$loadCollections))
+      
       ### SORTING FOR RELEVANCE
       
-      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      
-      initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
-      initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
-      initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
-      initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
-      
-      initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
-      initialType <- ifelse(is.null(initialType),character(0),initialType)
-      initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
-      initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
-      
-      initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
-      
-      weight.jur=100
-      weight.int.type=1
-      weight.assessment=1
-      weight.date=.1
-      weight.product=1
-      
-      singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(singleHintOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
-                                           do.call(rbind, lapply(as.list(strsplit(singleHintOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
-                                           do.call(rbind, lapply(as.list(strsplit(singleHintOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
-                                           do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-                                           do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
-      
-      singleHintOutput$order[singleHintOutput$order<0]=0
-      
-      singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+      # initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      # initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      # initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      # initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      # 
+      # initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
+      # initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
+      # initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
+      # initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
+      # 
+      # initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
+      # initialType <- ifelse(is.null(initialType),character(0),initialType)
+      # initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
+      # initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
+      # 
+      # initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
+      # 
+      # weight.jur=100
+      # weight.int.type=1
+      # weight.assessment=1
+      # weight.date=.1
+      # weight.product=1
+      # 
+      # singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(singleHintOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
+      #                                      do.call(rbind, lapply(as.list(strsplit(singleHintOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
+      #                                      do.call(rbind, lapply(as.list(strsplit(singleHintOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
+      #                                      do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
+      #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+      # 
+      # singleHintOutput$order[singleHintOutput$order<0]=0
+      # 
+      # singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
       
       
       ## generate HTML
