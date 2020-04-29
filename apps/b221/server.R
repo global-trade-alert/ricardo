@@ -222,12 +222,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                no = as.character(paste0("<div class='comment-list'>",paste0("<div class='comment-item'>",strsplit(x['comment'],split=" ; ")[[1]],"</div>",collapse=""),"</div>")))
       })
             
+      if (nrow(leads.output)>0) {
       #order by date
       leads.output$order <- ifelse(is.na(leads.output$registration.date), yes = leads.output$hint.date, no = leads.output$registration.date)
       leads.output <- leads.output[with(leads.output, order(order, hint.date, decreasing = T)),]
       leads.output$order <- seq(1,nrow(leads.output),1)
       leads.output[,c("registration.date","hint.date")] <- NULL
-
+      }
+      
       
       leads.output <- leads.output
       leads.output <<- leads.output
@@ -371,7 +373,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         initialHint <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title 
                                                                           FROM bt_hint_text
-                                                                          WHERE hint_id = ",hintId,";"))))
+                                                                          WHERE hint_id = ",hintId," AND language_id = 1;"))))
         
         
         initialHint$hint.title <- paste(initialHint$hint.id, initialHint$hint.title, sep=" - ")
