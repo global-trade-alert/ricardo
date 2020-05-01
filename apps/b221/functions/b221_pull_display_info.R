@@ -20,7 +20,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
                           JOIN bt_hint_url ON bt_hint_url.hint_id = attributed_hints.hint_id AND (bt_hint_url.url_accepted = 1 OR bt_hint_url.url_accepted IS NULL)
                           JOIN bt_url_log ON bt_url_log.url_id = bt_hint_url.url_id
                           JOIN bt_url_type_list ON bt_hint_url.url_type_id = bt_url_type_list.url_type_id
-                          LEFT JOIN bt_hint_text ht_txt ON ht_log.hint_id = ht_txt.hint_id
+                          LEFT JOIN bt_hint_text ht_txt ON ht_log.hint_id = ht_txt.hint_id AND ht_txt.language_id = 1
                           LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = ht_log.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                           LEFT JOIN bt_hint_relevance ht_rlvnt ON attributed_hints.hint_id = ht_rlvnt.relevance
                           LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = attributed_hints.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
@@ -48,7 +48,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
                             JOIN bt_hint_url ON bt_hint_url.hint_id = attributed_hints.hint_id AND (bt_hint_url.url_accepted = 1 OR bt_hint_url.url_accepted IS NULL) AND bt_hint_url.classification_id IS NOT NULL
                             JOIN bt_url_log ON bt_url_log.url_id = bt_hint_url.url_id
                             JOIN bt_url_type_list ON bt_hint_url.url_type_id = bt_url_type_list.url_type_id
-                            LEFT JOIN bt_hint_text ht_txt ON ht_log.hint_id = ht_txt.hint_id
+                            LEFT JOIN bt_hint_text ht_txt ON ht_log.hint_id = ht_txt.hint_id AND ht_txt.language_id = 1
                             LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = ht_log.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                             LEFT JOIN bt_hint_relevance ht_rlvnt ON attributed_hints.hint_id = ht_rlvnt.relevance
                             LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = attributed_hints.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id

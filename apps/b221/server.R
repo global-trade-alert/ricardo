@@ -4,6 +4,10 @@
 # SERVER
 b221server <- function(input, output, session, user, app, prm, ...) {
 
+  # Set encoding for all tables, to make filtering in DT work
+  gta_sql_get_value('SET NAMES utf8;')
+  
+  
   observe({
     delete.processing.ids <<- paste0("DELETE bt_hint_processing FROM bt_hint_processing
                                         JOIN bt_hint_log ON bt_hint_log.hint_id = bt_hint_processing.hint_id
@@ -810,15 +814,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       collectionsOutput=collectionsOutput[order(collectionsOutput$order, decreasing = T),]
       
       
-      # I gave equal weight, can weight which matches matter most by multiplying a scalar
-      # collectionsOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(collectionsOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) +
-      #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * 3 +
-      #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) +
-      #                                       do.call(rbind, lapply(collectionsOutput$assessment.name, function(x) sum(x %in% initialAssessment))))
-      # collectionsOutput = collectionsOutput[sort(collectionsOutput$order, decreasing = T),]
-      
-      
-      
       ## generate HTML
       
       collectionsOutput$tag_country = apply(collectionsOutput,1, function(x){
@@ -968,12 +963,12 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       # removing active hint
       singleHintOutput=subset(singleHintOutput, ! hint.id %in% as.numeric(input$loadCollections))
       
+      ht_val = as.numeric(gsub("leadsID_| ","",input$loadSingleHints))
       ### SORTING FOR RELEVANCE
-      
-      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
-      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",as.numeric(input$loadCollections),");"))))
+      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",ht_val,");"))))
+      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",ht_val,");"))))
+      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",ht_val,");"))))
+      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",ht_val,");"))))
 
       initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
       initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
@@ -985,7 +980,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
       initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
 
-      initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
+      initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
 
       weight.jur=100
       weight.int.type=1
@@ -1123,8 +1118,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           updateSelectInput(session = session, inputId = "initProduct", selected = initialProduct)
           updateSelectInput(session = session, inputId = "initAssessment", selected = initialAssessment)
           
-          runjs(paste0("$('.initialValues').addClass('locked')"))
-          lockHint <- lockHint(TRUE)
+          if (prm$freelancer == 1) {
+            runjs(paste0("$('.initialValues').addClass('locked')"))
+            lockHint <- lockHint(TRUE)
+          }
           }
           
         }

@@ -7,19 +7,21 @@ bt_attribute_hint_processing = function(user.id = NULL, hint.state = NULL, db.co
   #hint.state == 'B221 - editor desk'
   if(3<2) hint.state = paste0("'",hint.state, "' OR bt_hint_state_list.hint_state_name = 'trash bin - entered'") else hint.state = paste0("'",hint.state,"'")
   app.id = gta_sql_get_value(paste0("SELECT type_id FROM ric_app_list WHERE app_name = ",substr(hint.state,1,5),"';"))
-  sql.pull.hints = paste0("SELECT DISTINCT unique_hints.hint_id FROM
+  sql.pull.hints = paste0("SELECT hint_id FROM
+                          (SELECT hint_id FROM
                           (SELECT bt_hint_log.hint_id FROM bt_hint_log 
-                            JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = bt_hint_log.hint_id 
-                            JOIN (SELECT jurisdiction_id FROM ric_user_implementers WHERE user_id = ",user.id," AND app_id = ",app.id,") user_prio_jur ON ht_jur.jurisdiction_id = user_prio_jur.jurisdiction_id
-                            JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
-                            AND NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id) 
-                            UNION 
-                            SELECT bt_hint_log.hint_id FROM bt_hint_log 
-                            LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = bt_hint_log.hint_id 
-                            JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
-                            AND NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id)
-                          ) unique_hints
-                          LIMIT 10;")
+                          JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = bt_hint_log.hint_id 
+                          JOIN (SELECT jurisdiction_id FROM ric_user_implementers WHERE user_id = ",user.id," AND app_id = ",app.id,") user_prio_jur ON ht_jur.jurisdiction_id = user_prio_jur.jurisdiction_id
+                          JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
+                          AND NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id) 
+                          ORDER BY bt_hint_log.registration_date DESC LIMIT 10) prio_hints
+                          UNION 
+                          SELECT hint_id FROM
+                          (SELECT bt_hint_log.hint_id FROM bt_hint_log 
+                          LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = bt_hint_log.hint_id 
+                          JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
+                          AND NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id)
+                          ORDER BY bt_hint_log.registration_date DESC LIMIT 10) non_prio_hints) hints LIMIT 10;")
   
   hints <<- na.omit(data.frame(hint.id = gta_sql_get_value(sql.pull.hints), user.id = user.id, start.time = substr(as.POSIXct(Sys.time(), tz = "CET"),1,19)))
 

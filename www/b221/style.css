@@ -192,13 +192,13 @@ table.dataTable thead .sorting_desc {
 
 @media (max-width:992px) {
 	#b221-leadsTable .leads-item .top-row {
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: 1fr 1fr;
 	}
 }
 
 @media (max-width:768px) {
 	#b221-leadsTable .leads-item .top-row {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr;
 	}
 }
 
