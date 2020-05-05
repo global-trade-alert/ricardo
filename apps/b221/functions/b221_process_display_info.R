@@ -94,8 +94,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           
                           CREATE INDEX src ON b221_temp_changes_data_",user.id," (url(300));
                           
-                          DELETE bt_hint_url, bt_hint_jurisdiction, bt_hint_relevance FROM b221_temp_changes_data_",user.id," changes
-                          JOIN bt_hint_url ON changes.hint_id = bt_hint_url.hint_id
+                          DELETE bt_hint_jurisdiction, bt_hint_relevance FROM b221_temp_changes_data_",user.id," changes
                           LEFT JOIN bt_hint_jurisdiction ON changes.hint_id = bt_hint_jurisdiction.hint_id
                           LEFT JOIN bt_hint_relevance ON changes.hint_id = bt_hint_relevance.hint_id
                           WHERE 1 = 1;
@@ -106,10 +105,20 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_name = changes.implementer_name;
                           
                           INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_user)
-                          SELECT DISTINCT changes.hint_id, bt_url_log.url_id, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id,
-                          @classification_id AS classification_id, NULL AS url_accepted, NULL as validation_user
-                          FROM b221_temp_changes_data_",user.id," changes
-                          JOIN bt_url_log ON bt_url_log.url = changes.url;
+                          SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, NULL AS url_accepted, NULL AS validation_user FROM 
+                          (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                          FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
+                          JOIN bt_url_log ON changes_w_url_type.url = bt_url_log.url
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id);
+                          
+                          UPDATE bt_hint_url ht_url 
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_url.hint_id = changed_hints.hint_id
+                          JOIN bt_url_log ON bt_url_log.url_id = ht_url.url_id
+                          LEFT JOIN (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                          FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
+                          ON ht_url.hint_id = changes_w_url_type.hint_id AND changes_w_url_type.url = bt_url_log.url AND changes_w_url_type.url_type_id = ht_url.url_type_id
+                          SET ht_url.url_accepted = (CASE WHEN changes_w_url_type.hint_id IS NOT NULL THEN NULL ELSE 0 END),
+                              ht_url.classification_id = @classification_id;
                           
                           INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
                           SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, changes.relevance, NULL as relevance_probability, NULL as relevance_accepted, NULL as validation_user 
