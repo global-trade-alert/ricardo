@@ -234,6 +234,12 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       leads.output[,c("registration.date","hint.date")] <- NULL
       }
       
+      # bring import barrier and export barrier to the top
+      leads.output <- rbind(dplyr::filter(leads.output, grepl('import barrier|export barrier', intervention.type.name)),
+                            dplyr::filter(leads.output, !grepl('import barrier|export barrier', intervention.type.name)))
+      
+      leads.output$order <- seq(1,nrow(leads.output),1)
+      
       
       leads.output <- leads.output
       leads.output <<- leads.output
@@ -401,6 +407,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
                                                                         WHERE ht_log.hint_id = ",hintId,"
                                                                         GROUP BY ht_log.hint_id) unsorted_hints;")))
+        
+        initSingleHint = cbind(initSingleHint[,1:4],lapply(initSingleHint[,5:length(initSingleHint)], function(x) stri_trans_general(x, "Any-ascii")))
+        
         
         initSingleHint$intervention.type <- gsub("export subsidy","Export subsidy",initSingleHint$intervention.type)
         initSingleHint$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",initSingleHint$intervention.type)
@@ -574,7 +583,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         if (colState == "newCollection") {
           
-          collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
+          collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F, empty.attributes = F)
           if(collection.save!='successful') showNotification(collection.save, duration = 3)
           
         } else {
@@ -615,7 +624,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                 "\ncollection assessment val: ",paste0(colAssessment,collapse=','),
                 "\ncollection product val: ",paste0(colProduct,collapse=',')))
           
-          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = !collectionChanged)
+          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = !collectionChanged, empty.attributes = F)
           
         }
         
@@ -932,15 +941,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
       
-      singleHintOutput[["hint.title"]] = stri_trans_general(singleHintOutput[["hint.title"]], "Any-ascii")
-      singleHintOutput[["hint.description"]] = stri_trans_general(singleHintOutput[["hint.description"]], "Any-ascii")
-      singleHintOutput[["acting.agency"]] = stri_trans_general(singleHintOutput[["acting.agency"]], "Any-ascii")
-      singleHintOutput[["official"]] = stri_trans_general(singleHintOutput[["official"]], "Any-ascii")
-      singleHintOutput[["news"]] = stri_trans_general(singleHintOutput[["news"]], "Any-ascii")
-      singleHintOutput[["consultancy"]] = stri_trans_general(singleHintOutput[["consultancy"]], "Any-ascii")
-      singleHintOutput[["others"]] = stri_trans_general(singleHintOutput[["others"]], "Any-ascii")
-      singleHintOutput[["intervention.type"]] = stri_trans_general(singleHintOutput[["intervention.type"]], "Any-ascii")
-      singleHintOutput[["product.group.name"]] = stri_trans_general(singleHintOutput[["product.group.name"]], "Any-ascii")
+      singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) stri_trans_general(x, "Any-ascii")))
       singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
       
       singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
