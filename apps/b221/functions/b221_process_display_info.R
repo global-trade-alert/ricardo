@@ -101,7 +101,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_user
                           FROM b221_temp_changes_data_",user.id," changes) new_dates
                           WHERE new_dates.`date` IS NOT NULL;
-                          
+
                           INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_user)
                           SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, NULL AS url_accepted, NULL AS validation_user FROM 
                           (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
@@ -116,6 +116,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
                           ON ht_url.hint_id = changes_w_url_type.hint_id AND changes_w_url_type.url = bt_url_log.url AND changes_w_url_type.url_type_id = ht_url.url_type_id
                           SET ht_url.url_accepted = (CASE WHEN changes_w_url_type.hint_id IS NOT NULL THEN NULL ELSE 0 END),
+
                           ht_url.classification_id = @classification_id;
                           
                           INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
