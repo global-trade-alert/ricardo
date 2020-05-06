@@ -19,11 +19,11 @@ function checkLeads() {
           $(changeEl).removeClass('reactivate');
           $(changeEl).addClass('dismiss');
           // Shiny.setInputValue("b221-checkLeadsClick", [elementType, elementID], {priority: "event"});
-          collectData(`#${elementID}`,'dismiss');
+          // collectData(`#${elementID}`,'dismiss');
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
           console.log(`#${elementID}`);
-          collectData(`#${elementID}`,'reactivate');
+          // collectData(`#${elementID}`,'reactivate');
       } 
   }
 
@@ -97,6 +97,7 @@ function hintsBasicUI() {
     event.stopPropagation(); // prevent bubbling to .leads-item
   });
   
+  
   $('#b221-leadsTable').on('click','.submission',function (event) {
     event.stopPropagation(); // prevent bubbling to .leads-item
   });
@@ -133,6 +134,25 @@ function slideInBasicUI() {
     $('#b221-slideInRight').removeClass('open');
   });
   
+}
+
+function markHints() {
+  
+  $('#b221-slideInRight #hintContainer .hint-item').on('click', function () {
+    if ($(this).hasClass('starred')) {
+      $(this).removeClass('starred');
+    } else {
+      $('#b221-slideInRight #hintContainer .hint-item').removeClass('starred');
+      $(this).addClass('starred');
+    }
+})
+
+// SHOW COUNTRIES DROPDOWNS ON SELECT
+$('#b221-singleHintsTable .right .info').on('mouseenter','.top-row',function (event) {
+  console.log("STOPPING BACK PROPAGATION");
+  event.stopPropagation(); // prevent bubbling to .leads-item
+});
+
 }
 
 
@@ -209,13 +229,16 @@ function collectData(type='', state=''){
           let comment = $(`#comment_${id}`).val().length != 0 ? $(`#comment_${id}`).val() : null;
           let url = $(`#leadsID_${id} .background-url a`).attr('href');
           let official = $(`#official_${id}`).is(':checked') ? 1 : 0;
+          let announcementdate = $(`#announcementdate_${id} input`).val().length != 0 ? $(`#announcementdate_${id} input`).val() : null;
+          let implementationdate = $(`#implementationdate_${id} input`).val().length != 0 ? $(`#implementationdate_${id} input`).val() : null;
+          let removaldate = $(`#removaldate_${id} input`).val().length != 0 ? $(`#removaldate_${id} input`).val() : null;
           output.push({id: id, clicked: clicked, country: country, product: product, intervention: intervention,
-            assessment: assessment, official: official, comment: comment, url: url
-          })
+            assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate:
+removaldate})
     });
     console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];
-    
+  
     if (state == 'reactivate') {
         if (validate.some(checkNull)) {
           Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});  
@@ -230,7 +253,7 @@ function collectData(type='', state=''){
         $(`${type}`).removeClass('show-submission') 
     }
   }
-    
+  
     catch(error) {
       console.log(error);
       Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});  
@@ -242,12 +265,16 @@ function saveNewCollection() {
   var state = $('#b221-slideInRight .collectionHeader')[0].id;
   var hintId = $('#b221-slideInRight .removeslideinui')[0].id;
   console.log("COLLETION HINT ID: "+hintId);
+  var starredHint = null;
   
   var childIds = [];
   
-  $("#hintContainer > div").each((index, elem) => {
+    $("#hintContainer > div.hint-item").each((index, elem) => {
+      if ($(elem).hasClass('starred')) {
+        starredHint = elem.id.replace("hintId_","");
+      }
     childIds.push(parseInt(elem.id.replace("hintId_","")));
   });
   
-  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId}), {priority: "event"});
+  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint}), {priority: "event"});
 }

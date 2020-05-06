@@ -52,13 +52,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     # USE TO SELECT WHEN SEARCH FIELD IS ACTIVE
     options = list(
       pageLength = 50,
-      columnDefs = list(list(visible = FALSE, targets = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)), list(sortable=FALSE, targets = c(0)),
-                        list(targets = c(19), render = JS("
+      columnDefs = list(list(visible = FALSE, targets = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25)), list(sortable=FALSE, targets = c(0)),
+                        list(targets = c(22), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
                                                         }
                                                       "))),
-      order = list(list(19, 'asc')),
+      order = list(list(22, 'asc')),
       language = list(
         zeroRecords = "No more leads available."),
       rowCallback = JS("function ( row, data ) {
@@ -88,21 +88,24 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                               var urlimage = '<div class=\\'background-url no-touch\\'><a class=\\'no-touch\\' href=\\''+url+'\\' target=\\'_blank\\'><img src=\\'www/b221/url.svg\\' class=\\'svg no-touch\\'></a></div>';
                             }
                             
-                            let country = data[13];
-                            let product = data[14];
-                            let intervention = data[15];
+                            let country = data[16];
+                            let product = data[17];
+                            let intervention = data[18];
                             let submit = '<div class=\\'submission\\'><button id=\\'submit_'+data[5]+'\\' type=\"button\" class=\"btn btn-default action-button\">Save changes</button></div>';
                             let checkboxCheck = data[12] == 1 ? ' checked' : '';
                             let official = '<div class=\\'is-official\\'><label for=\"official\">URL official</label><div class=\\'checkbox\\'><input type=\"checkbox\" id=\\'official_'+data[5]+'\\' name=\"official\" value=\"non-official\"'+checkboxCheck+'></div></div>';
-                            let assessment = data[16];
-                            let comment = data[17];
+                            let assessment = data[19];
+                            let comment = data[20];
+                            let dateAnnouncement = data[23];
+                            let dateRegistration = data[24];
+                            let dateRemoval = data[25];
                             
                             
                             var actingAgency = '<div class=\\'acting-agency\\'><label>Acting Agency</label><div class=\\'value\\'>'+data[1]+'</div></div>';
                             var title = '<div class=\\'title-row\\'><div class=\\'act-title\\'>'+data[2]+'</div></div>';
                             var descr = '<div class=\\'middle-row\\'><div class=\\'act-description\\'>'+description+'</div><div class=\\'gradient-bottom\\'><div class=\\'gradient-inner\\'></div></div><div class=\\'show-more no-touch\\'><img src=\\''+image+'\\' class=\\'svg no-touch\\'></div></div>';
                             var buttons = '<div class=\\'bottom-row no-touch\\'>'+urlimage+collection+'</div>';
-                            var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+'</div><div class=\\'comment\\'>'+comment+data[18]+'</div>';
+                            var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+dateAnnouncement+dateRegistration+dateRemoval+'</div><div class=\\'comment\\'>'+comment+data[21]+'</div>';
                             var middle = '<div class=\\'middle-col'+readMore+'\\'>'+descr+'</div>';
                             var right = '<div class=\\'right-col\\'><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
                            $(row)
@@ -122,9 +125,21 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                           $('[id^=assessment]').selectize({
                             placeholder: 'Choose assessment type...'
                           });
+                          $('[id^=announcementdate] input').each((index, elem) => {
+                          $(elem).bsDatepicker('update', $(elem)[0].getAttribute('data-initial-date')); })
+                          $('[id^=implementationdate] input').each((index, elem) => {
+                          $(elem).bsDatepicker('update', $(elem)[0].getAttribute('data-initial-date')); })
+                          $('[id^=removaldate] input').each((index, elem) => {
+                          $(elem).bsDatepicker('update', $(elem)[0].getAttribute('data-initial-date')); })
+                          
+                            
+                          $('#b221-leadsTable').on('change','.shiny-date-input input',function (event) {
+                            $(this.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
+                          });
+                          
                         }"),
-      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
-      drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); }') # bind select boxes to Shiny
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }') # reset
+      # drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); }') # bind select boxes to Shiny
     ),
     callback = JS(paste0("table.on('click.dt','tr', function() {
                 var data=table.row(this).data();
@@ -235,6 +250,36 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       }
       
       
+      # Add Date fields
+      leads.output$date_announcement = apply(leads.output,1, function(x){
+        as.character(dateInput(gsub(" ","",paste0('announcementdate_',x['hint.id'])),
+                                label = 'Announcement date',
+                                value = x['announcement.date'], startview = Sys.Date(),
+                               format = "yyyy-mm-dd")
+        )
+      })
+      leads.output$date_registration = apply(leads.output,1, function(x){
+        as.character(dateInput(gsub(" ","",paste0('implementationdate_',x['hint.id'])),
+                               label = 'Implementation date',
+                               value = x['implementation.date'], startview = Sys.Date(),
+                               format = "yyyy-mm-dd")
+        )
+      })
+      leads.output$date_removal = apply(leads.output,1, function(x){
+        as.character(dateInput(gsub(" ","",paste0('removaldate_',x['hint.id'])),
+                               label = 'Removal Date',
+                               value = x['removal.date'], startview = Sys.Date(),
+                               format = "yyyy-mm-dd")
+        )
+      })
+      
+
+      # bring import barrier and export barrier to the top
+      leads.output <- rbind(dplyr::filter(leads.output, grepl('import barrier|export barrier', intervention.type.name)),
+                            dplyr::filter(leads.output, !grepl('import barrier|export barrier', intervention.type.name)))
+      
+      leads.output$order <- seq(1,nrow(leads.output),1)
+      
       leads.output <- leads.output
       leads.output <<- leads.output
     })
@@ -295,9 +340,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP_CONCAT(DISTINCT(ass_list.assessment_name) SEPARATOR ' ; ') AS assessment_name,
                         GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                         GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
-                        cltn_rel.relevance
+                        cltn_rel.relevance, cltn_star.hint_id AS starred_hint
                         FROM b221_collection_log cltn_log
                         JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                        LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
                         JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
                         JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
@@ -477,7 +523,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                    HTML(initialHints)))
         )
         )
-      runjs(paste0(" slideInBasicUI(); removeHint();"))
+      runjs(paste0(" slideInBasicUI(); removeHint(); markHints();"))
       runjs("$('#b221-slideInRight').addClass('open');")
       runjs("$('#b221-slideInRight').trigger('loadCollectionSlideIn');console.log('2 loading collection slide in');")
       runjs("$('.tooltip-create-top').tooltipster({
@@ -495,6 +541,12 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     scroll: true
                                 }
                               })")
+      if (collection) {
+        if (is.na(collectionStats$starred.hint)==F) {
+          runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+        }
+      }
+      
       })
     
     observeEvent(input$saveCollection, {
@@ -520,6 +572,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       colProduct <- input$initProduct
       colAssessment <- input$initAssessment
       colHints <- as.numeric(colData$childIds)
+      hintStarred <- ifelse(length(as.numeric(colData$starredHint))==0, NA, as.numeric(colData$starredHint))
       colState <- colData$state
       hintId <- as.numeric(gsub("collectionContainer_","",colData$hintId))
       
@@ -529,6 +582,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       colProduct <<- input$initProduct
       colAssessment <<- input$initAssessment
       colHints <<- as.numeric(colData$childIds)
+      hintStarred <<- hintStarred
       colState <<- colData$state
       hintId <<- as.numeric(gsub("collectionContainer_","",colData$hintId))
       
@@ -539,8 +593,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       print(colProduct)
       print(colAssessment)
       print(colHints)
+      print(hintStarred)
       print(colState)
       print(hintId)
+      
       
       if (any(nchar(colName)==0,
               nchar(colImplementer)==0,
@@ -572,10 +628,11 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       # IF NEW COLLECTION: colID == "newCollection"
       # IF UPDATING COLLECTION: colID == "collectionID_XXXX"
         
+        collection.save = "successful"
+        
         if (colState == "newCollection") {
           
-          collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F)
-          if(collection.save!='successful') showNotification(collection.save, duration = 3)
+          collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, starred.hint.id = hintStarred, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F, empty.attributes = F)
           
         } else {
           print('not new collection')
@@ -615,57 +672,61 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                 "\ncollection assessment val: ",paste0(colAssessment,collapse=','),
                 "\ncollection product val: ",paste0(colProduct,collapse=',')))
           
-          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = !collectionChanged)
+          b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, starred.hint.id = hintStarred, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = !collectionChanged, empty.attributes = F)
           
         }
         
         print(paste0("THIS IS THE COUNTRY HINT ID country_",hintId))
-      
         
-        
-      updateSelectInput(session = session, inputId = paste0("country_",hintId), selected = colImplementer)
-      updateSelectInput(session = session, inputId = paste0("product_",hintId), selected = colProduct)
-      updateSelectInput(session = session, inputId = paste0("intervention_",hintId), selected = colType)
-      updateSelectInput(session = session, inputId = paste0("assessment_",hintId), selected = colAssessment)
-      
-      collectionId <- gta_sql_get_value(paste0("SELECT collection_id FROM b221_hint_collection WHERE hint_id = ",hintId,";"))
-      print(collectionId)
-      if(is.na(collectionId)==F) {
-        runjs(paste0("$('#leadsID_",hintId," .selectize-input .item').remove();"))
-        insertCountry <- paste0('<div class="item" data-value=',colImplementer,'>',colImplementer,'</div>',collapse="")
-        insertCountryOptions <- paste0('<option value=',colImplementer,' selected="selected">',colImplementer,'</option>')
-        insertProduct <- paste0('<div class="item" data-value=',colProduct,'>',colProduct,'</div>',collapse="")
-        insertProductOptions <- paste0('<option value=',colProduct,' selected="selected">',colProduct,'</option>')
-        insertType <- paste0('<div class="item" data-value=',colType,'>',colType,'</div>',collapse="")
-        insertTypeOptions <- paste0('<option value=',colType,' selected="selected">',colType,'</option>')
-        insertAssessment <- paste0('<div class="item" data-value=',colAssessment,'>',colAssessment,'</div>',collapse="")
-        insertAssessmentOptions <- paste0('<option value=',colAssessment,' selected="selected">',colAssessment,'</option>')
-        
-        runjs(paste0("$('select#country_",hintId,"').append('",insertCountryOptions,"');"))
-        runjs(paste0("$('",insertCountry,"').hide().insertBefore('input#country_",hintId,"-selectized').fadeIn(300);"))
-        runjs(paste0("$('select#product_",hintId,"').append('",insertProductOptions,"');"))
-        runjs(paste0("$('",insertProduct,"').hide().insertBefore('input#product_",hintId,"-selectized').fadeIn(300);"))
-        runjs(paste0("$('select#intervention_",hintId,"').append('",insertTypeOptions,"');"))
-        runjs(paste0("$('",insertType,"').hide().insertBefore('input#intervention_",hintId,"-selectized').fadeIn(300);"))
-        runjs(paste0("$('select#assessment_",hintId,"').append('",insertAssessmentOptions,"');"))
-        runjs(paste0("$('",insertAssessment,"').hide().insertBefore('input#assessment_",hintId,"-selectized').fadeIn(300);"))
-        
-        runjs(paste0("$('#leadsID_",hintId,"').addClass('locked');"))
-        runjs(paste0("$('#leadsID_",hintId,"').addClass('reactivate');"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('noPartOfCollection');"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('partOfCollection');"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = 'collection_",collectionId,"';"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add img')[0].src = $('#leadsID_",hintId," .collection-add img')[0].src.replace('collection.svg', 'collection-added.svg');"))
-      } else {
-        runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('noPartOfCollection');"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('partOfCollection');"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add img')[0].src = $('#leadsID_",hintId," .collection-add img')[0].src.replace('collection-added.svg', 'collection.svg');"))
-        runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = '';"))
-        
-      }
-      runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
-      runjs(paste0("$('.backdrop-nav').removeClass('open');"))
-      removeUI(selector = ".removeslideinui",immediate = T)
+          if (collection.save!='successful') {
+            showNotification(collection.save, duration = 3)
+          } else {
+            
+            updateSelectInput(session = session, inputId = paste0("country_",hintId), selected = colImplementer)
+            updateSelectInput(session = session, inputId = paste0("product_",hintId), selected = colProduct)
+            updateSelectInput(session = session, inputId = paste0("intervention_",hintId), selected = colType)
+            updateSelectInput(session = session, inputId = paste0("assessment_",hintId), selected = colAssessment)
+            
+            collectionId <- gta_sql_get_value(paste0("SELECT collection_id FROM b221_hint_collection WHERE hint_id = ",hintId,";"))
+            print(collectionId)
+            if(is.na(collectionId)==F) {
+              runjs(paste0("$('#leadsID_",hintId," .selectize-input .item').remove();"))
+              insertCountry <- paste0('<div class="item" data-value=',colImplementer,'>',colImplementer,'</div>',collapse="")
+              insertCountryOptions <- paste0('<option value=',colImplementer,' selected="selected">',colImplementer,'</option>')
+              insertProduct <- paste0('<div class="item" data-value=',colProduct,'>',colProduct,'</div>',collapse="")
+              insertProductOptions <- paste0('<option value=',colProduct,' selected="selected">',colProduct,'</option>')
+              insertType <- paste0('<div class="item" data-value=',colType,'>',colType,'</div>',collapse="")
+              insertTypeOptions <- paste0('<option value=',colType,' selected="selected">',colType,'</option>')
+              insertAssessment <- paste0('<div class="item" data-value=',colAssessment,'>',colAssessment,'</div>',collapse="")
+              insertAssessmentOptions <- paste0('<option value=',colAssessment,' selected="selected">',colAssessment,'</option>')
+              
+              runjs(paste0("$('select#country_",hintId,"').append('",insertCountryOptions,"');"))
+              runjs(paste0("$('",insertCountry,"').hide().insertBefore('input#country_",hintId,"-selectized').fadeIn(300);"))
+              runjs(paste0("$('select#product_",hintId,"').append('",insertProductOptions,"');"))
+              runjs(paste0("$('",insertProduct,"').hide().insertBefore('input#product_",hintId,"-selectized').fadeIn(300);"))
+              runjs(paste0("$('select#intervention_",hintId,"').append('",insertTypeOptions,"');"))
+              runjs(paste0("$('",insertType,"').hide().insertBefore('input#intervention_",hintId,"-selectized').fadeIn(300);"))
+              runjs(paste0("$('select#assessment_",hintId,"').append('",insertAssessmentOptions,"');"))
+              runjs(paste0("$('",insertAssessment,"').hide().insertBefore('input#assessment_",hintId,"-selectized').fadeIn(300);"))
+              
+              runjs(paste0("$('#leadsID_",hintId,"').addClass('locked');"))
+              runjs(paste0("$('#leadsID_",hintId,"').addClass('reactivate');"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('noPartOfCollection');"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('partOfCollection');"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = 'collection_",collectionId,"';"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add img')[0].src = $('#leadsID_",hintId," .collection-add img')[0].src.replace('collection.svg', 'collection-added.svg');"))
+            } else {
+              runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('noPartOfCollection');"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('partOfCollection');"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add img')[0].src = $('#leadsID_",hintId," .collection-add img')[0].src.replace('collection-added.svg', 'collection.svg');"))
+              runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = '';"))
+              
+            }
+            runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+            runjs(paste0("$('.backdrop-nav').removeClass('open');"))
+            removeUI(selector = ".removeslideinui",immediate = T)
+            
+          } 
       
       }
       
@@ -1141,7 +1202,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     scroll: true
                                 }
                               })")
-      runjs("removeHint();")
+      runjs("removeHint(); markHints();")
     })
     
     # SELECT ROWS MECHANISM COLLECTION TABLE
@@ -1195,12 +1256,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP_CONCAT(DISTINCT(ass_list.assessment_name) SEPARATOR ' ; ') AS assessment_name,
                         GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                         GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
-                        cltn_rel.relevance
+                        cltn_rel.relevance, cltn_star.hint_id AS starred_hint
                         FROM b221_collection_log cltn_log
                         JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                        LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
                         JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
-                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
+                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
                         JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
                         GROUP BY cltn_log.collection_id;")
       
@@ -1229,7 +1291,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     scroll: true
                                 }
                               })")
-      runjs("removeHint();")
+      runjs("removeHint(); markHints();")
+      if (is.na(collectionStats$starred.hint)==F) {
+        runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+      }
     })
     
     # COLLECT ALL CLICKS ON LEADS-ITEM
