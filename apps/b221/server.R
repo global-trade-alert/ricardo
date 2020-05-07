@@ -382,7 +382,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                           GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
                                                           FROM bt_hint_log ht_log 
                                                           JOIN b221_hint_collection ht_col ON ht_col.hint_id = ht_log.hint_id AND ht_col.collection_id = ",collectionId,"
-                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
                                                           LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                                                           LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
                                                           LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
@@ -417,7 +417,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                             JOIN bt_hint_log ht_log ON ht_log.hint_id = ht_cltn.hint_id;"))
         
         locked <- ifelse(any(maxHint %in% c(3:7,9)) & prm$freelancer == 1, " locked","")
-        lockHint <- lockHint(TRUE)
+        lockHint <- ifelse(any(maxHint %in% c(3:7,9)) & prm$freelancer == 1, yes = lockHint(TRUE), no = lockHint(FALSE))
       } else {
         
         initialPlaceholder <- "Enter new Collection Name"
@@ -454,8 +454,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         WHERE ht_log.hint_id = ",hintId,"
                                                                         GROUP BY ht_log.hint_id) unsorted_hints;")))
         
-        initSingleHint = cbind(initSingleHint[,1:4],lapply(initSingleHint[,5:length(initSingleHint)], function(x) stri_trans_general(x, "Any-ascii")))
-        
+        # initSingleHint = cbind(initSingleHint[,1:4],lapply(initSingleHint[,5:length(initSingleHint)], function(x) stri_trans_general(x, "Any-ascii")))
+        initSingleHint = cbind(initSingleHint[,1:4],lapply(initSingleHint[,5:length(initSingleHint)], function(x) gsub("<.*?>","",iconv(x, "", "ASCII", "byte"))))
         
         initSingleHint$intervention.type <- gsub("export subsidy","Export subsidy",initSingleHint$intervention.type)
         initSingleHint$intervention.type <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy",initSingleHint$intervention.type)
@@ -551,8 +551,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                 }
                               })")
       if (collection) {
-        if (is.na(collectionStats$starred.hint)==F) {
-          runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+        if (nrow(collectionStats)>0) {
+          if (is.na(collectionStats$starred.hint)==F) {
+            runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+          }
         }
       }
       
@@ -824,13 +826,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                     GROUP_CONCAT(DISTINCT(prod_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
                                                                     GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) SEPARATOR ' ; ') AS jurisdiction_name
                                                                     FROM b221_collection_log cltn
-                                                                    JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
-                                                                    JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn.collection_id JOIN b221_intervention_type_list int_list ON cltn_int.intervention_type_id = int_list.intervention_type_id
-                                                                    JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn.collection_id JOIN b221_product_group_list prod_list ON cltn_prod.product_group_id = prod_list.product_group_id
-                                                                    JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn.collection_id JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
-                                                                    JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
+                                                                    LEFT JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn.collection_id LEFT JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
+                                                                    LEFT JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn.collection_id LEFT JOIN b221_intervention_type_list int_list ON cltn_int.intervention_type_id = int_list.intervention_type_id
+                                                                    LEFT JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn.collection_id LEFT JOIN b221_product_group_list prod_list ON cltn_prod.product_group_id = prod_list.product_group_id
+                                                                    LEFT JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn.collection_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                                                                    LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.collection_id = cltn.collection_id LEFT JOIN bt_hint_log ON bt_hint_log.hint_id = ht_cltn.hint_id
                                                                     GROUP BY cltn.collection_id;"))
-      collectionsOutput[["collection.name"]] = stri_trans_general(collectionsOutput[["collection.name"]], "Any-ascii")
+      # collectionsOutput[["collection.name"]] = stri_trans_general(collectionsOutput[["collection.name"]], "Any-ascii")
+      collectionsOutput[["collection.name"]] = gsub("<.*?>","",iconv(collectionsOutput[["collection.name"]], "", "ASCII", "byte"))
       
       collectionsOutput$intervention.type.name <- gsub("export subsidy","Export subsidy", collectionsOutput$intervention.type.name)
       collectionsOutput$intervention.type.name <- gsub("domestic subsidy \\(incl\\. tax cuts, rescues etc\\.)","Domestic subsidy", collectionsOutput$intervention.type.name)
@@ -1003,7 +1006,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                                         GROUP BY ht_log.hint_id) unsorted_hints
                                                                         ORDER BY prio_cty DESC, hint_date DESC;")))
       
-      singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) stri_trans_general(x, "Any-ascii")))
+      # singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) stri_trans_general(x, "Any-ascii")))
+      singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) gsub("<.*?>","",iconv(x, "", "ASCII", "byte"))))
       singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
       
       singleHintOutput$intervention.type <- gsub("export subsidy","Export subsidy",singleHintOutput$intervention.type)
@@ -1223,7 +1227,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                           GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
                                                           FROM bt_hint_log ht_log 
                                                           JOIN b221_hint_collection ht_col ON ht_col.hint_id = ht_log.hint_id AND ht_col.collection_id = ",collectionId,"
-                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND ht_log.hint_state_id BETWEEN 2 and 9 JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
                                                           LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                                                           LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
                                                           LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
@@ -1259,14 +1263,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                         GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
                         cltn_rel.relevance, cltn_star.hint_id AS starred_hint
-                        FROM b221_collection_log cltn_log
-                        JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                        FROM (SELECT * FROM b221_collection_log WHERE collection_id = ",collectionId,") cltn_log
+                        LEFT JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                         LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
-                        JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
-                        JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
-                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
-                        JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
-                        GROUP BY cltn_log.collection_id;")
+                        LEFT JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id LEFT JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
+                        LEFT JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
+                        LEFT JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id LEFT JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
+                        LEFT JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
+                        GROUP BY cltn_log.collection_id")
       
       collectionStats <- gta_sql_get_value(query)
       
@@ -1277,6 +1281,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       print(initialHints)
       runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
       runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))
+      initialHints <- gsub("[\r\n]", "", initialHints)
       runjs(paste0("$('",paste0(initialHints, collapse=""),"').hide().appendTo('#hintContainer').fadeIn(300);"))
       runjs("$('.tooltip-create-top-col').tooltipster({
                                 theme: 'tooltipster-noir',
@@ -1294,8 +1299,11 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                 }
                               })")
       runjs("removeHint(); markHints();")
-      if (is.na(collectionStats$starred.hint)==F) {
-        runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+    
+      if(nrow(collectionStats)>0) {
+        if (is.na(collectionStats$starred.hint)==F) {
+          runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+        }
       }
     })
     
