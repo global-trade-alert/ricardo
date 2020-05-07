@@ -666,15 +666,19 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP BY cltn_log.collection_id;")
           collectionStats <- gta_sql_get_value(query)
           
-          if (length(c(
-            setdiff(union(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]]),intersect(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]])),
-            setdiff(union(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),intersect(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]])),
-            setdiff(union(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),intersect(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]])),
-            setdiff(union(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]),intersect(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]))
-          )) > 0 ) {
-            collectionChanged = T
+          if (nrow(collectionStats)>0) {
+            if (length(c(
+              setdiff(union(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]]),intersect(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]])),
+              setdiff(union(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),intersect(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]])),
+              setdiff(union(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),intersect(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]])),
+              setdiff(union(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]),intersect(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]))
+            )) > 0 ) {
+              collectionChanged = T
+            } else {
+              collectionChanged = F
+            }
           } else {
-            collectionChanged = F
+            collectionChanged = T # Collection must have changed in this scenario, otherwise it could not be saved
           }
           
           cat(paste0("collection changed val: ",collectionChanged,
