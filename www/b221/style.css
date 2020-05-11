@@ -276,41 +276,82 @@ table.dataTable thead .sorting_desc {
 	border-bottom:1px solid #dadada;
 }
 
-#b221-leadsTable .leads-item .middle-col .act-description {
+#b221-leadsTable .leads-item .middle-col .act-description,
+#b221-leadsTable .leads-item .middle-col .act-description-original {
 	float:left;
 	width:100%;
 	padding:calc(10px + 0.5vw);
+	padding-right:calc(40px + 0.5vw);
 	font-weight:100;
 	max-height:10000px;
 	color:#222222;
 	overflow: hidden;
 	word-break: break-word;
+	transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
 }
 
-#b221-leadsTable .leads-item .middle-col.readMore .act-description {
-	float:left;
-	width:100%;
-	padding:calc(10px + 0.5vw);
-	font-weight:100;
-	color:#222222;
+#b221-leadsTable .leads-item .middle-col.readMore .act-description,
+#b221-leadsTable .leads-item .middle-col.readMore .act-description-original {
+	height:auto;
 	max-height: 150px;
-	transition:max-height 0.5s ease-out;
+	transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
 }
 
-#b221-leadsTable .leads-item.showAll .middle-col.readMore .act-description {
-	float:left;
-	width:100%;
-	padding:calc(10px + 0.5vw);
+#b221-leadsTable .leads-item.showAll .middle-col.readMore .act-description,
+#b221-leadsTable .leads-item.showAll .middle-col.readMore .act-description-original {
 	max-height:2000px;
-	font-weight:100;
-	color:#222222;
-	transition:max-height 0.5s ease-out;
+	height:auto;
+	transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
 }
 
-#b221-leadsTable .leads-item .middle-col.readMore .middle-row {
+#b221-leadsTable .leads-item .middle-col .act-description {
+	opacity:1;
+	visibility: visible;
+	transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
+}
+
+#b221-leadsTable .leads-item .middle-col.translate .act-description-original {
+	height:auto !important;
+	padding:calc(10px + 0.5vw);
+	opacity:1;
+	visibility: visible;
+	transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
+}
+
+#b221-leadsTable .leads-item .middle-col .act-description-original,
+#b221-leadsTable .leads-item .middle-col.translate .act-description {
+	height:0px !important;
+	padding-top:0;
+	padding-bottom:0;
+	opacity:0;
+	visibility: hidden;
+	transition: opacity 0.5s ease-out, max-height 0.5s ease-out;
+}
+
+#b221-leadsTable .leads-item .middle-col .middle-row {
 	position: relative;
 	float:left;
 	width:100%;
+}
+
+#b221-leadsTable .leads-item .middle-col .middle-row .translation-toggle {
+	position: absolute;
+	top:calc(10px + 0.5vw);
+	right:calc(10px + 0.5vw);
+	font-size:20px;
+	color:#cccccc;
+	cursor: pointer;
+	transition: all 0.5s ease-out;
+}
+
+#b221-leadsTable .leads-item .middle-col .middle-row .translation-toggle:hover {
+	color:#1460aa;
+	transition: all 0.5s ease-out;
+}
+
+#b221-leadsTable .leads-item .middle-col.translate .middle-row .translation-toggle {
+	color:#1460aa;
+	transition: all 5s ease-out;
 }
 
 #b221-leadsTable .leads-item .middle-col .middle-row .gradient-bottom {
@@ -922,9 +963,9 @@ table.dataTable thead .sorting_desc {
 .control-bar {
 	position: fixed;
   bottom: 0px;
-  left: 0px;
-  width: 100%;
-	padding:calc(20px + 1vw);
+  right: 0px;
+	padding-bottom:calc(20px + 1vw);
+	padding-right:calc(20px + 1vw);
 	display: flex;
 	flex-direction: row;
 	justify-content: center;	
@@ -933,7 +974,8 @@ table.dataTable thead .sorting_desc {
 
 .control-bar > div {
 	display:flex;
-	padding: 0px 15px;	
+	padding: 0px;
+	padding-left:15px;	
 }
 
 .control-bar button,
