@@ -7,8 +7,11 @@ bt_change_user_implementers=function(app.id = NULL, user.id = NULL, implementer.
   # only parameter which doesnt accept vector is user.id 
   
   gta_sql_get_value(sprintf(paste0("DELETE FROM ric_user_implementers WHERE user_id = ",user.id," AND app_id IN (%s);"),paste(app.id, collapse = ',')))
-  gta_sql_get_value(paste0('INSERT INTO ric_user_implementers VALUES',paste0('(',unique(apply(expand.grid(app.id, user.id, implementer.ids), 1, paste, collapse=",")),')', collapse = ',')))
+  gta_sql_get_value(paste0('INSERT INTO ric_user_implementers VALUES',paste0('(',unique(apply(expand.grid(app.id, user.id, implementer.ids), 1, paste, collapse=",")),')', collapse = ','),';'))
   
   print('successful')
   
 }
+
+a = paste0('INSERT INTO ric_user_implementers VALUES',paste0('(',unique(apply(expand.grid(app.id, user.id, implementer.ids), 1, paste, collapse=",")),')', collapse = ','),';')
+cat(a)
