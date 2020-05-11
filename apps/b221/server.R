@@ -352,7 +352,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
                         JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
-                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
+                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
                         JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
                         GROUP BY cltn_log.collection_id;")
         collectionStats <- gta_sql_get_value(query)
@@ -408,7 +408,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                         '<div><label>URL news</label>',initialHints$news,'</div>',
                                         '</div></div>')
         
-        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',initialHints$tpcontent)
+        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',initialHints$tpcontent)
         
         slideInState = paste0("existingCollection_",collectionId)
         
@@ -486,7 +486,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
         
         tpcontent = paste0('<div id="top-tooltip_',hintId,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>')
-        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div><div class="remove" value="',initialHint$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',tpcontent)
+        initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div><div class="remove" value="',initialHint$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',tpcontent)
         
         slideInState = "newCollection"
         
@@ -661,7 +661,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                         JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
-                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp_list.product_group_id
+                        JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
                         JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
                         GROUP BY cltn_log.collection_id;")
           collectionStats <- gta_sql_get_value(query)
@@ -1142,7 +1142,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       
       tpcontent = gsub("'","\"",paste0('<div id="top-tooltip_',moveHint$hint.id,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description"></div><div class="tipped-url">',tpofficial,tpnews,'</div></div>'))
-      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',moveHint$hint.id,'" id="hintId_',moveHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',moveHint$hint.title,'</div><div class="remove" value="',moveHint$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',tpcontent)
+      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',moveHint$hint.id,'" id="hintId_',moveHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',moveHint$hint.title,'</div><div class="remove" value="',moveHint$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',tpcontent)
       
       reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
       if (moveHint$hint.state.id %in% c(2,8)) {
@@ -1257,7 +1257,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                       '<div><label>URL news</label>',initialHints$news,'</div>',
                                       '</div></div>')
       
-      initialHints = gsub("'","\"",paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top-col added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div></div>',initialHints$tpcontent))
+      initialHints = gsub("'","\"",paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top-col added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',initialHints$tpcontent))
       
       updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
       
