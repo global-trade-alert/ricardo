@@ -1,5 +1,4 @@
 b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
-
                                         product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, collection.unchanged = NULL, empty.attributes = NULL){
   
   if(is.null(is.freelancer) | length(is.freelancer)!= 1 | !is.logical(is.freelancer) | is.na(is.freelancer)) stop('is.freelancer must be false if you are an editor, or true if you are a freelancer, no other value permitted')
@@ -18,6 +17,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   # first update collection related information: 
   # temp values to test 
   # is.freelancer = T ; user.id = 1 ; collection.id = 1 ; country = c(1,2) ; product = c(1,2) ; intervention = c(1,2) ; assessment = 1 ; relevance = 1
+  
   if(empty.attributes == F){
     if(collection.unchanged==F){
       if(is.null(new.collection.name)){
@@ -72,9 +72,12 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       }
       gta_sql_multiple_queries(update.collection.info, output.queries = 1)
     }
+    
     original.hints = gta_sql_get_value(paste0("SELECT hint_id FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,";"))
     # states which need to be confirmed for editor-side
     state.2or8.hints = gta_sql_get_value(paste0("SELECT b221_hint_collection.hint_id FROM b221_hint_collection JOIN bt_hint_log ON b221_hint_collection.collection_id = ",collection.id," AND (bt_hint_log.hint_state_id = 2 OR bt_hint_log.hint_state_id = 8) AND bt_hint_log.hint_id = b221_hint_collection.hint_id;"))
+    
+    
     
     if(length(hints.id)>0){
       # state for hints to be converted to when collection updates
@@ -404,14 +407,6 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
       gta_sql_get_value(paste0("DELETE FROM b221_collection_star WHERE b221_collection_star.collection_id = ",collection.id,";"))
       
-    } 
-    
-    
-    if(length(hints.id) > 0){
-      gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
-      gta_sql_get_value(paste0("INSERT INTO b221_hint_collection VALUES ",paste0("(",hints.id,",",collection.id,")", collapse = ',')))
-    } else {
-      gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
     }
   }
   
