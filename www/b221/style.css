@@ -745,10 +745,30 @@ table.dataTable thead .sorting_desc {
 	border:2px solid transparent;
 	transition:all 0.5s ease-out;
 	cursor:pointer;
+	position:relative;
 }
 
-#hintContainer .hint-item.starred{
+#hintContainer .hint-item.starred {
 	border:2px solid #ffd600;
+	transition:all 0.5s ease-out;
+}
+
+#hintContainer .hint-item span {
+	opacity:0;
+	visibility:hidden;
+	position: absolute;
+  top: -13px;
+  left: -13px;
+  color: #ffd600;
+	transition:all 0.5s ease-out;
+	background-color: #2585e6;
+  border-radius: 100%;
+  overflow: hidden;
+}
+
+#hintContainer .hint-item.starred span {
+	opacity:1;
+	visibility:visible;
 	transition:all 0.5s ease-out;
 }
 
