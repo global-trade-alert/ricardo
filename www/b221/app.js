@@ -62,8 +62,14 @@ function hintsBasicUI() {
   console.log("HINTS BASIC UI BOUND");
 
   // SHOW MORE BUTTON
-  $('#b221-leadsTable').on('click', '.leads-item .middle-row',function () {
-    $(this.parentNode.parentNode.parentNode).toggleClass('showAll');
+  $('#b221-leadsTable').on('click', '.leads-item .middle-row .translation-toggle',function () {
+    event.stopPropagation(); // prevent bubbling to .leads-item
+    $(this.parentNode.parentNode).toggleClass('translate');
+  });
+
+  // SHOW MORE BUTTON
+  $('#b221-leadsTable').on('click', '.leads-item .middle-row .show-more',function () {
+    $(this.parentNode.parentNode.parentNode.parentNode).toggleClass('showAll');
   });
 
   $('#b221-leadsTable').on('click', '.leads-item .collection-add',function () {
