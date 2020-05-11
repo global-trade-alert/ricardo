@@ -196,6 +196,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     } else {
       pre.sorted.table <- b221_pull_display_info(user.id = user$id, is.freelancer = ifelse(prm$freelancer == 1, T, F)) # needs to be reversed when live, i put it opposite way for testing purposes
       pre.sorted.table$english.title = paste(pre.sorted.table$hint.id, pre.sorted.table$english.title, sep = ' - ')
+      pre.sorted.table$original.description[!is.na(pre.sorted.table$original.description) & !is.na(pre.sorted.table$original.title)] = paste(pre.sorted.table$original.title[!is.na(pre.sorted.table$original.description) & !is.na(pre.sorted.table$original.title)],pre.sorted.table$original.description[!is.na(pre.sorted.table$original.description) & !is.na(pre.sorted.table$original.title)],sep='<br /><br />')
       leads.output <- pre.sorted.table[match(processing.hints,pre.sorted.table$hint.id),]
       rm('pre.sorted.table')
     }
