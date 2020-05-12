@@ -911,6 +911,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
     })
     
+    collectionsOutput <- as.data.frame(collectionsOutput)
     collectionsOutput <<- collectionsOutput
   })
   
@@ -1091,6 +1092,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
     print("LENGTH OF SINGLE HINT OUTPUT")
     print(nrow(singleHintOutput))
+    singleHintOutput <- as.data.frame(singleHintOutput)
     singleHintOutput <<- singleHintOutput
   })
   
