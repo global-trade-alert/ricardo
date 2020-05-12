@@ -882,21 +882,21 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
     initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
     
-    weight.jur=100
-    weight.int.type=1
-    weight.assessment=1
-    weight.date=.1
-    weight.product=1
-    
-    collectionsOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(collectionsOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
-                                          do.call(rbind, lapply(as.list(strsplit(collectionsOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
-                                          do.call(rbind, lapply(as.list(strsplit(collectionsOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
-                                          do.call(rbind, lapply(collectionsOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-                                          do.call(rbind, lapply(collectionsOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
-    
-    collectionsOutput$order[collectionsOutput$order<0]=0
-    
-    collectionsOutput=collectionsOutput[order(collectionsOutput$order, decreasing = T),]
+    # weight.jur=100
+    # weight.int.type=1
+    # weight.assessment=1
+    # weight.date=.1
+    # weight.product=1
+    # 
+    # collectionsOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(collectionsOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
+    #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
+    #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
+    #                                       do.call(rbind, lapply(collectionsOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
+    #                                       do.call(rbind, lapply(collectionsOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+    # 
+    # collectionsOutput$order[collectionsOutput$order<0]=0
+    # 
+    # collectionsOutput=collectionsOutput[order(collectionsOutput$order, decreasing = T),]
     
     
     ## generate HTML
@@ -1061,21 +1061,21 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
     initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
     
-    weight.jur=100
-    weight.int.type=1
-    weight.assessment=1
-    weight.date=.1
-    weight.product=1
-    
-    singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
-                                         do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
-                                         do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
-                                         do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-                                         do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
-    
-    singleHintOutput$order[singleHintOutput$order<0]=0
-    
-    singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+    # weight.jur=100
+    # weight.int.type=1
+    # weight.assessment=1
+    # weight.date=.1
+    # weight.product=1
+    # 
+    # singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
+    #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
+    #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
+    #                                      do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
+    #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+    # 
+    # singleHintOutput$order[singleHintOutput$order<0]=0
+    # 
+    # singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
     
     
     ## generate HTML
