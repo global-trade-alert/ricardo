@@ -763,7 +763,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     options = list(
       pagingType = 'simple_numbers',
       pageLength = 10,
-      columnDefs = list(list(visible = FALSE, targets = c(0,2,4:10)), list(sortable=FALSE, targets = c(0)),
+      columnDefs = list(list(visible = FALSE, targets = c(0,2,4:9)), list(sortable=FALSE, targets = c(0)),
                         list(targets = c(1,3), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
@@ -771,7 +771,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                       ")),
                         list(title="Title", targets=c(1)),
                         list(title="Date", targets=c(3))),
-      order = list(list(7, 'desc')),
+      order = list(list(3, 'desc')),
       language = list(
         paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
         zeroRecords = "No more leads available.",
@@ -781,17 +781,17 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[2]+'</div></div>';
-                            let product = data[9];
-                            let type = data[10];
-                            let jurisdiction = data[8];
+                            let product = data[8];
+                            let type = data[9];
+                            let jurisdiction = data[7];
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
 
                             let tpdate = '<div><label>Date</label>'+data[3]+'</div>';
-                            let tpimplementer = '<div><label>Implementer</label>'+data[8]+'</div>';
+                            let tpimplementer = '<div><label>Implementer</label>'+data[7]+'</div>';
                             let tpassessment = '<div><label>Assessment</label>'+data[2]+'</div>';
-                            let tpproduct = '<div><label>Product</label>'+data[9]+'</div>';
-                            let tptype = '<div><label>Intervention type</label>'+data[10]+'</div>';
+                            let tpproduct = '<div><label>Product</label>'+data[8]+'</div>';
+                            let tptype = '<div><label>Intervention type</label>'+data[9]+'</div>';
 
                             let tpcontent = '<div id=\\'coltooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpimplementer+tpassessment+tptype+tpproduct+'</div></div>';
                             
@@ -911,7 +911,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
     })
     
-    collectionsOutput <- as.data.frame(collectionsOutput)
+    # explicitly declare numeric columns
+    collectionsOutput$collection.id <- as.numeric(collectionsOutput$collection.id)
+    
     collectionsOutput <<- collectionsOutput
   })
   
@@ -923,7 +925,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     options = list(
       pagingType = 'simple_numbers',
       pageLength = 20,
-      columnDefs = list(list(visible = FALSE, targets = c(0:2,4,6:20)), list(sortable=FALSE, targets = c(0)),
+      columnDefs = list(list(visible = FALSE, targets = c(0:2,4,6:19)), list(sortable=FALSE, targets = c(0)),
                         list(targets = c(5,3), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
@@ -931,7 +933,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                       ")),
                         list(title="Title", targets=c(5)),
                         list(title="Date", targets=c(3))),
-      order = list(list(17, 'desc')),
+      order = list(list(3, 'desc')),
       colnames = c("Title","Date"),
       language = list(
         paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
@@ -948,9 +950,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[7]+'</div></div>';
-                            let product = data[19];
-                            let type = data[20];
-                            let jurisdiction = data[18];
+                            let product = data[18];
+                            let type = data[19];
+                            let jurisdiction = data[17];
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
                             let tags2 = '<div class=\\'tags-lower\\'>'+type+product+'</div>';
@@ -987,7 +989,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     click: true,
                                     scroll: true
                                 }
-                              })
+                              });
+                              console.log('TOOLTIPS CREATED');
                             }")),
     callback = JS("console.log('TEST');"),
     extensions = "Select",
@@ -1091,8 +1094,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     })
     
     print("LENGTH OF SINGLE HINT OUTPUT")
+    
+    # explicitly declare numeric columns
+    singleHintOutput$hint.id <- as.numeric(singleHintOutput$hint.id)
+    singleHintOutput$hint.state.id <- as.numeric(singleHintOutput$hint.state.id)
+    singleHintOutput$prio.cty <- as.character(singleHintOutput$prio.cty)
+    singleHintOutput$collection.id <- as.numeric(singleHintOutput$collection.id)
+    
     print(nrow(singleHintOutput))
-    singleHintOutput <- as.data.frame(singleHintOutput)
     singleHintOutput <<- singleHintOutput
   })
   
