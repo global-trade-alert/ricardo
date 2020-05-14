@@ -1,7 +1,7 @@
 b221_hint_url=function(is.freelancer = NULL, user.id = NULL, hint.url.dataframe = NULL){
-  hint.url.dataframe = data.frame(hint.id = 1:3, url = c("https://www.wto.org/english/tratop_e/covid19_e/covid_measures_e.pdf","http://www.douane.gov.dz/s","http://servicios.infoleg.gob.a"), is.official = c(1,0,1))
-  is.freelancer = T
-  user.id = 1
+  # hint.url.dataframe = data.frame(hint.id = 1:3, url = c("https://www.wto.org/english/tratop_e/covid19_e/covid_measures_e.pdf","http://www.douane.gov.dz/s","http://servicios.infoleg.gob.a"), is.official = c(1,0,1))
+  # is.freelancer = T
+  # user.id = 1
   
   temp.changes.name=paste0("b221.url.changes.",user.id)
   assign(temp.changes.name,hint.url.dataframe,envir=globalenv())
@@ -51,6 +51,16 @@ b221_hint_url=function(is.freelancer = NULL, user.id = NULL, hint.url.dataframe 
                           ON ht_url.hint_id = changes_w_url_type.hint_id AND changes_w_url_type.url = bt_url_log.url AND changes_w_url_type.url_type_id = ht_url.url_type_id
                           SET ht_url.validation_user = ",user.id,", 
                           ht_url.url_accepted = (CASE WHEN changes_w_url_type.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                          
+                          UPDATE bt_hint_log
+                          JOIN 
+                          (SELECT b221_hint_collection.hint_id, IF(max_state BETWEEN 3 AND 4 AND is_official = 1, 5, changed_collection.max_state) AS new_state FROM b221_hint_collection
+                          JOIN
+                          (SELECT changes.hint_id, changes.is_official, b221_hint_collection.collection_id, MAX(bt_hint_log.hint_state_id) AS max_state FROM b221_url_changes_1 changes
+                          JOIN bt_hint_log ON changes.hint_id = bt_hint_log.hint_id
+                          JOIN b221_hint_collection ON changes.hint_id = b221_hint_collection.hint_id
+                          GROUP BY collection_id) changed_collection ON b221_hint_collection.collection_id = changed_collection.collection_id) new_hint_states ON bt_hint_log.hint_id = new_hint_states.hint_id
+                          SET bt_hint_log.hint_state_id = new_hint_states.new_state;
                           ")  
   }
   
