@@ -54,12 +54,15 @@ b221_hint_url=function(is.freelancer = NULL, user.id = NULL, hint.url.dataframe 
                           
                           UPDATE bt_hint_log
                           JOIN 
-                          (SELECT b221_hint_collection.hint_id, IF(max_state BETWEEN 3 AND 4 AND is_official = 1, 5, changed_collection.max_state) AS new_state FROM b221_hint_collection
+                          (SELECT b221_hint_collection.hint_id, changed_collection.max_state AS new_state FROM b221_hint_collection
                           JOIN
-                          (SELECT changes.hint_id, changes.is_official, b221_hint_collection.collection_id, MAX(bt_hint_log.hint_state_id) AS max_state FROM b221_url_changes_1 changes
-                          JOIN bt_hint_log ON changes.hint_id = bt_hint_log.hint_id
-                          JOIN b221_hint_collection ON changes.hint_id = b221_hint_collection.hint_id
-                          GROUP BY collection_id) changed_collection ON b221_hint_collection.collection_id = changed_collection.collection_id) new_hint_states ON bt_hint_log.hint_id = new_hint_states.hint_id
+                          (SELECT DISTINCT locate_collection_hints.collection_id,
+                          MAX(IF(hint_state_id BETWEEN 3 AND 4 AND is_official = 1, 5, hint_state_id)) max_state
+                          FROM b221_url_changes_",user.id," changes
+                          JOIN b221_hint_collection allocate_collection ON changes.hint_id = allocate_collection.hint_id
+                          JOIN b221_hint_collection locate_collection_hints ON allocate_collection.collection_id = locate_collection_hints.collection_id
+                          JOIN bt_hint_log ON locate_collection_hints.hint_id = bt_hint_log.hint_id
+                          GROUP BY locate_collection_hints.collection_id) changed_collection ON b221_hint_collection.collection_id = changed_collection.collection_id) new_hint_states ON bt_hint_log.hint_id = new_hint_states.hint_id
                           SET bt_hint_log.hint_state_id = new_hint_states.new_state;
                           ")  
   }
