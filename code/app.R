@@ -10,7 +10,9 @@ gtasql::gta_sql_kill_connections()
 gta_setwd()
 # setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
 # path <<- "17 Shiny/8 ricardo app/"
-path <<- "0 dev/ricardo-pb/"
+# path <<- "0 dev/ricardo-lg/"
+setwd( "C:/Users/Liubomyr Gavryliv/Dropbox/")
+path <<- "ricardo-lg/"
 
 # APP SETUP
 source(paste0(path,"code/setup.R"), local = F)
@@ -32,10 +34,10 @@ shinyApp(ui = ui,
          onStart = function() {
            gta_sql_kill_connections()
            gta_sql_pool_open(db.title="ricardomainclone",
-                             db.host = gta_pwd("ricardodev")[['host']],
+                             db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
                              db.name = 'ricardomainclone',
-                             db.user = gta_pwd("ricardodev")[['user']],
-                             db.password = gta_pwd("ricardodev")[['password']],
+                             db.user = 'gtaricardodev',
+                             db.password = 'nC6okGiDKEcFV36rKsykeE9HXbfphgAH6',
                              table.prefix = "ric_")
 
            onStop(function() {

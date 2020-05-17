@@ -1,0 +1,171 @@
+@charset "UTF-8";
+/* CSS Document */
+
+/*GTA B221 _____________________________________________________________*/
+
+
+/* GENERAL SETTINGS */
+
+.submitButton {
+	color:#FFFFFF;
+	width:100%;
+	height:50px;
+	background-color:#1874CD;
+	border-color:#1460aa !important;
+	transition:all 0.2s ease-out;
+}
+
+.submitButton:hover,
+.submitButton:active,
+.submitButton:focus{
+	color:#FFFFFF;
+	height:50px;
+	border-color:#1460aa !important;
+	background-color:#1460aa !important;
+	transition:all 0.2s ease-out;
+}
+
+/* LEADS LIST */
+
+
+/* CONTROL BAR */
+
+.control-bar {
+	position: fixed;
+  bottom: 0px;
+  right: 0px;
+	padding-bottom:calc(20px + 1vw);
+	padding-right:calc(20px + 1vw);
+	display: flex;
+	flex-direction: row;
+	justify-content: center;	
+	z-index:1;
+}
+
+.control-bar > div {
+	display:flex;
+	padding: 0px;
+	padding-left:15px;	
+}
+
+.control-bar button,
+.control-bar button:hover {
+	border:none;
+	color:#FFFFFF;
+	border-radius: 30px;
+	padding:15px 30px;
+	font-size:1.2em;
+	box-shadow: 1px 1px 20px rgba(0,0,0,0.1);
+}
+
+
+/* LOAD MORE BUTTON */
+
+.load-more {
+	position: relative;
+	width: 100%;
+	margin:auto;
+	height: 100vh;
+	background: radial-gradient(circle, rgba(24,116,205,1) 0%, rgba(30,77,186,1) 100%);
+	box-shadow: 0px -10px 20px rgba(0,0,0,0);
+	margin-top:10vw;
+	transition:all 0.5s ease-out;
+	display:flex;
+	justify-content: center;
+	align-items: center;
+	float:left;
+	width:100%;
+}
+
+.load-more.active {
+	position: relative;
+	width: 100%;
+	margin:auto;
+	height: 100vh;
+	margin-top:0;
+	background: radial-gradient(circle, rgba(24,116,205,1) 0%, rgba(30,77,186,1) 100%);
+	box-shadow: 0px -10px 20px rgba(0,0,0,0.2);;
+	transition:all 0.5s ease-out;
+	display:flex;
+	justify-content: center;
+	align-items: center;
+	float:left;
+	width:100%;
+}
+
+.load-more #deliver-loadMoreDeliver {
+	display: flex;
+	justify-content: center;
+	align-content: center;
+	height: 80px;
+	margin: auto;
+	align-items: center;
+	width: 80%;
+	max-width: 400px;
+	font-size: 1.8em;
+	color: #FFF;
+	background: radial-gradient(#238EFF, #2786E1);
+	border: none;
+	box-shadow: 15px 15px 40px rgba(0, 0, 0, 0.1);
+	border-radius: 50px;
+	opacity:1;
+	transition:all 0.2s ease-out;
+}
+.load-more #deliver-loadMoreDeliver:hover {
+	box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1);
+	transition:all 0.2s ease-out;
+	transform:scale(0.95);
+}
+
+.load-more #deliver-loadMoreDeliver:active {
+	box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
+	transform:scale(0.90);
+	transition:all 0.1s ease-out;
+}
+
+/* POP UP */
+
+.pop-up-inner .selectize-input {
+	padding: 15px;
+	border-radius: 5px;
+}
+
+.countryPopUp-pop-up .selectize-dropdown.single {
+
+}
+
+/* SHINY FORM ADJUSTMENTS */
+
+label {
+	margin-bottom:10px !important;
+}
+
+input.form-control {
+	height:50px !important;
+	width:100% !important;
+}
+
+textarea.form-control,
+.form-group {
+	width:100% !important;
+}
+
+.selectize-control,
+.form-group,
+.shiny-input-container {
+	margin-bottom:0;
+}
+
+input,
+textarea,
+.multi-wrapper a,
+.selectize-input.items,
+.selectize-dropdown-content .option {
+	font-weight: 100;
+}
+
+label {
+	font-weight: 600;
+	margin-bottom:15px;
+	color:#0E4E8C;
+}
