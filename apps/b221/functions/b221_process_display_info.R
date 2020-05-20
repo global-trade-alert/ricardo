@@ -264,7 +264,21 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, is_official, relevance FROM b221_temp_changes_data_",user.id,") changes ON changes.hint_id = bt_hint_log.hint_id
                           SET bt_hint_log.hint_state_id = (CASE WHEN (changes.is_official = 0 AND changes.relevance = 1) THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'OSC - freelancer desk') 
                           	  WHEN (changes.is_official = 1 AND changes.relevance = 1) THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'BT - ready for dispatch') 
-                          	  ELSE (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - fully processed') END);")
+                          	  ELSE (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - fully processed') END);
+                          
+                          /* auto graduation query for collections */
+                          UPDATE bt_hint_log
+                          JOIN 
+                          (SELECT b221_hint_collection.hint_id, changed_collection.max_state AS new_state FROM b221_hint_collection
+                          JOIN
+                          (SELECT DISTINCT locate_collection_hints.collection_id,
+                          MAX(hint_state_id) max_state
+                          FROM b221_temp_changes_data_",user.id," changes
+                          JOIN b221_hint_collection allocate_collection ON changes.hint_id = allocate_collection.hint_id
+                          JOIN b221_hint_collection locate_collection_hints ON allocate_collection.collection_id = locate_collection_hints.collection_id
+                          JOIN bt_hint_log ON locate_collection_hints.hint_id = bt_hint_log.hint_id
+                          GROUP BY locate_collection_hints.collection_id) changed_collection ON b221_hint_collection.collection_id = changed_collection.collection_id) new_hint_states ON bt_hint_log.hint_id = new_hint_states.hint_id
+                          SET bt_hint_log.hint_state_id = new_hint_states.new_state;")
   }
   
   gta_sql_multiple_queries(push.updates, output.queries = 1, show.time = T, db.connection = 'pool')

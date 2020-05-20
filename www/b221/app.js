@@ -7,7 +7,7 @@
 function checkLeads() {
   $('#b221-leadsTable').on('click', '.leads-item .right-col .evaluate',function (e) {
    // Check if sender is the <div> element e.g.
-   console.log('checkLeads');
+   // console.log('checkLeads');
     var elementType = $(this)[0].id
     
     var elementID = $(this.parentNode.parentNode.parentNode)[0].id
@@ -22,7 +22,7 @@ function checkLeads() {
           // collectData(`#${elementID}`,'dismiss');
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
-          console.log(`#${elementID}`);
+          // console.log(`#${elementID}`);
           // collectData(`#${elementID}`,'reactivate');
       } 
   }
@@ -34,7 +34,7 @@ function checkLeads() {
 function checkLeadsManual() {
   $('#b221-leadsTable').on('click', '.leads-item .right-col .evaluate',function (e) {
    // Check if sender is the <div> element e.g.
-   console.log('checkLeadsManual');
+   // console.log('checkLeadsManual');
     var elementType = $(this)[0].id
     
     var elementID = $(this.parentNode.parentNode.parentNode)[0].id
@@ -49,7 +49,7 @@ function checkLeadsManual() {
           collectData(`#${elementID}`,'dismiss');
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
-          console.log(`#${elementID}`);
+          // console.log(`#${elementID}`);
           collectData(`#${elementID}`,'reactivate');
       } 
   }
@@ -73,7 +73,7 @@ function hintsBasicUI() {
   });
 
   $('#b221-leadsTable').on('click', '.leads-item .collection-add',function () {
-    console.log("1 pressing collection-add button");
+    // console.log("1 pressing collection-add button");
     var elementID = $(this.parentNode.parentNode.parentNode)[0].id
     if ($(this).hasClass('partOfCollection')){
       var collectionID = $(this)[0].id;
@@ -82,7 +82,7 @@ function hintsBasicUI() {
       var collectionID = "FALSE";
       var collection = "FALSE";
     }
-    console.log([elementID, collectionID, collection]);
+    // console.log([elementID, collectionID, collection]);
     
     Shiny.setInputValue("b221-collectionAdd", [elementID, collectionID, collection], {priority: "event"});
     Shiny.setInputValue("b221-loadCollections", elementID.replace("leadsID_",""), {priority: "event"});
@@ -93,8 +93,9 @@ function hintsBasicUI() {
   
   $('#b221-slideInRight').on('loadCollectionSlideIn',function () {
     var elementID = $(this)[0].children[0].id
-    console.log("LOAD COLLECTIONS SLIDE IN")
-    console.log(elementID);
+    // console.log("LOAD COLLECTIONS SLIDE IN")
+    // console.log(elementID);
+    $('#b221-close-button').addClass('open');
     $('.backdrop-nav').addClass('open');
   });
   
@@ -125,7 +126,7 @@ function hintsBasicUI() {
   });
 
   $('#b221-leadsTable').on('mouseenter', '.leads-item', function(event){
-    console.log("MOUSENTER SUCCESS 3");
+    // console.log("MOUSENTER SUCCESS 3");
     // gather all select box classes => pass to object => pass to server
     let country_select = $('[id^=country]', this);
     let current_country = $(country_select).val();
@@ -138,24 +139,34 @@ function slideInBasicUI() {
   
   $('.backdrop-nav').on('click', function () {
     $('#b221-slideInRight').removeClass('open');
+    $('#b221-close-button').removeClass('open');
+  });
+  
+  $('#b221-close-button').on('click', function () {
+    $('#b221-slideInRight').removeClass('open');
+    $('#b221-close-button').removeClass('open');
+    $('.backdrop-nav').removeClass('open');
   });
   
 }
 
 function markHints() {
   
-  $('#b221-slideInRight #hintContainer .hint-item').on('click', function () {
-    if ($(this).hasClass('starred')) {
-      $(this).removeClass('starred');
+  $('#b221-slideInRight #hintContainer').on('click','.hint-title', function (e) {
+    console.log(e);
+    if(e.target.className == 'hint-title') {
+    if ($(this.parentNode.parentNode).hasClass('starred')) {
+      $(this.parentNode.parentNode).removeClass('starred');
     } else {
       $('#b221-slideInRight #hintContainer .hint-item').removeClass('starred');
-      $(this).addClass('starred');
+      $(this.parentNode.parentNode).addClass('starred');
+    }
     }
 })
 
 // SHOW COUNTRIES DROPDOWNS ON SELECT
 $('#b221-singleHintsTable .right .info').on('mouseenter','.top-row',function (event) {
-  console.log("STOPPING BACK PROPAGATION");
+  // console.log("STOPPING BACK PROPAGATION");
   event.stopPropagation(); // prevent bubbling to .leads-item
 });
 
@@ -163,18 +174,29 @@ $('#b221-singleHintsTable .right .info').on('mouseenter','.top-row',function (ev
 
 
 function removeHint() {
-  $('#b221-slideInRight').on('click','.remove',function () {
-    console.log($(this.parentNode));
-    var removeElement = $(this.parentNode);
+  // console.log('REMOVE HINT CALLED');
+  $('#b221-slideInRight').on('click','.remove',function (event) {
+    // console.log($(this.parentNode.parentNode));
+    event.stopPropagation();
+    var removeElement = $(this.parentNode.parentNode);
     removeElement.fadeOut(300, function(){
       $(this).remove();
     });
+  });
+    
+  $('#b221-slideInRight').on('click', '.is-official',function () {
+    // console.log($(this.parentNode.parentNode).hasClass('official'));
+    if ($(this.parentNode.parentNode).hasClass('official')) {
+      $(this.parentNode.parentNode).removeClass('official');
+    } else {
+      $(this.parentNode.parentNode).addClass('official');
+    }
   });
 }
 
 // EVENT LISTENER FOR LEADS_ITEM ARRIVING AT TOP
 function leadsDismiss() {
-  console.log("LEADS DISMISSED FUNCTION LOADED");
+  // console.log("LEADS DISMISSED FUNCTION LOADED");
     $('.leads-item').each(function () {
         var $this = $(this);
         var offset = $this.offset().top;
@@ -197,17 +219,17 @@ function leadsDismiss() {
 }
 
 function callLeadsDismiss() {
-  console.log('LEADS DISMISSED CALLED');
+  // console.log('LEADS DISMISSED CALLED');
   $(window).scroll(leadsDismiss);
 }
 
 // Submit data of one hint
 function submitSingleHint() {
-  console.log("submitSingleHint");
+  // console.log("submitSingleHint");
   $('#b221-leadsTable').on('click', '.leads-item [id^=submit]',function () {
-     console.log(this)
+     // console.log(this)
      let state = $(this.parentNode.parentNode.parentNode).hasClass('dismiss') ? "dismiss" : "reactivate";
-     console.log(state);
+     // console.log(state);
      let id = $(this)[0].id.replace("submit_", "");
      collectData(`#leadsID_${id}`, state);
   });
@@ -219,11 +241,11 @@ function checkNull(el) {
 
 //  Collect data for a general submit of hints
 function collectData(type='', state=''){
-  console.log("Collector running");
+  // console.log("Collector running");
   let selector = `${type}`;
   let output = [];
-  console.log(state);
-  console.log(state=="reactivate");
+  // console.log(state);
+  // console.log(state=="reactivate");
   try {
       $(selector).each(function () {
           let clicked = state == 'reactivate' ? 1 : 0 // add logics if hint is not selected at all
@@ -242,7 +264,7 @@ function collectData(type='', state=''){
             assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate:
 removaldate})
     });
-    console.log(output)
+    // console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];
   
     if (state == 'reactivate') {
@@ -261,7 +283,7 @@ removaldate})
   }
   
     catch(error) {
-      console.log(error);
+      // console.log(error);
       Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});  
     }
 
@@ -270,8 +292,9 @@ removaldate})
 function saveNewCollection() {
   var state = $('#b221-slideInRight .collectionHeader')[0].id;
   var hintId = $('#b221-slideInRight .removeslideinui')[0].id;
-  console.log("COLLETION HINT ID: "+hintId);
+  // console.log("COLLETION HINT ID: "+hintId);
   var starredHint = null;
+  var officialHint = [];
   
   var childIds = [];
   
@@ -279,8 +302,11 @@ function saveNewCollection() {
       if ($(elem).hasClass('starred')) {
         starredHint = elem.id.replace("hintId_","");
       }
+      if ($(elem).hasClass('official')) {
+        officialHint.push(elem.id.replace("hintId_",""));
+      }
     childIds.push(parseInt(elem.id.replace("hintId_","")));
   });
   
-  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint}), {priority: "event"});
+  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint}), {priority: "event"});
 }

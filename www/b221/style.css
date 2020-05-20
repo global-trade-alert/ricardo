@@ -218,7 +218,9 @@ table.dataTable thead .sorting_desc {
 }
 
 #b221-leadsTable .leads-item.locked .top-row .selectize-input,
-#b221-leadsTable .leads-item.locked .right {
+#b221-leadsTable .leads-item.locked .top-row .shiny-date-input,
+#b221-leadsTable .leads-item.locked .right,
+#b221-leadsTable .leads-item.locked .top-row {
 	pointer-events: none !important;
 }
 
@@ -458,6 +460,40 @@ table.dataTable thead .sorting_desc {
 }
 
 /* SLIDE IN RIGHT*/
+
+#b221-close-button.open {
+		opacity:1;
+		visibility: visible;
+    left: calc(20vw - 60px);
+		transition:all 0.2s ease-out;
+}
+
+#b221-close-button {
+		z-index: 1000000;
+    position: fixed;
+		opacity:0;
+		visibility: hidden;
+    top: 20px;
+    left: 100%;
+    height: 40px;
+    width: 40px;
+    border-radius:5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+		transition:all 0.2s ease-out;
+		background-color: rgba(255,255,255,0.5);
+    -webkit-backdrop-filter: blur(15px) saturate(200%) contrast(120%);
+    backdrop-filter: blur(15px) saturate(200%) contrast(120%);
+}
+
+#b221-close-button span {
+		color:#1874CD;
+		font-weight:900;
+		font-size: 2em;
+}
+
 #b221-slideInRight {
 	position:fixed;
 	height:100%;
@@ -500,19 +536,24 @@ table.dataTable thead .sorting_desc {
 	background-color:#1874CD;
 }
 
-#b221-slideInRight #collectionValues input {
+#b221-slideInRight #collectionValues input,
+#b221-slideInRight .collectionHeader input {
 	background-color:transparent !important;
 	border:none;
+	border-bottom: 1px solid #5694d0;
 	color:#FFFFFF;
 	box-shadow:none;
 	border-radius:0px;
-	border-bottom:1px solid #5694d0;
 	padding-left:0;
 	font-size:1.5em;
 }
 
+#b221-slideInRight #collectionValues .shiny-date-input input {
+	font-size:1em;
+}
+
 #b221-slideInRight #collectionValues input::placeholder {
-	color:#FFFFFF;
+	color:#c7c7c7;
 }
 
 #b221-slideInRight .tipped-content {
@@ -776,13 +817,13 @@ table.dataTable thead .sorting_desc {
 /* COLLECTION CONTAINER */
 
 #hintContainer .hint-item {
-	padding:10px;
 	font-weight:400;
 	color:#FFFFFF;
 	border-radius:5px;
 	box-shadow:5px 5px 10px rgba(0,0,0,0.07);
 	background-color:#2485e6;
 	display:flex;
+	flex-direction: column;
 	border:2px solid transparent;
 	transition:all 0.5s ease-out;
 	cursor:pointer;
@@ -842,9 +883,85 @@ table.dataTable thead .sorting_desc {
 	flex:1;
 }
 
-#hintContainer .hint-item .remove {
+#hintContainer .hint-item .bottom-options {
+	border-top:1px solid #86b8e8;
 	flex-grow:0;
-	align-items:center;
+	margin-top:auto;
+	max-height:40px;
+}
+
+#hintContainer .hint-item > div > div,
+#hintContainer .hint-item > div > a {
+	display: flex;
+	flex:1;
+	padding:8px;
+	justify-content: center;
+}
+
+#hintContainer .hint-item .hint-title {
+	justify-content: flex-start;
+}
+
+#hintContainer .hint-item .bottom-options > div,
+#hintContainer .hint-item .bottom-options > a {
+	border-right:1px solid #86b8e8;
+	background-color:rgba(0,0,0,0);
+	transition: all 0.5s ease-out;
+}
+
+#hintContainer .hint-item .bottom-options > div:hover,
+#hintContainer .hint-item .bottom-options > a:hover {
+	background-color:rgba(0,0,0,0.1);
+	transition: all 0.5s ease-out;
+}
+
+#hintContainer .hint-item .bottom-options > div:last-child {
+	border-right:none;
+}
+
+#hintContainer .hint-item .bottom-options .url {
+	cursor:pointer;
+	border-right:1px solid #86b8e8;
+}
+
+#hintContainer .hint-item .bottom-options .is-processed img {
+	width:100%;
+}
+
+#hintContainer .hint-item .bottom-options .url img {
+	height:100%;
+}
+
+#hintContainer .hint-item .bottom-options .is-official {
+	position: relative;
+}
+
+#hintContainer .hint-item .bottom-options .is-official img.official,
+#hintContainer .hint-item .bottom-options .is-official img.nonofficial {
+	  position: absolute;
+    height: 23px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#hintContainer .hint-item.official .bottom-options .is-official img.official,
+#hintContainer .hint-item .bottom-options .is-official img.nonofficial {
+	opacity:1;
+	visibility:visible;
+	transition:all 0.5s ease-out;
+}
+
+#hintContainer .hint-item .bottom-options .is-official img.official,
+#hintContainer .hint-item.official .bottom-options .is-official img.nonofficial {
+	opacity:0;
+	visibility:hidden;
+	transition:all 0.5s ease-out;
+}
+
+#hintContainer .hint-item .remove {
+	flex-grow:0 !important;
+	align-items:flex-start;
 }
 
 #hintContainer .hint-item .remove img {
