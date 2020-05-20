@@ -99,7 +99,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             let product = data[19];
                             let intervention = data[20];
                             let submit = '<div class=\\'submission\\'><button id=\\'submit_'+data[7]+'\\' type=\"button\" class=\"btn btn-default action-button\">Save changes</button></div>';
-                            let checkboxCheck = data[13] == 1 ? ' checked' : '';
+                            let checkboxCheck = data[14] == 1 ? ' checked' : '';
                             let official = '<div class=\\'is-official\\'><label for=\"official\">URL official</label><div class=\\'checkbox\\'><input type=\"checkbox\" id=\\'official_'+data[7]+'\\' name=\"official\" value=\"non-official\"'+checkboxCheck+'></div></div>';
                             let assessment = data[21];
                             let comment = data[22];
@@ -345,7 +345,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     }
     
     print("COLLETION ID")
-    print(collectionId)
     
     if (collection) {
       query = paste0("SELECT cltn_log.collection_id, cltn_log.collection_name, 
@@ -353,7 +352,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP_CONCAT(DISTINCT(ass_list.assessment_name) SEPARATOR ' ; ') AS assessment_name,
                         GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                         GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
-                        cltn_rel.relevance, cltn_star.hint_id AS starred_hint
+                        cltn_rel.relevance, cltn_star.hint_id AS starred_hint,
+                        MAX(IF(bt_date_type_list.date_type_name='announcement', col_date.date, NULL )) AS announcement_date,
+                        MAX(IF(bt_date_type_list.date_type_name='implementation', col_date.date, NULL )) AS implementation_date,
+                        MAX(IF(bt_date_type_list.date_type_name='removal', col_date.date, NULL )) AS removal_date
                         FROM b221_collection_log cltn_log
                         JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                         LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
@@ -361,6 +363,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
                         JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
                         JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
+                        LEFT JOIN b221_collection_date col_date ON col_date.collection_id = cltn_log.collection_id LEFT JOIN bt_date_type_list ON col_date.date_type_id = bt_date_type_list.date_type_id
                         GROUP BY cltn_log.collection_id;")
       collectionStats <- gta_sql_get_value(query)
       
@@ -372,12 +375,18 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       initialType = unlist(na.omit(strsplit(collectionStats$intervention.type.name, " ; ")))
       initialAssessment = unlist(na.omit(strsplit(collectionStats$assessment.name, " ; ")))
       initialJurisdictions = unlist(na.omit(strsplit(collectionStats$jurisdiction.name, " ; ")))
+      initialAnnouncement = unlist(na.omit(strsplit(collectionStats$announcement.date, " ; ")))
+      initialImplementation = unlist(na.omit(strsplit(collectionStats$implementation.date, " ; ")))
+      initialRemoval = unlist(na.omit(strsplit(collectionStats$removal.date, " ; ")))
       
       print(initialName)
       print(initialProduct)
       print(initialType)
       print(initialAssessment)
       print(initialJurisdictions)
+      print(initialAnnouncement)
+      print(initialImplementation)
+      print(initialRemoval)
       
       initialHints <- unique(gta_sql_get_value(paste0("SELECT * FROM
                                                           (SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_name, cltn_log.collection_id, cltn_log.collection_name,
@@ -415,7 +424,11 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                       '<div><label>URL news</label>',initialHints$news,'</div>',
                                       '</div></div>')
       
-      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',initialHints$tpcontent)
+      
+      initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
+      
+      
+      initialHints = generate_initial_hints(initialHints)
       
       slideInState = paste0("existingCollection_",collectionId)
       
@@ -425,6 +438,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       locked <- ifelse(any(maxHint %in% c(3:7,9)) & prm$freelancer == 1, " locked","")
       lockHint <- ifelse(any(maxHint %in% c(3:7,9)) & prm$freelancer == 1, yes = lockHint(TRUE), no = lockHint(FALSE))
+      
     } else {
       
       initialPlaceholder <- "Enter new Collection Name"
@@ -433,13 +447,17 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",hintId,");"))))
       initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",hintId,");"))))
       initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",hintId,");"))))
+      initialAnnouncement <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT MAX(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date FROM bt_hint_date  
+LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id WHERE bt_hint_date.hint_id = ",hintId,";"))))
+      initialImplementation <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT MAX(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS announcement_date FROM bt_hint_date  
+LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id WHERE bt_hint_date.hint_id = ",hintId,";"))))
+      initialRemoval <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT MAX(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS announcement_date FROM bt_hint_date  
+LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id WHERE bt_hint_date.hint_id = ",hintId,";"))))
       
       initialHint <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title 
                                                                           FROM bt_hint_text
                                                                           WHERE hint_id = ",hintId," AND language_id = 1;"))))
       
-      
-      initialHint$hint.title <- paste(initialHint$hint.id, initialHint$hint.title, sep=" - ")
       
       # MOUSE OVER
       initSingleHint <- gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT * FROM
@@ -477,9 +495,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       initSingleHint$product.group.name <- gsub("food","Food",initSingleHint$product.group.name)
       initSingleHint$product.group.name <- gsub("other","Other",initSingleHint$product.group.name)
       
-      initSingleHint$jurisdiction.name[is.na(initSingleHint$jurisdiction.name)] <- "Unspecified"
-      initSingleHint$intervention.type[is.na(initSingleHint$intervention.type)] <- "Unspecified"
-      initSingleHint$product.group.name[is.na(initSingleHint$product.group.name)] <- "Unspecified"
+      initSingleHint$jurisdiction.name <- ifelse(is.na(initSingleHint$jurisdiction.name), "Unspecified", initSingleHint$jurisdiction.name)
+      initSingleHint$intervention.type <- ifelse(is.na(initSingleHint$intervention.type), "Unspecified", initSingleHint$intervention.type)
+      initSingleHint$product.group.name <- ifelse(is.na(initSingleHint$product.group.name), "Unspecified", initSingleHint$product.group.name)
       
       tpdate = paste0('<div><label>Date</label>',initSingleHint$hint.date,'</div>')
       tpimplementer = paste0('<div><label>Implementer</label>',initSingleHint$jurisdiction.name,'</div>')
@@ -493,8 +511,15 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       
       tpcontent = paste0('<div id="top-tooltip_',hintId,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>')
-      initialHints = paste0('<div data-tooltip-content="#top-tooltip_',hintId,'" id="hintId_',initialHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',initialHint$hint.title,'</div><div class="remove" value="',initialHint$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',tpcontent)
       
+      initSingleHint$hint.title <- paste(initSingleHint$hint.id, initSingleHint$hint.title, sep=" - ")
+      
+      
+      initSingleHint$url <- ifelse(is.na(initSingleHint$official), initSingleHint$news, initSingleHint$official)
+      initSingleHint$tpcontent <- tpcontent
+      
+      initialHints <- generate_initial_hints(initSingleHint, initSingle = T)
+
       slideInState = "newCollection"
       
       locked = ""
@@ -533,13 +558,25 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     label="Assessment",
                                     choices = assessment.list$assessment.name,
                                     selected = initialAssessment,
-                                    multiple = F)),
+                                    multiple = F),
+                        dateInput(ns("initAnnouncement"),
+                                    label="Announcement Date",
+                                    value = initialAnnouncement, startview = Sys.Date(),
+                                    format = "yyyy-mm-dd"),
+                        dateInput(ns("initImplementation"),
+                                    label="Implementation Date",
+                                    value = initialImplementation, startview = Sys.Date(),
+                                    format = "yyyy-mm-dd"),
+                        dateInput(ns("initRemoval"),
+                                    label="Removal Date",
+                                    value = initialRemoval, startview = Sys.Date(),
+                                    format = "yyyy-mm-dd")),
                tags$h4("Hints included"),
                tags$div(id="hintContainer",
                         HTML(initialHints)))
     )
     )
-    runjs(paste0(" slideInBasicUI(); removeHint(); markHints();"))
+
     runjs("$('#b221-slideInRight').addClass('open');")
     runjs("$('#b221-slideInRight').trigger('loadCollectionSlideIn');console.log('2 loading collection slide in');")
     runjs("$('.tooltip-create-top').tooltipster({
@@ -557,6 +594,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     scroll: true
                                 }
                               })")
+    runjs(paste0(" slideInBasicUI(); removeHint(); markHints();"))
     if (collection) {
       if (nrow(collectionStats)>0) {
         if (is.na(collectionStats$starred.hint)==F) {
@@ -589,8 +627,12 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     colType <- input$initType
     colProduct <- input$initProduct
     colAssessment <- input$initAssessment
+    colAnnouncement <- input$initAnnouncement
+    colImplementation <- input$initImplementation
+    colRemoval <- input$initRemoval
     colHints <- as.numeric(colData$childIds)
     hintStarred <- ifelse(length(as.numeric(colData$starredHint))==0, NA, as.numeric(colData$starredHint))
+    hintOfficial <- as.numeric(colData$officialHint)
     colState <- colData$state
     hintId <- as.numeric(gsub("collectionContainer_","",colData$hintId))
     
@@ -599,17 +641,23 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     colType <<- input$initType
     colProduct <<- input$initProduct
     colAssessment <<- input$initAssessment
+    colAnnouncement <<- input$initAnnouncement
+    colImplementation <<- input$initImplementation
+    colRemoval <<- input$initRemoval
     colHints <<- as.numeric(colData$childIds)
     hintStarred <<- hintStarred
+    hintOfficial <<- hintOfficial
     colState <<- colData$state
     hintId <<- as.numeric(gsub("collectionContainer_","",colData$hintId))
-    
     
     print(colName)
     print(colImplementer)
     print(colType)
     print(colProduct)
     print(colAssessment)
+    print(colAnnouncement)
+    print(colImplementation)
+    print(colRemoval)
     print(colHints)
     print(hintStarred)
     print(colState)
@@ -642,6 +690,25 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       colAssessmentId = as.numeric(mapvalues(colAssessment, assessment.list$assessment.name, assessment.list$assessment.id))
       
       
+      # construct url DF
+      hintUrls <- gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT * FROM
+                                                                        (SELECT ht_log.hint_id, 
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                                                                        GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news
+                                                                        FROM bt_hint_log ht_log 
+                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                                        WHERE ht_log.hint_id IN (",paste0(colHints, collapse=","),")
+                                                                        GROUP BY ht_log.hint_id) unsorted_hints;")))
+      
+      
+      hintUrls$url <- ifelse(is.na(hintUrls$official), hintUrls$news, hintUrls$official)
+      hintUrls$is.official <- ifelse(hintUrls$hint.id %in% hintOfficial, 1, 0)
+      hintUrls$official <- NULL
+      hintUrls$news <- NULL
+      
+      
+      
+      
       # SQL INSERT HERE: UPDATE OR CREATE COLLECTION, 
       # IF NEW COLLECTION: colID == "newCollection"
       # IF UPDATING COLLECTION: colID == "collectionID_XXXX"
@@ -650,7 +717,23 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       if (colState == "newCollection") {
         
-        collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, new.collection.name = colName, hints.id = colHints, starred.hint.id = hintStarred, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = F, empty.attributes = F)
+        collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), 
+                                                          user.id = user$id, 
+                                                          new.collection.name = colName, 
+                                                          hints.id = colHints, 
+                                                          starred.hint.id = hintStarred, 
+                                                          country = colImplementerId, 
+                                                          product = colProductId, 
+                                                          intervention = colTypeId, 
+                                                          assessment = colAssessmentId, 
+                                                          announcement.date = colAnnouncement, 
+                                                          implementation.date = colImplementation, 
+                                                          removal.date = colRemoval, 
+                                                          relevance = 1, 
+                                                          collection.unchanged = F, 
+                                                          empty.attributes = F)
+        
+        b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
         
       } else {
         print('not new collection')
@@ -663,14 +746,19 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP_CONCAT(DISTINCT(ass_list.assessment_name) SEPARATOR ' ; ') AS assessment_name,
                         GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                         GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
-                        cltn_rel.relevance
+                        cltn_rel.relevance,
+                        MAX(IF(bt_date_type_list.date_type_name='announcement', col_date.date, NULL )) AS announcement_date,
+                          MAX(IF(bt_date_type_list.date_type_name='implementation', col_date.date, NULL )) AS implementation_date,
+                          MAX(IF(bt_date_type_list.date_type_name='removal', col_date.date, NULL )) AS removal_date
                         FROM b221_collection_log cltn_log
                         JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",collectionId," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                         JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
                         JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
                         JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
                         JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
-                        GROUP BY cltn_log.collection_id;")
+                        LEFT JOIN b221_collection_date col_date ON col_date.collection_id = cltn_log.collection_id LEFT JOIN bt_date_type_list ON col_date.date_type_id = bt_date_type_list.date_type_id
+                        GROUP BY cltn_log.collection_id;
+                       ")
         collectionStats <- gta_sql_get_value(query)
         
         if (nrow(collectionStats)>0) {
@@ -678,7 +766,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
             setdiff(union(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]]),intersect(colImplementer, strsplit(collectionStats$jurisdiction.name,split = " ; ")[[1]])),
             setdiff(union(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),intersect(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]])),
             setdiff(union(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),intersect(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]])),
-            setdiff(union(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]),intersect(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]))
+            setdiff(union(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]),intersect(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]])),
+            setdiff(union(colAnnouncement, collectionStats$announcement.date), intersect(colAnnouncement, collectionStats$announcement.date)),
+            setdiff(union(colImplementation, collectionStats$implementation.date), intersect(colImplementation, collectionStats$implementation.date)),
+            setdiff(union(colRemoval, collectionStats$removal.date), intersect(colRemoval, collectionStats$removal.date))
           )) > 0 ) {
             collectionChanged = T
           } else {
@@ -694,7 +785,23 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                    "\ncollection assessment val: ",paste0(colAssessment,collapse=','),
                    "\ncollection product val: ",paste0(colProduct,collapse=',')))
         
-        b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, collection.id = collectionId, hints.id = colHints, starred.hint.id = hintStarred, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, collection.unchanged = !collectionChanged, empty.attributes = F)
+        b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), 
+                                       user.id = user$id, 
+                                       collection.id = collectionId, 
+                                       hints.id = colHints, 
+                                       starred.hint.id = hintStarred, 
+                                       country = colImplementerId, 
+                                       product = colProductId, 
+                                       intervention = colTypeId, 
+                                       assessment = colAssessmentId, 
+                                       announcement.date = colAnnouncement, 
+                                       implementation.date = colImplementation, 
+                                       removal.date = colRemoval,
+                                       relevance = 1, 
+                                       collection.unchanged = !collectionChanged, 
+                                       empty.attributes = F)
+        
+        b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
         
         
       }
@@ -705,10 +812,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
         showNotification(collection.save, duration = 3)
       } else {
         
-        updateSelectInput(session = session, inputId = paste0("country_",hintId), selected = colImplementer)
-        updateSelectInput(session = session, inputId = paste0("product_",hintId), selected = colProduct)
-        updateSelectInput(session = session, inputId = paste0("intervention_",hintId), selected = colType)
-        updateSelectInput(session = session, inputId = paste0("assessment_",hintId), selected = colAssessment)
+        # updateSelectInput(session = session, inputId = paste0("country_",hintId), selected = colImplementer)
+        # updateSelectInput(session = session, inputId = paste0("product_",hintId), selected = colProduct)
+        # updateSelectInput(session = session, inputId = paste0("intervention_",hintId), selected = colType)
+        # updateSelectInput(session = session, inputId = paste0("assessment_",hintId), selected = colAssessment)
+        # updateDateInput(session = session, inputId = paste0("announcementdate_",hintId), value = colAnnouncement)
+        # updateDateInput(session = session, inputId = paste0("implementationdate_",hintId), value = colImplementation)
+        # updateDateInput(session = session, inputId = paste0("removaldate_",hintId), value = colRemoval)
         
         collectionId <- gta_sql_get_value(paste0("SELECT collection_id FROM b221_hint_collection WHERE hint_id = ",hintId,";"))
         print(collectionId)
@@ -731,6 +841,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           runjs(paste0("$('",insertType,"').hide().insertBefore('input#intervention_",hintId,"-selectized').fadeIn(300);"))
           runjs(paste0("$('select#assessment_",hintId,"').append('",insertAssessmentOptions,"');"))
           runjs(paste0("$('",insertAssessment,"').hide().insertBefore('input#assessment_",hintId,"-selectized').fadeIn(300);"))
+          runjs(paste0("$('#announcementdate_",hintId," input')[0].value = '",colAnnouncement,"';"))
+          runjs(paste0("$('#implementationdate_",hintId," input')[0].value = '",colImplementation,"';"))
+          runjs(paste0("$('#removaldate_",hintId," input')[0].value = '",colRemoval,"';"))
+          runjs(paste0("$('#official_",hintId,"')[0].checked = ",ifelse(hintId %in% hintOfficial, "true", "false"),";"))
           
           runjs(paste0("$('#leadsID_",hintId,"').addClass('locked');"))
           runjs(paste0("$('#leadsID_",hintId,"').addClass('reactivate');"))
@@ -747,6 +861,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           
         }
         runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+        runjs(paste0("$('#b221-close-button').removeClass('open');"))
         runjs(paste0("$('.backdrop-nav').removeClass('open');"))
         removeUI(selector = ".removeslideinui",immediate = T)
         
@@ -973,7 +1088,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             let tpcontent = '<div id=\\'tooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpactingAgency+tpimplementer+tpassessment+tptype+tpproduct+'</div><div class=\\'tipped-description\\'>'+tpdescription+'</div><div class=\\'tipped-url\\'>'+tpofficial+tpnews+'</div></div>';
                             
                             let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
-                            
+
                            $(row)[0].innerHTML = '';
                            $(row)
                            .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item'+lock+'\\'><div class=\\'left\\'>'+tags+'<div class=\\'hint-title\\'>'+data[5]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#tooltip_'+data[0]+'\\' class=\\'tooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons lock\\'>lock</span><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
@@ -1165,9 +1280,17 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     tpdescription = paste0('<div><label>Description</label>',initSingleHint$hint.description,'</div>')
     
     
-    tpcontent = gsub("'","\"",paste0('<div id="top-tooltip_',moveHint$hint.id,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description"></div><div class="tipped-url">',tpofficial,tpnews,'</div></div>'))
-    initialHints = paste0('<div data-tooltip-content="#top-tooltip_',moveHint$hint.id,'" id="hintId_',moveHint$hint.id,'" class="hint-item initial tooltip-create-top"><div class="hint-title">',moveHint$hint.title,'</div><div class="remove" value="',moveHint$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',tpcontent)
+    tpcontent = gsub("'","\"",paste0('<div id="top-tooltip_',initSingleHint$hint.id,'" class="tipped-content"><div class="tipped-grid"">',tpdate,tpactingAgency,tpimplementer,tpassessment,tptype,tpproduct,'</div><div class="tipped-description">',tpdescription,'</div><div class="tipped-url">',tpofficial,tpnews,'</div></div>'))
     
+    initSingleHint$hint.title <- paste(initSingleHint$hint.id, initSingleHint$hint.title, sep=" - ")
+    
+    initSingleHint$url <- ifelse(is.na(initSingleHint$official), initSingleHint$news, initSingleHint$official)
+    initSingleHint$tpcontent <- tpcontent
+    
+    initialHints <- generate_initial_hints(initSingleHint)
+    
+    print(initialHints)
+
     reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
     if (moveHint$hint.state.id %in% c(2,8)) {
       runjs(reassign)
@@ -1236,7 +1359,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     scroll: true
                                 }
                               })")
-    runjs("removeHint(); markHints();")
   })
   
   # SELECT ROWS MECHANISM COLLECTION TABLE
@@ -1275,13 +1397,15 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     '<div><label>Intervention type</label>',initialHints$intervention.type,'</div>',
                                     '<div><label>Product</label>',initialHints$product.group.name,'</div>',
                                     '</div><div class="tipped-description">',
-                                    # '<div><label>Description</label>',initialHints$hint.description,'</div>',
+                                    '<div><label>Description</label>',initialHints$hint.description,'</div>',
                                     '</div><div class="tipped-url">',
                                     '<div><label>URL official</label>',initialHints$official,'</div>',
                                     '<div><label>URL news</label>',initialHints$news,'</div>',
                                     '</div></div>')
     
-    initialHints = gsub("'","\"",paste0('<div data-tooltip-content="#top-tooltip_',initialHints$hint.id,'" id="hintId_',initialHints$hint.id,'" class="hint-item tooltip-create-top-col added"><div class="hint-title">',initialHints$hint.title,'</div><div class="remove" value="',initialHints$hint.id,'"><img src="www/b221/cancel.svg"></div><span class="material-icons">stars</span></div>',initialHints$tpcontent))
+    initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
+  
+    initialHints = gsub("'","\"",generate_initial_hints(initialHints))
     
     updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
     
@@ -1290,7 +1414,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         GROUP_CONCAT(DISTINCT(ass_list.assessment_name) SEPARATOR ' ; ') AS assessment_name,
                         GROUP_CONCAT(DISTINCT(int_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                         GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
-                        cltn_rel.relevance, cltn_star.hint_id AS starred_hint
+                        cltn_rel.relevance, cltn_star.hint_id AS starred_hint,
+                        MAX(IF(bt_date_type_list.date_type_name='announcement', col_date.date, NULL )) AS announcement_date,
+                          MAX(IF(bt_date_type_list.date_type_name='implementation', col_date.date, NULL )) AS implementation_date,
+                          MAX(IF(bt_date_type_list.date_type_name='removal', col_date.date, NULL )) AS removal_date
                         FROM (SELECT * FROM b221_collection_log WHERE collection_id = ",collectionId,") cltn_log
                         LEFT JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
                         LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
@@ -1298,7 +1425,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                         LEFT JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
                         LEFT JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id LEFT JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
                         LEFT JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
-                        GROUP BY cltn_log.collection_id")
+                        LEFT JOIN b221_collection_date col_date ON col_date.collection_id = cltn_log.collection_id LEFT JOIN bt_date_type_list ON col_date.date_type_id = bt_date_type_list.date_type_id
+                        GROUP BY cltn_log.collection_id;")
     
     collectionStats <- gta_sql_get_value(query)
     
@@ -1306,12 +1434,16 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     updateSelectInput(session = session, inputId = "initType", selected = unlist(strsplit(collectionStats$intervention.type.name, " ; ")))
     updateSelectInput(session = session, inputId = "initProduct", selected = unlist(strsplit(collectionStats$product.group.name, " ; ")))
     updateSelectInput(session = session, inputId = "initAssessment", selected = unlist(strsplit(collectionStats$assessment.name, " ; ")))
+    updateDateInput(session = session, inputId = "initAnnouncement", value = unlist(strsplit(collectionStats$announcement.date, " ; ")))
+    updateDateInput(session = session, inputId = "initImplementation", value = unlist(strsplit(collectionStats$implementation.date, " ; ")))
+    updateDateInput(session = session, inputId = "initRemoval", value = unlist(strsplit(collectionStats$removal.date, " ; ")))
+    
     print(initialHints)
     runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
     runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))
     initialHints <- gsub("[\r\n]", "", initialHints)
     runjs(paste0("$('",paste0(initialHints, collapse=""),"').hide().appendTo('#hintContainer').fadeIn(300);"))
-    runjs("$('.tooltip-create-top-col').tooltipster({
+    runjs("$('.tooltip-create-top').tooltipster({
                                 theme: 'tooltipster-noir',
                                 contentCloning: true,
                                 maxWidth: 600,
@@ -1326,7 +1458,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                     scroll: true
                                 }
                               })")
-    runjs("removeHint(); markHints();")
     
     if(nrow(collectionStats)>0) {
       if (is.na(collectionStats$starred.hint)==F) {
