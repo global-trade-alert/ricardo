@@ -145,8 +145,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                           });
                           
                         }"),
-      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }') # reset
-      # drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); }') # bind select boxes to Shiny
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
+      drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); }') # bind select boxes to Shiny
     ),
     callback = JS(paste0("table.on('click.dt','tr', function() {
                 var data=table.row(this).data();
@@ -743,6 +743,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
           runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('partOfCollection');"))
           runjs(paste0("$('#leadsID_",hintId," .collection-add img')[0].src = $('#leadsID_",hintId," .collection-add img')[0].src.replace('collection-added.svg', 'collection.svg');"))
           runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = '';"))
+          runjs(paste0("$('#leadsID_",hintId,"').removeClass('locked');"))
           
         }
         runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
@@ -796,11 +797,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             let tpcontent = '<div id=\\'coltooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpimplementer+tpassessment+tptype+tpproduct+'</div></div>';
                             
                             let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
-        
+                          
+                           $(row)[0].innerHTML = '';
                            $(row)
                            .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'left\\'>'+tags+'<div class=\\'collection-title\\'>'+data[1]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#coltooltip_'+data[0]+'\\' class=\\'coltooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
 
                            return row; }"),
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
       drawCallback = JS("function createTipped() {
                               $('.coltooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
@@ -822,7 +825,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     extensions = "Select",
     selection = "single"
   ),
-  server = T)
+  server = F)
   
   
   
@@ -971,10 +974,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             
                             let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
                             
+                           $(row)[0].innerHTML = '';
                            $(row)
                            .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item'+lock+'\\'><div class=\\'left\\'>'+tags+'<div class=\\'hint-title\\'>'+data[5]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#tooltip_'+data[0]+'\\' class=\\'tooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons lock\\'>lock</span><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
-                           return row; }"),
-      drawCallback = JS("function createTipped() {
+                           return row; 
+                            }"),
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
+      drawCallback = JS("function() { Shiny.bindAll(this.api().table().node());
                               $('.tooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
                                 contentCloning: true,
@@ -996,7 +1002,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     extensions = "Select",
     selection = "single"
   ),
-  server = T)
+  server = F)
   
   # LOAD SINGLE HINTS FOR COLLECTIONS SLIDE IN
   singleHints <- eventReactive(input$loadSingleHints, {
