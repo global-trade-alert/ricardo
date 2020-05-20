@@ -1289,8 +1289,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     initialHints <- generate_initial_hints(initSingleHint)
     
+    initialHints <- gsub("[\r\n]", "", initialHints)
+      
     print(initialHints)
-
+  
     reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
     if (moveHint$hint.state.id %in% c(2,8)) {
       runjs(reassign)
