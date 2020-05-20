@@ -5,19 +5,19 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
   if(is.freelancer == T){
     # attach only those urls in the bt_hint_url which are suggested by bastiat OR accepted by editor on the other end (on back feed from editor)
     pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date,  
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_title ELSE NULL END) AS english_title,
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_description ELSE NULL END) AS english_description, 
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_title ELSE NULL END) AS original_title,
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_description ELSE NULL END) AS original_description, bt_url_log.url, attributed_hints.hint_id,
+                          MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_title ELSE NULL END) AS english_title,
+                          MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_description ELSE NULL END) AS english_description, 
+                          MAX(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_title ELSE NULL END) AS original_title,
+                          MAX(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_description ELSE NULL END) AS original_description, bt_url_log.url, attributed_hints.hint_id,
                           GROUP_CONCAT(DISTINCT(cltn_log.collection_id) SEPARATOR ' ; ') AS collection_id,
                           ass_list.assessment_name, 
                           GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
                           GROUP_CONCAT(DISTINCT(int_type_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                           GROUP_CONCAT(DISTINCT(ht_cmt_log.comment)  ORDER BY ht_cmt_log.time_stamp DESC SEPARATOR ' ; ') AS comment,
                           ht_rlvnt.relevance, bt_hint_url.url_type_id,
-                          GROUP_CONCAT(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date,
-                          GROUP_CONCAT(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS implementation_date,
-                          GROUP_CONCAT(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date
+                          MAX(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date,
+                          MAX(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS implementation_date,
+                          MAX(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date
                           FROM (SELECT DISTINCT(bt_hint_processing.hint_id) FROM bt_hint_processing
                           	  JOIN bt_hint_log ON bt_hint_log.hint_id = bt_hint_processing.hint_id
                           	  JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id
@@ -41,10 +41,10 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
     #attach only those urls which are non-dormant, i.e. those hints @b221 editor desk & search_id non null & was_accepted null (pending decision) or 1
     # OR bt_hint_state_list.hint_state_name = 'trash bin - entered' in attributed_hints if we want to pull up trash bin too
     pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date, 
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_title ELSE NULL END) AS english_title,
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_description ELSE NULL END) AS english_description, 
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_title ELSE NULL END) AS original_title,
-                          GROUP_CONCAT(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_description ELSE NULL END) AS original_description, bt_url_log.url, attributed_hints.hint_id, 
+                          MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_title ELSE NULL END) AS english_title,
+                          MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_description ELSE NULL END) AS english_description, 
+                          MAX(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_title ELSE NULL END) AS original_title,
+                          MAX(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_description ELSE NULL END) AS original_description, bt_url_log.url, attributed_hints.hint_id, 
                           GROUP_CONCAT(DISTINCT(cltn_log.collection_id) SEPARATOR ' ; ') AS collection_id,
                           ass_list.assessment_name, 
                           GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_name) SEPARATOR ' ; ') AS product_group_name,
