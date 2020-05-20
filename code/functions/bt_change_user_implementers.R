@@ -12,6 +12,3 @@ bt_change_user_implementers=function(app.id = NULL, user.id = NULL, implementer.
   print('successful')
   
 }
-
-a = paste0('INSERT INTO ric_user_implementers VALUES',paste0('(',unique(apply(expand.grid(app.id, user.id, implementer.ids), 1, paste, collapse=",")),')', collapse = ','),';')
-cat(a)

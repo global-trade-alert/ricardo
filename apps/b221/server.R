@@ -145,8 +145,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                           });
                           
                         }"),
-      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }') # reset
-      # drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); }') # bind select boxes to Shiny
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
+      drawCallback = JS('function() { Shiny.bindAll(this.api().table().node()); }') # bind select boxes to Shiny
     ),
     callback = JS(paste0("table.on('click.dt','tr', function() {
                 var data=table.row(this).data();
@@ -196,6 +196,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     } else {
       pre.sorted.table <- b221_pull_display_info(user.id = user$id, is.freelancer = ifelse(prm$freelancer == 1, T, F)) # needs to be reversed when live, i put it opposite way for testing purposes
       pre.sorted.table$english.title = paste(pre.sorted.table$hint.id, pre.sorted.table$english.title, sep = ' - ')
+      pre.sorted.table$original.description[!is.na(pre.sorted.table$original.description) & !is.na(pre.sorted.table$original.title)] = paste(pre.sorted.table$original.title[!is.na(pre.sorted.table$original.description) & !is.na(pre.sorted.table$original.title)],pre.sorted.table$original.description[!is.na(pre.sorted.table$original.description) & !is.na(pre.sorted.table$original.title)],sep='<br /><br />')
       leads.output <- pre.sorted.table[match(processing.hints,pre.sorted.table$hint.id),]
       rm('pre.sorted.table')
     }
@@ -858,7 +859,6 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
           runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = '';"))
           runjs(paste0("$('#leadsID_",hintId,"').removeClass('locked');"))
           
-          
         }
         runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
         runjs(paste0("$('#b221-close-button').removeClass('open');"))
@@ -879,7 +879,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     options = list(
       pagingType = 'simple_numbers',
       pageLength = 10,
-      columnDefs = list(list(visible = FALSE, targets = c(0,2,4:10)), list(sortable=FALSE, targets = c(0)),
+      columnDefs = list(list(visible = FALSE, targets = c(0,2,4:9)), list(sortable=FALSE, targets = c(0)),
                         list(targets = c(1,3), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
@@ -887,7 +887,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                       ")),
                         list(title="Title", targets=c(1)),
                         list(title="Date", targets=c(3))),
-      order = list(list(7, 'desc')),
+      order = list(list(3, 'desc')),
       language = list(
         paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
         zeroRecords = "No more leads available.",
@@ -897,26 +897,28 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[2]+'</div></div>';
-                            let product = data[9];
-                            let type = data[10];
-                            let jurisdiction = data[8];
+                            let product = data[8];
+                            let type = data[9];
+                            let jurisdiction = data[7];
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
 
                             let tpdate = '<div><label>Date</label>'+data[3]+'</div>';
-                            let tpimplementer = '<div><label>Implementer</label>'+data[8]+'</div>';
+                            let tpimplementer = '<div><label>Implementer</label>'+data[7]+'</div>';
                             let tpassessment = '<div><label>Assessment</label>'+data[2]+'</div>';
-                            let tpproduct = '<div><label>Product</label>'+data[9]+'</div>';
-                            let tptype = '<div><label>Intervention type</label>'+data[10]+'</div>';
+                            let tpproduct = '<div><label>Product</label>'+data[8]+'</div>';
+                            let tptype = '<div><label>Intervention type</label>'+data[9]+'</div>';
 
                             let tpcontent = '<div id=\\'coltooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpimplementer+tpassessment+tptype+tpproduct+'</div></div>';
                             
                             let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
-        
+                          
+                           $(row)[0].innerHTML = '';
                            $(row)
                            .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'left\\'>'+tags+'<div class=\\'collection-title\\'>'+data[1]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#coltooltip_'+data[0]+'\\' class=\\'coltooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
 
                            return row; }"),
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
       drawCallback = JS("function createTipped() {
                               $('.coltooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
@@ -938,7 +940,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     extensions = "Select",
     selection = "single"
   ),
-  server = T)
+  server = F)
   
   
   
@@ -998,21 +1000,21 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
     
-    weight.jur=100
-    weight.int.type=1
-    weight.assessment=1
-    weight.date=.1
-    weight.product=1
-    
-    collectionsOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(collectionsOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
-                                          do.call(rbind, lapply(as.list(strsplit(collectionsOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
-                                          do.call(rbind, lapply(as.list(strsplit(collectionsOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
-                                          do.call(rbind, lapply(collectionsOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-                                          do.call(rbind, lapply(collectionsOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
-    
-    collectionsOutput$order[collectionsOutput$order<0]=0
-    
-    collectionsOutput=collectionsOutput[order(collectionsOutput$order, decreasing = T),]
+    # weight.jur=100
+    # weight.int.type=1
+    # weight.assessment=1
+    # weight.date=.1
+    # weight.product=1
+    # 
+    # collectionsOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(collectionsOutput$intervention.type.name, split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
+    #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$jurisdiction.name, split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
+    #                                       do.call(rbind, lapply(as.list(strsplit(collectionsOutput$product.group.name, split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
+    #                                       do.call(rbind, lapply(collectionsOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
+    #                                       do.call(rbind, lapply(collectionsOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+    # 
+    # collectionsOutput$order[collectionsOutput$order<0]=0
+    # 
+    # collectionsOutput=collectionsOutput[order(collectionsOutput$order, decreasing = T),]
     
     
     ## generate HTML
@@ -1027,6 +1029,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       as.character(paste0("<div class='grid-row'>",paste0("<div class='tag type'>",substr(strsplit(x['intervention.type.name'],split=" ; ")[[1]],1,20),"</div>",collapse=""),"</div>"))
     })
     
+    # explicitly declare numeric columns
+    collectionsOutput$collection.id <- as.numeric(collectionsOutput$collection.id)
+    
     collectionsOutput <<- collectionsOutput
   })
   
@@ -1038,7 +1043,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     options = list(
       pagingType = 'simple_numbers',
       pageLength = 20,
-      columnDefs = list(list(visible = FALSE, targets = c(0:2,4,6:20)), list(sortable=FALSE, targets = c(0)),
+      columnDefs = list(list(visible = FALSE, targets = c(0:2,4,6:19)), list(sortable=FALSE, targets = c(0)),
                         list(targets = c(5,3), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
@@ -1046,7 +1051,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                       ")),
                         list(title="Title", targets=c(5)),
                         list(title="Date", targets=c(3))),
-      order = list(list(17, 'desc')),
+      order = list(list(3, 'desc')),
       colnames = c("Title","Date"),
       language = list(
         paginate = list("next"="<img src='www/b221/arrow_forward.svg'>", previous="<img src='www/b221/arrow_back.svg'>"),
@@ -1063,9 +1068,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                             
                             let date = '<div class=\\'grid-row\\'><div class=\\'date tag\\'>'+data[3]+'</div></div>';
                             let assessment = '<div class=\\'grid-row\\'><div class=\\'assessment tag\\'>'+data[7]+'</div></div>';
-                            let product = data[19];
-                            let type = data[20];
-                            let jurisdiction = data[18];
+                            let product = data[18];
+                            let type = data[19];
+                            let jurisdiction = data[17];
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
                             let tags2 = '<div class=\\'tags-lower\\'>'+type+product+'</div>';
@@ -1083,11 +1088,14 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                             let tpcontent = '<div id=\\'tooltip_'+data[0]+'\\' class=\\'tipped-content\\'><div class=\\'tipped-grid\\'>'+tpdate+tpactingAgency+tpimplementer+tpassessment+tptype+tpproduct+'</div><div class=\\'tipped-description\\'>'+tpdescription+'</div><div class=\\'tipped-url\\'>'+tpofficial+tpnews+'</div></div>';
                             
                             let tipped = '<span><span class=\\'material-icons\\'>info</span></span>';
+
                            $(row)[0].innerHTML = '';
                            $(row)
                            .append('<div id=\\'hint_'+data[0]+'\\' class=\\'hint-item'+lock+'\\'><div class=\\'left\\'>'+tags+'<div class=\\'hint-title\\'>'+data[5]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#tooltip_'+data[0]+'\\' class=\\'tooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons lock\\'>lock</span><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
-                           return row; }"),
-      drawCallback = JS("function createTipped() {
+                           return row; 
+                            }"),
+      preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
+      drawCallback = JS("function() { Shiny.bindAll(this.api().table().node());
                               $('.tooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
                                 contentCloning: true,
@@ -1102,7 +1110,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     click: true,
                                     scroll: true
                                 }
-                              })
+                              });
+                              console.log('TOOLTIPS CREATED');
                             }")),
     callback = JS("console.log('TEST');"),
     extensions = "Select",
@@ -1176,21 +1185,21 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
     
-    weight.jur=100
-    weight.int.type=1
-    weight.assessment=1
-    weight.date=.1
-    weight.product=1
-    
-    singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
-                                         do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
-                                         do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
-                                         do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-                                         do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
-    
-    singleHintOutput$order[singleHintOutput$order<0]=0
-    
-    singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+    # weight.jur=100
+    # weight.int.type=1
+    # weight.assessment=1
+    # weight.date=.1
+    # weight.product=1
+    # 
+    # singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
+    #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
+    #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
+    #                                      do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
+    #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+    # 
+    # singleHintOutput$order[singleHintOutput$order<0]=0
+    # 
+    # singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
     
     
     ## generate HTML
@@ -1206,6 +1215,13 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     })
     
     print("LENGTH OF SINGLE HINT OUTPUT")
+    
+    # explicitly declare numeric columns
+    singleHintOutput$hint.id <- as.numeric(singleHintOutput$hint.id)
+    singleHintOutput$hint.state.id <- as.numeric(singleHintOutput$hint.state.id)
+    singleHintOutput$prio.cty <- as.character(singleHintOutput$prio.cty)
+    singleHintOutput$collection.id <- as.numeric(singleHintOutput$collection.id)
+    
     print(nrow(singleHintOutput))
     singleHintOutput <<- singleHintOutput
   })

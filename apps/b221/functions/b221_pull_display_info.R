@@ -51,9 +51,9 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
                           GROUP_CONCAT(DISTINCT(int_type_list.intervention_type_name) SEPARATOR ' ; ') AS intervention_type_name,
                           GROUP_CONCAT(DISTINCT(ht_cmt_log.comment) ORDER BY ht_cmt_log.time_stamp DESC SEPARATOR ' ; ') AS comment,
                           ht_rlvnt.relevance, bt_hint_url.url_type_id,
-                          GROUP_CONCAT(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date,
-                          GROUP_CONCAT(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS implementation_date,
-                          GROUP_CONCAT(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date
+                          MAX(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date,
+                          MAX(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS implementation_date,
+                          MAX(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date
                           FROM (SELECT DISTINCT(bt_hint_processing.hint_id) FROM bt_hint_processing
                           	  JOIN bt_hint_log ON bt_hint_log.hint_id = bt_hint_processing.hint_id
                           	  JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id
