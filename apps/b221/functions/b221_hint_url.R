@@ -33,7 +33,7 @@ b221_hint_url=function(is.freelancer = NULL, user.id = NULL, hint.url.dataframe 
                           ht_url.classification_id = @classification_id;")
   } else {
     push.updates = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
-                          INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
+                          INSERT INTO bt_classification_log (classification_id, user_id, hint_state_id, time_stamp)
                           SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                           
                           INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_user)
@@ -63,11 +63,9 @@ b221_hint_url=function(is.freelancer = NULL, user.id = NULL, hint.url.dataframe 
                           JOIN b221_hint_collection locate_collection_hints ON allocate_collection.collection_id = locate_collection_hints.collection_id
                           JOIN bt_hint_log ON locate_collection_hints.hint_id = bt_hint_log.hint_id
                           GROUP BY locate_collection_hints.collection_id) changed_collection ON b221_hint_collection.collection_id = changed_collection.collection_id) new_hint_states ON bt_hint_log.hint_id = new_hint_states.hint_id
-                          SET bt_hint_log.hint_state_id = new_hint_states.new_state;
-                          ")  
+                          SET bt_hint_log.hint_state_id = new_hint_states.new_state;")  
   }
-  
-  
+  gta_sql_multiple_queries(push.updates, db.connection = 'pool', output.queries = 1)
   gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
   return('successful')
   
