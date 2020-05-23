@@ -1,6 +1,6 @@
 # addResourcePath(prefix = 'www', directoryPath = paste0(path,'apps/b221/www'))
 
-  addResourcePath(prefix = 'www', directoryPath = paste0(path,'www'))
+ addResourcePath(prefix = 'www', directoryPath = paste0(path,'www'))
 
 deliverui <- function(id) {
   # Create a namespace function using the provided id

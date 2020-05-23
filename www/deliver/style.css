@@ -175,25 +175,6 @@ body {
   font-size: 1.2em;
 }
 
-.truncate {
-  max-width: 350px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.item {
-  margin: 10px 20px 10px 20px ;
-}
-
-.top-item{
-  
-}
-
-.middle-item{
-  
-}
-
 table .item-label {
     display: inline-block;
     font-size: 0.9em;
@@ -214,10 +195,70 @@ table .item-label {
   justify-content: center;
 }
 
+.more-less {
+  background-color: #DCDCDC;
+  border: 1px solid #2F4F4F;
+  color: black;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
 /*.hidden-item{
-  text-indent: -9999px;                 
-  height: 100px;                        
-  width: 600px;
-  white-space: nowrap; 
+  display: none;
+}
+
+.unhidden{
+  display: content;
 }*/
 
+.trimmed-text{
+  height: auto;
+  max-height: 50px;
+  overflow: hidden;
+  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}
+
+.full-text{
+  height: auto;
+  max-height: 2000px;
+  overflow: hidden;
+  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}
+
+.description-less {
+  height: auto;
+  max-height: 50px;
+  overflow: hidden;
+  max-width: 600px;
+  word-wrap: break-word;
+  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}
+
+.description-more {
+  height: auto;
+  max-height: 2000px;
+  overflow: hidden;
+  max-width: 600px;
+  word-wrap: break-word;
+  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}
+
+.source-less {
+  height: auto;
+  max-height: 50px;
+  overflow: hidden;
+  max-width: 300px;
+  word-wrap: break-word;
+  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}
+
+.source-more {
+  height: auto;
+  max-height: 2000px;
+  overflow: hidden;
+  max-width: 300px;
+  word-wrap: break-word;
+  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}

@@ -40,21 +40,25 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       
       autoWidth = FALSE,
       columns = list(
-           list(NULL),
-           list(width = '5%'),
-           list(width = '5%'),
-           list(width = '5%'),
-           list(width = '5%'),
-           list(width = '5%'),
-           list(width = '5%'),
-           list(width = '5%'),
-           list(width = '45%'),
-           list(width = '10%'),
-           list(width = '5%'),
-           list(width = '5%')
+           list(width = NULL), # Entry ID
+           list(width = '5%'), # Documentation status
+           list(width = '5%'), # Jurisdiction
+           list(width = '5%'), # Initial assessment
+           list(width = '5%'), # GTA intervention type
+           list(width = '5%'), # Announcement date
+           list(width = '5%'), # Implementation date
+           list(width = '5%'), # Removal date 
+           list(width = '57%'), # Description
+           list(width = '8%'), # Source
+           list(width = NULL), # Intervention type
+           list(width = '3%') # Instruments and Products
       ),
       columnDefs = list(
-          
+          list(targets = '_all',
+               createdCell = JS("function (td, cellData, rowData, row, col) {
+                                  $(td).css('padding', '5px')
+                                }
+                                ")),
           list(targets = 11,
                 render = JS("function(data, type, row, meta){
                               let export_barrier = data != false ? `<div class=\'item-label\'>export barrier</div>` : null;
@@ -77,34 +81,54 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                        med_drug, food, prd_other, med_any].filter(d => d != null).join('') + '</div>'
                             }")
                ),
-          # add hyperlinks to sources
-          list(targets = 9, 
+          # add hyperlinks to sources and initialize ShowMore options
+          # list(targets = 9,
+          #      render = JS("function(data, type, row, meta){
+          # 
+          #                     let output = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\">$1</a>');
+          # 
+          #                     if (output != \"\" & output.length > 250){
+          #                       let limit = '<div class=\"trimmed-text\">' + output.substr(0,200).lastIndexOf('<a') == -1 ? output.substr(0,200).lastIndexOf(' ') : output.substr(0,200).lastIndexOf('<a');
+          #                       let trimmedString = output.substring(0, limit) + '<span class=\"hidden-item\">' +  output.substring(limit,output.length) + '</span>' +
+          #                       `</div><a id=\'toggle-source_${row[0]}\' onclick=\'showMore(\"source\",${row[0]});\'  href=\"javascript:void(0);\">...Show more</a>`
+          #                       return trimmedString;
+          #                     } else {
+          #                       return output;
+          #                     }
+          #                  }"
+          #                )),
+          # 
+          # list(targets = 8,
+          #      render = JS("function(data, type, row, meta){
+          #                     if (data != \"\" & data.length > 250){
+          #                       let limit = data.substr(0,200).lastIndexOf(' ');
+          #                       let trimmedString = '<div class=\"trimmed-text\">' + data.substring(0, limit) + '<span class=\"hidden-item\">' +  data.substring(limit,data.length) + '</span>' +
+          #                       `</div><a id=\'toggle-description_${row[0]}\' onclick=\'showMore(\"description\",${row[0]});\'  href=\"javascript:void(0);\">...Show more</a>`
+          #                       return trimmedString;
+          #                     } else {
+          #                       return data;
+          #                     }
+          #      }")),
+          list(targets = 9,
                render = JS("function(data, type, row, meta){
-                              //return data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\">$1</a>').substring(0, 100) + '...'
-                              
-                              let shortText= data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\">$1</a>').substring(0, 100);
-                              let allStr = data.replace(/'/g,'&apos;');
-                              console.log(allStr)
-                              
-                              return shortText + '...' + 
-                              `<a id=\'toggle-source_${row[0]}\' onclick=\'toggleShowMore(\"${allStr}\",\"source\",${row[0]});\'  href=\"javascript:void(0);\"> Show more</a>`
-                           }"
-                         )),
-          
+                          data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\">$1</a>');
+
+                          let output = `<div class=\"source-less\">${data}</div>
+                          <button id =\"toggle-source_${row[0]}\" class=\"more-less\" onclick=\'showMorecontent(\"source\",${row[0]})\'>Show More</button>`;
+
+                          return output
+               }")),
           list(targets = 8,
                render = JS("function(data, type, row, meta){
-                              if (data != \"\" & data.length > 450){
-                                let trimmedString = data.substring(0, 400) + '<div class=\"hidden\">' +  data.substring(200,data.length) + '</div>';
-                                return trimmedString + '...'
-                              } else {
-                                return data
-                              }
+                          let output = `<div class=\"description-less\">${data}</div>
+                          <button id =\"toggle-description_${row[0]}\" class=\"more-less\" onclick=\'showMorecontent(\"description\",${row[0]})\'>Show More</button>`;
+
+                          return output
                }")),
-          
           # searchPanes extension
           list(
             searchPanes = list(show = FALSE),
-            targets = c(0:10,12:22)#4:22
+            targets = c(0:1,4:10,12:22)#4:22
             ),
           
           list(
@@ -190,7 +214,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           # Column visibility
           list(
             visible = FALSE,
-            targets = c(0,12:22) #11
+            targets = c(0,10,11:22) #11
           )
         )
       # rowCallback = JS("function (row, data) {
