@@ -250,10 +250,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                                                                   exp_subsidy, other, unclear, med_con, med_eqm, 
                                                                                   med_drug, food, prd_other, med_any].filter(d => d != null).join('') + '</div>');
                                                                                   
-                                api.$(`tr#${data[i][0]}`).after(`<table class=\"custom-table\"><tbody class=\"custom-tbody\">
-                                                                  <tr id=\"labels_${data[i][0]}\" class=\"custom-tr\"><td>${output}</td></tr>
-                                                                  </tbody>
-                                                                  </table>`);
+                                api.$(`tr#${data[i][0]}`).after(`<tr id=\"labels_${data[i][0]}\" class=\"labels-tr\">
+                                                                  <td colspan=\"9\">${output}</td>
+                                                                  </tr>`);
                                 }
 
       }"),
@@ -281,31 +280,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               })
                         }"),
       rowCallback = JS("function(row, data){
-
-                              let export_barrier = data[11] != false ? `<div class=\'item-label\'>export barrier</div>` : null;
-                              
-                              let import_barrier = data[12] != false ? `<div class=\'item-label\'>import barrier</div>` : null;
-                              let dom_subsidy = data[13] != false ? `<div class=\'item-label\'>domestic subsidy</div>` : null;
-                              let exp_subsidy = data[14] != false ? `<div class=\'item-label\'>export subsidy</div>` : null;
-                              let other = data[15] != false ? `<div class=\'item-label\'>other</div>` : null;
-                              let unclear = data[16] != false ? `<div class=\'item-label\'>unclear</div>` : null;
-                              let med_con = data[17] != false ? `<div class=\'item-label\'>medical consumables</div>` : null;
-                              let med_eqm = data[18] != false ? `<div class=\'item-label\'>medical equipment</div>` : null;
-                              let med_drug = data[19] != false ? `<div class=\'item-label\'>medicines or drugs</div>` : null;
-                              let food = data[20] != false ? `<div class=\'item-label\'>food</div>` : null;
-                              let prd_other = data[21] != false ? `<div class=\'item-label\'>product other</div>` : null;
-                              let med_any = data[22] != false ? `<div class=\'item-label\'>any medical product</div>` : null;
-                              
-                              $(`#labels_${data[0]} td`).append('<div class=\"box-item-label\">' + [export_barrier, import_barrier, dom_subsidy,
-                                       exp_subsidy, other, unclear, med_con, med_eqm, 
-                                       med_drug, food, prd_other, med_any].filter(d => d != null).join('') + '</div>');
-                                       
-                              $(row).after(`<tr id=\"labels_${data[0]}\"><td>asfaskfasfsas</td></tr>`);
                                        
       }"),
       createdRow = JS("function(row, data, dataIndex, cells){
       
-                              $(row).after(`<tr id=\"labels_${data[0]}\"><td>asfaskfasfsas</td></tr>`);
       }")
       # rowCallback = JS("function (row, data) {
       #                //top row
@@ -338,6 +316,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       # }")
                           
     ),
+    class = "hover stripe",
     extensions = c("Select", 'SearchPanes', 'FixedHeader'),
     selection = "none"
     ),

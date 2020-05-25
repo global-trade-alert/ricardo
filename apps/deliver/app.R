@@ -37,5 +37,5 @@ shinyApp(
   #     gta_sql_pool_close()
   #   })
   # },
-  options = list(launch.browser=F)
+  options = list(launch.browser=F, port=4109)
 )
