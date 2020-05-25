@@ -4,7 +4,7 @@ gtasql::gta_sql_kill_connections()
 
 # SET PATHS
 gta_setwd()
-setwd( "C:/Users/Liubomyr Gavryliv/Dropbox/")
+setwd( "~/Dropbox/")
 path <<- "ricardo-lg/"
 
 # APP SETUP
@@ -37,5 +37,5 @@ shinyApp(
   #     gta_sql_pool_close()
   #   })
   # },
-  options = list(launch.browser=T)
+  options = list(launch.browser=F)
 )

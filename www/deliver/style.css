@@ -176,7 +176,7 @@ body {
 }
 
 table .item-label {
-    display: inline-block;
+
     font-size: 0.9em;
     padding: 1px 10px;
     border: 1px solid #d2d2d2;
@@ -205,13 +205,6 @@ table .item-label {
   border-radius: 10px;
 }
 
-/*.hidden-item{
-  display: none;
-}
-
-.unhidden{
-  display: content;
-}*/
 
 .trimmed-text{
   height: auto;
@@ -261,4 +254,12 @@ table .item-label {
   max-width: 300px;
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
+}
+
+.box-item-label{
+      display: flex;
+}
+
+.custom-table > tr > td {
+  width: 100%;
 }

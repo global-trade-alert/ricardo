@@ -1,7 +1,7 @@
 # Define reactive values used in this app module up here, these will be passed automatically
 # Don't forget to add these variables as function parameters as well
 
-load(file.path("C:/Users/Liubomyr Gavryliv/Dropbox/ricardo-lg/apps/deliver/data/GTA-COVID data.Rdata"), new_env <- new.env() )
+load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
 
 # SERVER
 deliverserver <- function(input, output, session, user, app, prm, ...) {
@@ -17,7 +17,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     rownames = FALSE,
     escape = FALSE,
     options = list(
-      pageLength = 10,
+      rowId = JS("function(d) {
+        return d[0];
+      }"),
+      pageLength = 30,
       scrollX = FALSE,
 
       deferRender = TRUE,
@@ -48,10 +51,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
            list(width = '5%'), # Announcement date
            list(width = '5%'), # Implementation date
            list(width = '5%'), # Removal date 
-           list(width = '57%'), # Description
-           list(width = '8%'), # Source
+           list(width = '60%'), # Description
+           list(width = '5%'), # Source
            list(width = NULL), # Intervention type
-           list(width = '3%') # Instruments and Products
+           list(width = NULL) # Instruments and Products
       ),
       columnDefs = list(
           list(targets = '_all',
@@ -111,17 +114,20 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           #      }")),
           list(targets = 9,
                render = JS("function(data, type, row, meta){
-                          data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\">$1</a>');
+                          data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>');
 
-                          let output = `<div class=\"source-less\">${data}</div>
-                          <button id =\"toggle-source_${row[0]}\" class=\"more-less\" onclick=\'showMorecontent(\"source\",${row[0]})\'>Show More</button>`;
+                          let output = `<div class=\"source-less\">${data}</div>`;
+                          let button = `<button id =\"toggle-source_${row[0]}\" class=\"more-less\" onclick=\'showMorecontent(\"source\",${row[0]})\'>Show More</button>`;
 
                           return output
                }")),
           list(targets = 8,
                render = JS("function(data, type, row, meta){
-                          let output = `<div class=\"description-less\">${data}</div>
-                          <button id =\"toggle-description_${row[0]}\" class=\"more-less\" onclick=\'showMorecontent(\"description\",${row[0]})\'>Show More</button>`;
+                          let output = `<div class=\"description-less\">${data}</div>`;
+                          
+                          let button = data.length > 320 ? `<button id =\"toggle-description_${row[0]}\" 
+                                                            class=\"more-less\" onclick=\'showMorecontent(\"description\",${row[0]})\'>
+                                                            Show More</button>` : '';
 
                           return output
                }")),
@@ -216,7 +222,91 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             visible = FALSE,
             targets = c(0,10,11:22) #11
           )
-        )
+        ),
+      infoCallback = JS("function(settings, start, end, max, total, pre){
+                                const api = this.api();
+                                console.log(api.page.info());
+                                console.log(api)
+                                let data = api.rows( { page: 'current' } ).data();
+                                
+                                console.log(data)
+                                
+                                for (let i = 0; i < 30; i++){
+
+                                let export_barrier = data[i][11] != false ? `<div class=\'item-label\'>export barrier</div>` : null;
+                                let import_barrier = data[i][12] != false ? `<div class=\'item-label\'>import barrier</div>` : null;
+                                let dom_subsidy = data[i][13] != false ? `<div class=\'item-label\'>domestic subsidy</div>` : null;
+                                let exp_subsidy = data[i][14] != false ? `<div class=\'item-label\'>export subsidy</div>` : null;
+                                let other = data[i][15] != false ? `<div class=\'item-label\'>other</div>` : null;
+                                let unclear = data[i][16] != false ? `<div class=\'item-label\'>unclear</div>` : null;
+                                let med_con = data[i][17] != false ? `<div class=\'item-label\'>medical consumables</div>` : null;
+                                let med_eqm = data[i][18] != false ? `<div class=\'item-label\'>medical equipment</div>` : null;
+                                let med_drug = data[i][19] != false ? `<div class=\'item-label\'>medicines or drugs</div>` : null;
+                                let food = data[i][20] != false ? `<div class=\'item-label\'>food</div>` : null;
+                                let prd_other = data[i][21] != false ? `<div class=\'item-label\'>product other</div>` : null;
+                                let med_any = data[i][22] != false ? `<div class=\'item-label\'>any medical product</div>` : null;
+                                
+                                let output = ('<div class=\"box-item-label\">' + [export_barrier, import_barrier, dom_subsidy,
+                                                                                  exp_subsidy, other, unclear, med_con, med_eqm, 
+                                                                                  med_drug, food, prd_other, med_any].filter(d => d != null).join('') + '</div>');
+                                                                                  
+                                api.$(`tr#${data[i][0]}`).after(`<table class=\"custom-table\"><tbody class=\"custom-tbody\">
+                                                                  <tr id=\"labels_${data[i][0]}\" class=\"custom-tr\"><td>${output}</td></tr>
+                                                                  </tbody>
+                                                                  </table>`);
+                                }
+
+      }"),
+      drawCallback = JS("function(settings){
+                              const api = this.api();
+                              
+                              // add tr with product labels
+                              console.log(api)
+                              console.log(api.page.info())
+                              
+                              // check if text length is bigger than tr height
+                              function isEllipsisActive($jQueryObject) {
+                                  return ($jQueryObject[0].offsetHeight < $jQueryObject[0].scrollHeight);
+                              }
+                              
+                              api.$('.more-less').remove();
+                              api.$('.description-less').each(function(){
+                              let id = api.row( $(this).closest('tr') ).id();
+                              
+                                  if(isEllipsisActive($(this)) == true){
+                                      $(this).parent('td').append(`<button id =\"toggle-description_${id}\" 
+                                                                        class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
+                                                                        Show More</button>`)
+                                  }
+                              })
+                        }"),
+      rowCallback = JS("function(row, data){
+
+                              let export_barrier = data[11] != false ? `<div class=\'item-label\'>export barrier</div>` : null;
+                              
+                              let import_barrier = data[12] != false ? `<div class=\'item-label\'>import barrier</div>` : null;
+                              let dom_subsidy = data[13] != false ? `<div class=\'item-label\'>domestic subsidy</div>` : null;
+                              let exp_subsidy = data[14] != false ? `<div class=\'item-label\'>export subsidy</div>` : null;
+                              let other = data[15] != false ? `<div class=\'item-label\'>other</div>` : null;
+                              let unclear = data[16] != false ? `<div class=\'item-label\'>unclear</div>` : null;
+                              let med_con = data[17] != false ? `<div class=\'item-label\'>medical consumables</div>` : null;
+                              let med_eqm = data[18] != false ? `<div class=\'item-label\'>medical equipment</div>` : null;
+                              let med_drug = data[19] != false ? `<div class=\'item-label\'>medicines or drugs</div>` : null;
+                              let food = data[20] != false ? `<div class=\'item-label\'>food</div>` : null;
+                              let prd_other = data[21] != false ? `<div class=\'item-label\'>product other</div>` : null;
+                              let med_any = data[22] != false ? `<div class=\'item-label\'>any medical product</div>` : null;
+                              
+                              $(`#labels_${data[0]} td`).append('<div class=\"box-item-label\">' + [export_barrier, import_barrier, dom_subsidy,
+                                       exp_subsidy, other, unclear, med_con, med_eqm, 
+                                       med_drug, food, prd_other, med_any].filter(d => d != null).join('') + '</div>');
+                                       
+                              $(row).after(`<tr id=\"labels_${data[0]}\"><td>asfaskfasfsas</td></tr>`);
+                                       
+      }"),
+      createdRow = JS("function(row, data, dataIndex, cells){
+      
+                              $(row).after(`<tr id=\"labels_${data[0]}\"><td>asfaskfasfsas</td></tr>`);
+      }")
       # rowCallback = JS("function (row, data) {
       #                //top row
       #                let description = data[8] != null ? `<div id=\'description\'>${data[8]}</div>` : 'No description available';

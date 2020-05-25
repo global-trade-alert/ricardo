@@ -11,7 +11,7 @@ gta_setwd()
 # setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
 # path <<- "17 Shiny/8 ricardo app/"
 # path <<- "0 dev/ricardo-lg/"
-setwd( "C:/Users/Liubomyr Gavryliv/Dropbox/")
+setwd( "~/Dropbox/")
 path <<- "ricardo-lg/"
 
 # APP SETUP

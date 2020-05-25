@@ -7,7 +7,7 @@ const showMore = function(type, id){
   $(`#toggle-${type}_${id}`).html('...Show less');
   $(`#toggle-${type}_${id}`).attr('onclick', `showLess(\"${type}\",${id})`)
   
-}
+} //comment
 
 const showLess = function(type, id){
 
