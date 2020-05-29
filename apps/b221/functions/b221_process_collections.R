@@ -334,13 +334,14 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                             	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
         
         if(is.freelancer){
+          if(!any(is.na(new.hints)) & length(new.hints) != 0){
           update.collection.hints = paste(update.collection.hints, 
                                           "UPDATE bt_hint_log
                                           JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
                                           JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
                                           SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
                                           																		(SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
-          
+          }
         } else {
           update.collection.hints = paste(update.collection.hints, 
                                           "UPDATE bt_hint_log
@@ -436,13 +437,14 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                             	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
           
           if(is.freelancer){
+            if(!any(is.na(new.hints)) & length(new.hints) != 0){
             update.collection.hints = paste(update.collection.hints, 
                                             "UPDATE bt_hint_log
                                           JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
                                           JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
                                           SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
                                           																		(SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
-            
+            }
           } else {
             update.collection.hints = paste(update.collection.hints, 
                                             "UPDATE bt_hint_log
