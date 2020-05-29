@@ -4,9 +4,13 @@ gtasql::gta_sql_kill_connections()
 
 # SET PATHS
 gta_setwd()
-setwd( "~/Dropbox/")
-path <<- "ricardo-lg/"
+# ----------------------------   set this path on staging environment
+setwd( "~/Dropbox/GTA cloud/")
+path <<- "0 dev/ricardo-lg/"
 
+# ----------------------------   LG local path
+# setwd("~/Dropbox/")
+# path <<- "ricardo-lg/" 
 # APP SETUP
 source(paste0(path,"apps/deliver/setup.R"), local = F)
 

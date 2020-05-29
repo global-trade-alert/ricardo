@@ -3,16 +3,16 @@ rm(list=ls())
 gtasql::gta_sql_kill_connections()
 
 # SET PATHS
-# setwd("/home/rstudio/Dropbox/GTA cloud/")
+setwd("/home/rstudio/Dropbox/GTA cloud/")
 # setwd("C:/Users/jfrit/Desktop/Dropbox/GTA cloud")
 # setwd("C:/Users/Piotr Lukaszuk/Dropbox/GTA cloud")
 
 gta_setwd()
 # setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
 # path <<- "17 Shiny/8 ricardo app/"
-# path <<- "0 dev/ricardo-lg/"
-setwd( "~/Dropbox/")
-path <<- "ricardo-lg/"
+path <<- "0 dev/ricardo-lg/"
+# setwd( "~/Dropbox/")
+# path <<- "ricardo-lg/"
 
 # APP SETUP
 source(paste0(path,"code/setup.R"), local = F)

@@ -1,6 +1,6 @@
 # addResourcePath(prefix = 'www', directoryPath = paste0(path,'apps/b221/www'))
 
- addResourcePath(prefix = 'www', directoryPath = paste0(path,'www'))
+ addResourcePath(prefix = 'www', directoryPath = paste0(path,'www/deliver'))
 
 deliverui <- function(id) {
   # Create a namespace function using the provided id
@@ -9,9 +9,9 @@ deliverui <- function(id) {
   # START UI
   tagList(
     fluidPage(
-    theme = "www/deliver/style.css",
+    theme = "www/style.css",
     tags$head(
-      tags$script(src="www/deliver/app.js")
+      tags$script(src="www/app.js")
     ),
     tags$div(class="removeui",
              tags$div(class="wrap deliver",
@@ -24,7 +24,7 @@ deliverui <- function(id) {
                                tags$div(id="loadMoreButton",
                                         actionButton(ns("loadMoreDeliver"),
                                                      "Refresh",
-                                                     class="blue"))),
+                                                     class="blue")))
 
              )
   )

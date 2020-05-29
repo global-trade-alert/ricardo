@@ -172,21 +172,48 @@ label {
 /*------------------------------------HERE GOES LG STYLE DECLARATIONS ------------------------------------------ */
 
 body {
-  font-size: 1.2em;
+  font-size: 1em;
 }
 
-table .item-label {
+/*#DataTables_Table_0 {
+  table-layout: fixed;
+  word-wrap:break-word;
+}*/
+
+table .prd-label {
+
+    font-size: 0.9em;
+    border: 1px solid grey;
+    border-radius: 20px;
+    background-color: #FFA07A;
+    color: black;
+    text-align: center;
+    padding: 0px 5px 0px 5px;
+}
+
+table .instr-label {
+
+    font-size: 0.9em;
+    border: 1px solid grey;
+    border-radius: 20px;
+    background-color: #76D7C4;
+    color: black;
+    text-align: center;
+    padding: 0px 5px 0px 5px;
+}
+
+table .status-label {
 
     font-size: 0.9em;
     padding: 1px 10px;
     border: 1px solid #d2d2d2;
     border-radius: 20px;
     background-color: #008080;
-    float: left;
-    margin-right: 40px;
+    float: none;
     color: white;
     text-align: center;
     margin-top: 0.6em;
+    max-width: 55px;
 }
 
 .middle-item{
@@ -205,26 +232,12 @@ table .item-label {
   border-radius: 10px;
 }
 
-
-.trimmed-text{
-  height: auto;
-  max-height: 50px;
-  overflow: hidden;
-  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
-}
-
-.full-text{
-  height: auto;
-  max-height: 2000px;
-  overflow: hidden;
-  transition: opacity 0.5s ease-out, max-height 0.5s ease-out
-}
-
 .description-less {
   height: auto;
-  max-height: 50px;
+  max-height: 26px;
   overflow: hidden;
-  max-width: 600px;
+  max-width: 430px;
+  width: 430px !important;
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
@@ -233,16 +246,18 @@ table .item-label {
   height: auto;
   max-height: 2000px;
   overflow: hidden;
-  max-width: 600px;
+  max-width: 430px;
+  width: 430px !important;
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
 
 .source-less {
   height: auto;
-  max-height: 50px;
+  max-height: 26px;
   overflow: hidden;
-  max-width: 300px;
+  max-width: 250px !important;
+  width: 250px !important;
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
@@ -251,21 +266,65 @@ table .item-label {
   height: auto;
   max-height: 2000px;
   overflow: hidden;
-  max-width: 300px;
+  max-width: 250px !important;
+  width: 250px !important;
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
 
 .box-item-label{
-      display: flex;
-      justify-content: center;
+  display: flex;
+  /*flex-flow: wrap;*/
+  white-space: nowrap;
+  justify-content: center;
 }
 
-.labels-tr{
-  border-bottom:1px solid #000;
-  background-color: #F0F8FF;
+.col-left, .col-right{
+  /*flex: 50%;*/
+}
+
+.box-status-label{
+  display: flex;
+  flex-direction: column;
+  flex-flow: wrap;
+  white-space: nowrap;
+  justify-content: center;
+}
+
+.ann-date {
+  /*max-width: 10px;*/
 }
 
 #DataTables_Table_0{
 	border-collapse: collapse;
+}
+
+/* Adjust searchpanes columns here */
+div.dtsp-columns-5 {
+    min-width: 20% !important;
+    max-width: 20% !important;
+    padding-left: 1%;
+    padding-right: 1%;
+    margin: 0px !important;
+}
+
+table.dataTable thead th {
+    font-weight: bold;
+    font-size: 1em;
+}
+
+tr.new {
+  background-color: #ABEBC6 !important;
+}
+
+tr.updated {
+  background-color: #AED6F1 !important;
+}
+
+tr.confirmed {
+  background-color: #F7DC6F !important;
+}
+
+tr.deleted {
+  background-color: #E6B0AA !important;
 }
