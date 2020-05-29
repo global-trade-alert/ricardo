@@ -117,7 +117,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
     # 2nd case: reassign new hint's collection + values
     # original.hints = 1:3
     # hints.id = 1:3
-    if(is.freelancer == T){
+    if(7 == 1){
       new.hints = unique(hints.id[!hints.id %in% original.hints])
       
       select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
@@ -331,11 +331,22 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                             LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
                                             ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance
                                             SET ht_rel.validation_user = ",user.id,", 
-                                            	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                        
-                                            UPDATE bt_hint_log
-                                            JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
-                                            SET bt_hint_log.hint_state_id = ",editor.new.state,";")
+                                            	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+        
+        if(is.freelancer){
+          update.collection.hints = paste(update.collection.hints, 
+                                          "UPDATE bt_hint_log
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
+                                          JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
+                                          SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
+                                          																		(SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+          
+        } else {
+          update.collection.hints = paste(update.collection.hints, 
+                                          "UPDATE bt_hint_log
+                                          JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
+                                          SET bt_hint_log.hint_state_id = ",editor.new.state,";")
+        }
         
         gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
       } else {
@@ -422,11 +433,22 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                             LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
                                             ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance
                                             SET ht_rel.validation_user = ",user.id,", 
-                                            	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                          
-                                            UPDATE bt_hint_log
-                                            JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
-                                            SET bt_hint_log.hint_state_id = ",editor.new.state,";")
+                                            	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+          
+          if(is.freelancer){
+            update.collection.hints = paste(update.collection.hints, 
+                                            "UPDATE bt_hint_log
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
+                                          JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
+                                          SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
+                                          																		(SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+            
+          } else {
+            update.collection.hints = paste(update.collection.hints, 
+                                            "UPDATE bt_hint_log
+                                          JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id
+                                          SET bt_hint_log.hint_state_id = ",editor.new.state,";")
+          }
           
           gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
           
