@@ -46,8 +46,19 @@ new_env$covid.data <-
   mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
   mutate(confirmation = str_replace(confirmation, "4", "deleted"))
 
+# create users involved column with random users
+new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
 new_env$covid.data <- 
-  new_env$covid.data[c("confirmation","entry.id", "entry.type","country","initial.assessment",
+  new_env$covid.data %>%
+  mutate(users = str_replace(users, "1", "LG,PB")) %>%
+  mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
+  mutate(users = str_replace(users, "3", "JF")) %>%
+  mutate(users = str_replace(users, "4", "DR,JF")) %>%
+  mutate(users = str_replace(users, "5", "OR")) %>%
+  mutate(users = str_replace(users, "6", "KM"))
+
+new_env$covid.data <- 
+  new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
                        "gta.intervention.type","date.announced","date.implemented","date.removed",
                        "description","source","intervention.type","products","instruments")]
   
@@ -58,9 +69,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   
   output$deliverTable <- DT::renderDataTable(DT::datatable(
     data = new_env$covid.data, #retrieve_data(),
-    colnames = c('Confirmation Status' = 1, 'Documentation status' = 3, 'Jurisdiction' = 4, 'Initial assessment' = 5, 'GTA intervention type' = 6, 
-                 'Announcement date' = 7, 'Implementation date' = 8, 'Removal date' = 9, 'Description' = 10,
-                 'Source' = 11, 'Intervention Type' = 12, 'Products' = 13, 'Instruments' = 14),
+    colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Jurisdiction' = 5, 'Initial assessment' = 6, 'GTA intervention type' = 7, 
+                 'Announcement date' = 8, 'Implementation date' = 9, 'Removal date' = 10, 'Description' = 11,
+                 'Source' = 12, 'Intervention Type' = 13, 'Products' = 14, 'Instruments' = 15),
     
     rownames = FALSE,
     escape = FALSE,
@@ -89,58 +100,69 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           countFiltered = '{shown} / {total}'
         )
       ),
-      
       autoWidth = FALSE,
       columnDefs = list(
        # set columns widths
-        list(
-          width = "4%",  # Confirmation status
-          targets = 0
-        ),
-        list(
-          width = "4%", # Documentation status
-          targets = 2
-        ),
-        list(
-          width = "4%", # Jurisdiction
-          targets = 3
-        ),
-        list(
-          width = "4%", # Initial assessment
-          targets = 4
-        ),
-        list(
-          width = "4%", # GTA intervention type
-          targets = 5
-        ),
-        list(
-          width = "4%", # Announcement date
-          targets = 6
-        ),
-        list(
-          width = "4%", # Implementation date
-          targets = 7
-        ),
-        list(
-          width = "4%", # Removal date
-          targets = 8
-        ),
-        list(
-          width = "42%", # Description
-          targets = 9
-        ),
-        list(
-          width = "20%", # Source
-          targets = 10
-        ),
-        list(
-          width = "7%", # Products
-          targets = 12
-        ),
-        list(
-          width = "7%", # Instruments
-          targets = 13
-        ),
+          list(
+            width = "5%",  # Confirmation status
+            targets = 0
+          ),
+          list(
+            width = "3%",  # Entry ID
+            targets = 1
+          ),
+          list(
+            width = "3%",  # Users
+            targets = 2
+          ),
+          list(
+            width = "5%", # Documentation status
+            targets = 3
+          ),
+          list(
+            width = "5%", # Jurisdiction
+            targets = 4
+          ),
+          list(
+            width = "5%", # Initial assessment
+            targets = 5
+          ),
+          list(
+            width = "5%", # GTA intervention type
+            targets = 6
+          ),
+          list(
+            width = "5%", # Announcement date
+            targets = 7
+          ),
+          list(
+            width = "5%", # Implementation date
+            targets = 8
+          ),
+          list(
+            width = "5%", # Removal date
+            targets = 9
+          ), # 43%
+          list(
+            width = "25%", # Description
+            targets = 10
+          ),
+          list(
+            width = "13%", # Source
+            targets = 11
+          ),
+          list(
+            width = "0%", # Intervention Type
+            targets = 12
+          ),
+          list(
+            width = "10%", # Products
+            targets = 13
+          ),
+          list(
+            width = "6%", # Instruments
+            targets = 14
+          ),
           list(targets = '_all',
                createdCell = JS("function (td, cellData, rowData, row, col) {
                                   $(td).css('padding', '1px')
@@ -159,7 +181,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                  orthogonal = 'sp'
                )
                ),
-          list(targets = 6,
+          list(targets = 2,
+               render = JS("function (data, type, row){
+                            let users = data.split(',').map(d =>`<div class=\"usr-label\">${d}</div>`).join('');
+                             return `<div class=\"box-status-label\">
+                                        ${users}
+                                     </div>`
+               }")
+          ),
+          list(targets = 7,
                render = JS("function(data,type,row){
                             if (data != null){
                                 return `<div class=\"ann-date\">${data}</div>` 
@@ -168,7 +198,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             }
                }")
                ),
-          list(targets = 13,
+          list(targets = 14,
                render = JS("function (data, type, row) {
                             if (type === 'sp') {
                               return data.split(',')
@@ -204,7 +234,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                  )
                )
           ),
-          list(targets = 12,
+          list(targets = 13,
                render = JS("function (data, type, row) {
                             if (type === 'sp') {
                                 return data.split(',')
@@ -232,7 +262,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                  orthogonal = 'sp'
                )
                ),
-          list(targets = 10,
+          list(targets = 11,
                render = JS("function(data, type, row, meta){
                           data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>');
 
@@ -240,7 +270,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 
                           return output
                }")),
-          list(targets = 9,
+          list(targets = 10,
                render = JS("function(data, type, row, meta){
                           let output = `<div class=\"description-less\">${data}</div>`;
 
@@ -252,7 +282,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             searchPanes = list(
               show = FALSE
               ),
-            targets = c(1:2,5:11)#,12:22
+            targets = c(1:3,6:12)#,12:22
             ),
           # list(
           #   searchPanes = list(
@@ -339,11 +369,13 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           # Column visibility
           list(
             visible = FALSE,
-            targets = c(1,11) #11
+            targets = c(12) 
           )
         ),
       
       initComplete = JS("function(settings) {
+                            const api = this.api();
+                            //$('#hide').css({'display': ''}); //make table visible only after adjustments
 
       }"),
       
@@ -356,60 +388,60 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       preDrawCallback = JS("function(settings){
                            const api = this.api();
                            api.$('.more-less').remove();
+                           $('#hide').length == 0 ?
+                           $('#DataTables_Table_0').wrap('<div id=\"hide\" style=\"display: none\"</div>'): //make table invisible before adjustments
+                           0;
+                           
+                                                           
+                           // check if text length is bigger than tr height
+                            function isEllipsisActive($jQueryObject) {
+                                return ($jQueryObject[0].offsetHeight < $jQueryObject[0].scrollHeight);
+                            }
+                            
+                           new Promise((resolve, reject) => {
+                                $('#DataTables_Table_0').resize() // adjust columns widths
+                                resolve();
+                            })
+                            .then(() => {
+                                $('#hide').css({'display': ''});
+  
+                                api.$('.description-less').each(function(){
+                                let id = api.row( $(this).closest('tr') ).id();
+                                
+                                    if(isEllipsisActive($(this)) == true){
+                                        $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
+                                                                          class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
+                                                                          Show More</button>`)
+                                    }
+                                })
+                            })
 
       }"),
       
       drawCallback = JS("function(settings){
                               const api = this.api();
-
-                           
+                      
                                api.$('.status-label').each(function(){
                                   let type = $(this).text();
                                   $(this).closest('tr').addClass(type)
                                 })
-
+                              console.log($('#hide').css('display'))
+                              
                               let data = api.rows( { page: 'current' } ).data();
-
-                                console.log(data)
-                                
-                                /*for (let i in api.rows({ page: 'current' })[0]){
-                                  let output = data[i][12].split(',').map(d => `<div class=\"item-label\">${d}</div>`).join('');
-                                  
-                                  api.$(`tr#${data[i][1]}`).after(`<tr id=\"labels_${data[i][1]}\" class=\"labels-tr\">
-                                                                    <td colspan=\"9\">
-                                                                      <div class=\"box-item-label\">${output}
-                                                                      </div>
-                                                                    </td>
-                                                                  </tr>`);
-                                }*/
-
-                              // check if text length is bigger than tr height
-                              function isEllipsisActive($jQueryObject) {
-                                  return ($jQueryObject[0].offsetHeight < $jQueryObject[0].scrollHeight);
-                              }
-
-                              api.$('.description-less').each(function(){
-                              let id = api.row( $(this).closest('tr') ).id();
-
-                                  if(isEllipsisActive($(this)) == true){
-                                      $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
-                                                                        class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
-                                                                        Show More</button>`)
-                                  }
-                              })
+                              
+                             
                         }"),
       
       rowCallback = JS("function(row, data){
-                console.log(row)
-                console.log(data)
+
       }"),
       
       createdRow = JS("function(row, data, dataIndex, cells){
         
       }")
     ),
-    class = "row-border hover",
-    extensions = c("Select", 'SearchPanes', 'FixedHeader'),
+    class = "row-border hover compact",
+    extensions = c("Select", 'SearchPanes'),
     selection = "none"
     ),
   server = F)

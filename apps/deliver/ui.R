@@ -3,6 +3,7 @@
  addResourcePath(prefix = 'www', directoryPath = paste0(path,'www/deliver'))
 
 deliverui <- function(id) {
+
   # Create a namespace function using the provided id
   ns <- NS(id)
   

@@ -175,10 +175,14 @@ body {
   font-size: 1em;
 }
 
-/*#DataTables_Table_0 {
+#DataTables_Table_0 {
+  margin: 0 auto;
+  width: 100%;
+  clear: both;
+  border-collapse: collapse;
   table-layout: fixed;
   word-wrap:break-word;
-}*/
+}
 
 table .prd-label {
 
@@ -216,6 +220,17 @@ table .status-label {
     max-width: 55px;
 }
 
+table .usr-label {
+  
+    font-size: 0.9em;
+    border: 1px solid grey;
+    border-radius: 20px;
+    background-color: gainsboro;
+    color: black;
+    text-align: center;
+    padding: 0px 5px 0px 5px;
+}
+
 .middle-item{
   display: flex;
   align-items: center;
@@ -236,8 +251,8 @@ table .status-label {
   height: auto;
   max-height: 26px;
   overflow: hidden;
-  max-width: 430px;
-  width: 430px !important;
+  /*max-width: 500px;*/
+  /*width: 370px !important;*/
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
@@ -246,8 +261,8 @@ table .status-label {
   height: auto;
   max-height: 2000px;
   overflow: hidden;
-  max-width: 430px;
-  width: 430px !important;
+  /*max-width: 500px;
+  width: 370px !important;*/
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
@@ -256,8 +271,8 @@ table .status-label {
   height: auto;
   max-height: 26px;
   overflow: hidden;
-  max-width: 250px !important;
-  width: 250px !important;
+  /*max-width: 250px !important;
+  width: 250px !important;*/
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }
@@ -266,8 +281,8 @@ table .status-label {
   height: auto;
   max-height: 2000px;
   overflow: hidden;
-  max-width: 250px !important;
-  width: 250px !important;
+  /*max-width: 250px !important;
+  width: 250px !important;*/
   word-wrap: break-word;
   transition: opacity 0.5s ease-out, max-height 0.5s ease-out
 }

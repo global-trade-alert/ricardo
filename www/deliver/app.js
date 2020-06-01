@@ -9,3 +9,7 @@ const showLesscontent = function(type, id){
   $(`#toggle-${type}_${id}`).html('Show more');
   $(`#toggle-${type}_${id}`).attr('onclick', `showMorecontent(\"${type}\",${id})`)
 }
+
+$(document).ready(function(){
+
+})
