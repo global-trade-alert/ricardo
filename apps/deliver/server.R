@@ -168,14 +168,27 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                   $(td).css('padding', '1px')
                                 }
                                 ")),
+          list(targets = c(0:9),
+               className = 'dt-center'),
           list(targets = 0,
                render = JS("function (data, type, row){
                             if (type === 'sp') {
                               return data;
                             }
-                           return `<div class=\"box-status-label\">
-                                    <div class=\"status-label\">${data}</div>
-                                   </div>`
+                            
+                            let accepted = data != 'confirmed' ? '<img src=\"www/accept.png\" class=\"accept\"/>' : '',
+                                deleted = '<img src=\"www/delete.png\" class=\"delete\"/>',
+                                edit = '<img src=\"www/edit.png\" class=\"edit\"/>';
+
+                            
+                            let output = `<div class=\"status-row\">
+                                              <div class=\"buttons-column\">${accepted + deleted + edit}</div>
+                                              <div class=\"status-column\">
+                                                <div class=\"status-label\">${data}</div>
+                                              </div>
+                                          </div>`;
+                                   
+                            return output;
                }"),
                searchPanes = list(
                  orthogonal = 'sp'
@@ -184,7 +197,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           list(targets = 2,
                render = JS("function (data, type, row){
                             let users = data.split(',').map(d =>`<div class=\"usr-label\">${d}</div>`).join('');
-                             return `<div class=\"box-status-label\">
+                             return `<div class=\"box-usr-label\">
                                         ${users}
                                      </div>`
                }")
@@ -420,7 +433,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       
       drawCallback = JS("function(settings){
                               const api = this.api();
-                      
+                              
                                api.$('.status-label').each(function(){
                                   let type = $(this).text();
                                   $(this).closest('tr').addClass(type)
@@ -433,14 +446,21 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                         }"),
       
       rowCallback = JS("function(row, data){
-
       }"),
       
       createdRow = JS("function(row, data, dataIndex, cells){
-        
+                      $(row).find('.buttons-column').each(function(){
+                            let status = data[0],
+                                that = $(this),
+                                id = data[1];
+                                
+                              $(that).children().each(function(){
+                                $(this).on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
+                              })
+                        })
       }")
     ),
-    class = "row-border hover compact",
+    class = "row-border compact",
     extensions = c("Select", 'SearchPanes'),
     selection = "none"
     ),
