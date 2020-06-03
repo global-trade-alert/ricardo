@@ -7,9 +7,9 @@ bt_attribute_hint_processing = function(user.id = NULL, hint.state = NULL, db.co
   #hint.state == 'B221 - editor desk'
   if(3<2) hint.state = paste0("'",hint.state, "' OR bt_hint_state_list.hint_state_name = 'trash bin - entered'") else hint.state = paste0("'",hint.state,"'")
   app.id = gta_sql_get_value(paste0("SELECT type_id FROM ric_app_list WHERE app_name = ",substr(hint.state,1,5),"';"))
-  sql.pull.hints = paste0("SELECT hint_id FROM
+  sql.pull.hints = paste0("SELECT DISTINCT hint_id FROM
                           (SELECT hint_id FROM
-                          (SELECT DISTINCT bt_hint_log.hint_id FROM bt_hint_log 
+                          (SELECT bt_hint_log.hint_id FROM bt_hint_log 
                           JOIN bt_hint_jurisdiction ht_jur ON ht_jur.hint_id = bt_hint_log.hint_id 
                           JOIN (SELECT jurisdiction_id FROM ric_user_implementers WHERE user_id = ",user.id," AND app_id = ",app.id,") user_prio_jur ON ht_jur.jurisdiction_id = user_prio_jur.jurisdiction_id
                           LEFT JOIN b221_hint_intervention ON b221_hint_intervention.hint_id = bt_hint_log.hint_id
@@ -18,7 +18,7 @@ bt_attribute_hint_processing = function(user.id = NULL, hint.state = NULL, db.co
                           ORDER BY FIND_IN_SET(apparent_intervention_id, '2,3') DESC, bt_hint_log.registration_date DESC LIMIT 10) prio_hints
                           UNION 
                           SELECT hint_id FROM
-                          (SELECT DISTINCT bt_hint_log.hint_id FROM bt_hint_log 
+                          (SELECT bt_hint_log.hint_id FROM bt_hint_log 
                           LEFT JOIN b221_hint_intervention ON b221_hint_intervention.hint_id = bt_hint_log.hint_id
                           JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
                           AND NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id)
