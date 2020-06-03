@@ -151,8 +151,9 @@ function slideInBasicUI() {
 }
 
 function markHints() {
+  console.log("markHints loaded");
   
-  $('#b221-slideInRight #hintContainer').on('click','.hint-title', function (e) {
+  $('#b221-slideInRight').on('click','#hintContainer .hint-title', function (e) {
     console.log(e);
     if(e.target.className == 'hint-title') {
     if ($(this.parentNode.parentNode).hasClass('starred')) {
