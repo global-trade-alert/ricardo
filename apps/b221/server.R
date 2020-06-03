@@ -23,6 +23,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   
   # Set reactive value to check whether first or second hint (state 3:7,9) is added to collection
   lockHint <- reactiveVal(FALSE)
+  # Set reactive value to check to the first time opening slide in
+  initial.slide.in <- reactiveVal(TRUE)
   
   ns <- NS("b221")
   
@@ -594,7 +596,13 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     scroll: true
                                 }
                               })")
-    runjs(paste0(" slideInBasicUI(); removeHint(); markHints();"))
+    runjs(paste0(" slideInBasicUI();"))
+    
+    if (initial.slide.in()) {
+      runjs(paste0("markHints(); removeHint();"))
+      initial.slide.in <- initial.slide.in(FALSE)
+    }
+    
     if (collection) {
       if (nrow(collectionStats)>0) {
         if (is.na(collectionStats$starred.hint)==F) {
@@ -767,9 +775,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
             setdiff(union(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]]),intersect(colType, strsplit(collectionStats$intervention.type.name,split = " ; ")[[1]])),
             setdiff(union(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]]),intersect(colAssessment, strsplit(collectionStats$assessment.name,split = " ; ")[[1]])),
             setdiff(union(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]]),intersect(colProduct, strsplit(collectionStats$product.group.name,split = " ; ")[[1]])),
-            setdiff(union(colAnnouncement, collectionStats$announcement.date), intersect(colAnnouncement, collectionStats$announcement.date)),
-            setdiff(union(colImplementation, collectionStats$implementation.date), intersect(colImplementation, collectionStats$implementation.date)),
-            setdiff(union(colRemoval, collectionStats$removal.date), intersect(colRemoval, collectionStats$removal.date))
+            setdiff(union(as.character(colAnnouncement), collectionStats$announcement.date), intersect(as.character(colAnnouncement), collectionStats$announcement.date)),
+            setdiff(union(as.character(colImplementation), collectionStats$implementation.date), intersect(as.character(colImplementation), collectionStats$implementation.date)),
+            setdiff(union(as.character(colRemoval), collectionStats$removal.date), intersect(as.character(colRemoval), collectionStats$removal.date))
           )) > 0 ) {
             collectionChanged = T
           } else {
@@ -880,7 +888,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       pagingType = 'simple_numbers',
       pageLength = 10,
       columnDefs = list(list(visible = FALSE, targets = c(0,2,4:9)), list(sortable=FALSE, targets = c(0)),
-                        list(targets = c(1,3), render = JS("
+                        list(targets = c(), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
                                                         }
@@ -1044,7 +1052,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       pagingType = 'simple_numbers',
       pageLength = 20,
       columnDefs = list(list(visible = FALSE, targets = c(0:2,4,6:19)), list(sortable=FALSE, targets = c(0)),
-                        list(targets = c(5,3), render = JS("
+                        list(targets = c(), render = JS("
                                                         function(data, type, row, meta){
                                                           return '';
                                                         }
