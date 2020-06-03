@@ -1399,6 +1399,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                           LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
                                                           GROUP BY ht_log.hint_id) unsorted_hints;")))
     
+    
     if (nrow(initialHints)>0) {
       initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
       
@@ -1420,6 +1421,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
       initialHints = gsub("'","\"",generate_initial_hints(initialHints))
         
+    } else {
+      initialHints <- c()
     }
     
     updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
@@ -1456,7 +1459,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
     runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))
-    if (nrow(initialHints)>0) {
+    if (length(initialHints)>0) {
       initialHints <- gsub("[\r\n]", "", initialHints)
       runjs(paste0("$('",paste0(initialHints, collapse=""),"').hide().appendTo('#hintContainer').fadeIn(300);"))
       runjs("$('.tooltip-create-top').tooltipster({
