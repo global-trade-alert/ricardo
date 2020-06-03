@@ -400,7 +400,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                                                           GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
                                                           FROM bt_hint_log ht_log 
                                                           JOIN b221_hint_collection ht_col ON ht_col.hint_id = ht_log.hint_id AND ht_col.collection_id = ",collectionId,"
-                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                          JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id AND (ht_url.url_accepted = 1 OR ht_url.url_accepted IS NULL) AND ht_url.classification_id IS NOT NULL
+                                                          JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
                                                           LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                                                           LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
                                                           LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
@@ -445,10 +446,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       initialPlaceholder <- "Enter new Collection Name"
       initialName = NULL
-      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",hintId,");"))))
-      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",hintId,");"))))
-      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",hintId,");"))))
-      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",hintId,");"))))
+      initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE (hint_id = ",hintId," AND classification_id = (SELECT MAX(classification_id) FROM bt_hint_jurisdiction WHERE hint_id = ",hintId,")));"))))
+      initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE (hint_id = ",hintId," AND classification_id = (SELECT MAX(classification_id) FROM b221_hint_product_group WHERE hint_id = ",hintId,")));"))))
+      initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE (hint_id = ",hintId," AND classification_id = (SELECT MAX(classification_id) FROM b221_hint_intervention WHERE hint_id = ",hintId,")));"))))
+      initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE (hint_id = ",hintId," AND classification_id = (SELECT MAX(classification_id) FROM b221_hint_assessment WHERE hint_id = ",hintId,")));"))))
       initialAnnouncement <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT MAX(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date FROM bt_hint_date  
 LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id WHERE bt_hint_date.hint_id = ",hintId,";"))))
       initialImplementation <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT MAX(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS announcement_date FROM bt_hint_date  
@@ -471,7 +472,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                                         GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
                                                                         GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others
                                                                         FROM bt_hint_log ht_log 
-                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                                                                        JOIN bt_hint_url ht_url ON ht_url.hint_id = ht_log.hint_id AND (ht_url.url_accepted = 1 OR ht_url.url_accepted IS NULL) AND ht_url.classification_id IS NOT NULL
+                                                                        JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
                                                                         LEFT JOIN bt_hint_jurisdiction ht_jur ON ht_log.hint_id = ht_jur.hint_id LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
                                                                         LEFT JOIN bt_hint_text ht_txt ON ht_txt.hint_id = ht_log.hint_id AND language_id = 1
                                                                         LEFT JOIN b221_hint_assessment ht_ass ON ht_ass.hint_id = ht_log.hint_id LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
@@ -597,7 +599,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                 }
                               })")
     runjs(paste0(" slideInBasicUI();"))
-  
+
+    
     if (initial.slide.in()) {
       runjs(paste0("markHints(); removeHint();"))
       initial.slide.in <- initial.slide.in(FALSE)
@@ -1396,26 +1399,28 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                           LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
                                                           GROUP BY ht_log.hint_id) unsorted_hints;")))
     
+    if (nrow(initialHints)>0) {
+      initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
+      
+      initialHints$tpcontent = paste0('<div id="top-tooltip_',initialHints$hint.id,'" class="tipped-content"><div class="tipped-grid"">',
+                                      '<div><label>Date</label>',initialHints$hint.date,'</div>',
+                                      '<div><label>Acting Agency</label>',initialHints$acting.agency,'</div>',
+                                      '<div><label>Implementer</label>',initialHints$jurisdiction.name,'</div>',
+                                      '<div><label>Assessment</label>',initialHints$assessment,'</div>',
+                                      '<div><label>Intervention type</label>',initialHints$intervention.type,'</div>',
+                                      '<div><label>Product</label>',initialHints$product.group.name,'</div>',
+                                      '</div><div class="tipped-description">',
+                                      '<div><label>Description</label>',initialHints$hint.description,'</div>',
+                                      '</div><div class="tipped-url">',
+                                      '<div><label>URL official</label>',initialHints$official,'</div>',
+                                      '<div><label>URL news</label>',initialHints$news,'</div>',
+                                      '</div></div>')
+      
+      initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
     
-    initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
-    
-    initialHints$tpcontent = paste0('<div id="top-tooltip_',initialHints$hint.id,'" class="tipped-content"><div class="tipped-grid"">',
-                                    '<div><label>Date</label>',initialHints$hint.date,'</div>',
-                                    '<div><label>Acting Agency</label>',initialHints$acting.agency,'</div>',
-                                    '<div><label>Implementer</label>',initialHints$jurisdiction.name,'</div>',
-                                    '<div><label>Assessment</label>',initialHints$assessment,'</div>',
-                                    '<div><label>Intervention type</label>',initialHints$intervention.type,'</div>',
-                                    '<div><label>Product</label>',initialHints$product.group.name,'</div>',
-                                    '</div><div class="tipped-description">',
-                                    '<div><label>Description</label>',initialHints$hint.description,'</div>',
-                                    '</div><div class="tipped-url">',
-                                    '<div><label>URL official</label>',initialHints$official,'</div>',
-                                    '<div><label>URL news</label>',initialHints$news,'</div>',
-                                    '</div></div>')
-    
-    initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
-  
-    initialHints = gsub("'","\"",generate_initial_hints(initialHints))
+      initialHints = gsub("'","\"",generate_initial_hints(initialHints))
+        
+    }
     
     updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
     
@@ -1448,30 +1453,32 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     updateDateInput(session = session, inputId = "initImplementation", value = unlist(strsplit(collectionStats$implementation.date, " ; ")))
     updateDateInput(session = session, inputId = "initRemoval", value = unlist(strsplit(collectionStats$removal.date, " ; ")))
     
-    print(initialHints)
+    
     runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
     runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))
-    initialHints <- gsub("[\r\n]", "", initialHints)
-    runjs(paste0("$('",paste0(initialHints, collapse=""),"').hide().appendTo('#hintContainer').fadeIn(300);"))
-    runjs("$('.tooltip-create-top').tooltipster({
-                                theme: 'tooltipster-noir',
-                                contentCloning: true,
-                                maxWidth: 600,
-                                arrow:false,
-                                animationDuration: 150,
-                                trigger: 'hover',
-                                triggerOpen: {
-                                    mouseenter: true
-                                },
-                                triggerClose: {
-                                    click: true,
-                                    scroll: true
-                                }
-                              })")
-    
-    if(nrow(collectionStats)>0) {
-      if (is.na(collectionStats$starred.hint)==F) {
-        runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+    if (nrow(initialHints)>0) {
+      initialHints <- gsub("[\r\n]", "", initialHints)
+      runjs(paste0("$('",paste0(initialHints, collapse=""),"').hide().appendTo('#hintContainer').fadeIn(300);"))
+      runjs("$('.tooltip-create-top').tooltipster({
+                                  theme: 'tooltipster-noir',
+                                  contentCloning: true,
+                                  maxWidth: 600,
+                                  arrow:false,
+                                  animationDuration: 150,
+                                  trigger: 'hover',
+                                  triggerOpen: {
+                                      mouseenter: true
+                                  },
+                                  triggerClose: {
+                                      click: true,
+                                      scroll: true
+                                  }
+                                })")
+      
+      if(nrow(collectionStats)>0) {
+        if (is.na(collectionStats$starred.hint)==F) {
+          runjs(paste0("$('#hintContainer #hintId_",collectionStats$starred.hint,"').addClass('starred');"))
+        }
       }
     }
   })
