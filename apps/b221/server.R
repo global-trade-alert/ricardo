@@ -793,7 +793,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                    "\ncollection assessment val: ",paste0(colAssessment,collapse=','),
                    "\ncollection product val: ",paste0(colProduct,collapse=',')))
         
-        b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), 
+        b221_process_collections_hints(is.freelancer = F, 
                                        user.id = user$id, 
                                        collection.id = collectionId, 
                                        hints.id = colHints, 
