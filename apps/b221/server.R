@@ -23,6 +23,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   
   # Set reactive value to check whether first or second hint (state 3:7,9) is added to collection
   lockHint <- reactiveVal(FALSE)
+  # Set reactive value to check to the first time opening slide in
+  initial.slide.in <- reactiveVal(TRUE)
   
   ns <- NS("b221")
   
@@ -594,7 +596,13 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     scroll: true
                                 }
                               })")
-    runjs(paste0(" slideInBasicUI(); removeHint(); markHints();"))
+    runjs(paste0(" slideInBasicUI();"))
+  
+    if (initial.slide.in()) {
+      runjs(paste0("markHints(); removeHint();"))
+      initial.slide.in <- initial.slide.in(FALSE)
+    }
+    
     if (collection) {
       if (nrow(collectionStats)>0) {
         if (is.na(collectionStats$starred.hint)==F) {
