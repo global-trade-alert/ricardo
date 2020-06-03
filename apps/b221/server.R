@@ -597,6 +597,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                 }
                               })")
     runjs(paste0(" slideInBasicUI();"))
+
     
     if (initial.slide.in()) {
       runjs(paste0("markHints(); removeHint();"))
