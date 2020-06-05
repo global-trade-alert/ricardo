@@ -9,7 +9,7 @@ setwd( "~/Dropbox/GTA cloud/")
 path <<- "0 dev/ricardo-lg/"
 
 # ----------------------------   LG local path
-# setwd("~/Dropbox/")
+# settwd("~/Dropbox/")
 # path <<- "ricardo-lg/" 
 # APP SETUP
 source(paste0(path,"apps/deliver/setup.R"), local = F)
@@ -27,5 +27,5 @@ shinyApp(
   server = function(input, output, session) {
             callModule(deliverserver, 'deliver', user = active.user, app=7, prm = list())
           },
-  options = list(launch.browser=F, port=4109)
+  options = list(launch.browser=T, port=4109)
 )

@@ -240,10 +240,19 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                  orthogonal = 'sp',
                  dtOpts = list(
                    initComplete = JS("function(){
-                           console.log($('.dtsp-searchPane'))
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
-                   }")
+                   }"),
+                   drawCallback = JS("function(settings){
+                                     const api = this.api();
+                   }"),
+                   predrawCallback = JS("function(settings){
+                                     const api = this.api();
+
+                   }"),
+                   createdRow = JS("function(row, data, dataIndexcells){
+
+                                   }")
                  )
                )
           ),
@@ -389,6 +398,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       initComplete = JS("function(settings) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
+                            settings._searchPanes.regenerating = true //allow recalculation of searchPanes
 
       }"),
       
@@ -400,11 +410,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       #clear display before creating content
       preDrawCallback = JS("function(settings){
                            const api = this.api();
-                           api.$('.more-less').remove();
+                           //api.$('.more-less').remove();
                            $('#hide').length == 0 ?
                            $('#DataTables_Table_0').wrap('<div id=\"hide\" style=\"display: none\"</div>'): //make table invisible before adjustments
                            0;
-                           
                                                            
                            // check if text length is bigger than tr height
                             function isEllipsisActive($jQueryObject) {
@@ -417,11 +426,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             })
                             .then(() => {
                                 $('#hide').css({'display': ''});
-  
-                                api.$('.description-less').each(function(){
-                                let id = api.row( $(this).closest('tr') ).id();
                                 
-                                    if(isEllipsisActive($(this)) == true){
+                                  api.$('.description-less').each(function(){ // all un-opened descriptions
+                                  let id = api.row( $(this).closest('tr') ).id();
+                                
+                                    if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
                                         $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
                                                                           class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
                                                                           Show More</button>`)
@@ -438,17 +447,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                   let type = $(this).text();
                                   $(this).closest('tr').addClass(type)
                                 })
-                              console.log($('#hide').css('display'))
                               
                               let data = api.rows( { page: 'current' } ).data();
-                              
-                             
+
                         }"),
       
       rowCallback = JS("function(row, data){
+
       }"),
       
       createdRow = JS("function(row, data, dataIndex, cells){
+      
                       $(row).find('.buttons-column').each(function(){
                             let status = data[0],
                                 that = $(this),
@@ -458,6 +467,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 $(this).on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
                               })
                         })
+
       }")
     ),
     class = "row-border compact",
