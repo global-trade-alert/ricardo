@@ -9,11 +9,11 @@ function checkLeads() {
    // Check if sender is the <div> element e.g.
    // console.log('checkLeads');
     var elementType = $(this)[0].id
-    
+
     var elementID = $(this.parentNode.parentNode.parentNode)[0].id
-    
+
     var changeEl = $(this.parentNode.parentNode.parentNode)
-    
+
     if(!$(e.target).is('#b221-leadsTable .no-touch')) {
       if (elementType == "discard" && ! $(this).hasClass('dismiss')) {
           $(changeEl).removeClass('reactivate');
@@ -24,7 +24,7 @@ function checkLeads() {
           $(changeEl).removeClass('dismiss');
           // console.log(`#${elementID}`);
           // collectData(`#${elementID}`,'reactivate');
-      } 
+      }
   }
 
   });
@@ -36,11 +36,11 @@ function checkLeadsManual() {
    // Check if sender is the <div> element e.g.
    // console.log('checkLeadsManual');
     var elementType = $(this)[0].id
-    
+
     var elementID = $(this.parentNode.parentNode.parentNode)[0].id
-    
+
     var changeEl = $(this.parentNode.parentNode.parentNode)
-    
+
     if(!$(e.target).is('#b221-leadsTable .no-touch')) {
       if (elementType == "discard" && ! $(this).hasClass('dismiss')) {
           $(changeEl).removeClass('reactivate');
@@ -51,14 +51,14 @@ function checkLeadsManual() {
           $(changeEl).removeClass('dismiss');
           // console.log(`#${elementID}`);
           collectData(`#${elementID}`,'reactivate');
-      } 
+      }
   }
 
   });
 }
 
 function hintsBasicUI() {
-  
+
   console.log("HINTS BASIC UI BOUND");
 
   // SHOW MORE BUTTON
@@ -83,14 +83,14 @@ function hintsBasicUI() {
       var collection = "FALSE";
     }
     // console.log([elementID, collectionID, collection]);
-    
+
     Shiny.setInputValue("b221-collectionAdd", [elementID, collectionID, collection], {priority: "event"});
     Shiny.setInputValue("b221-loadCollections", elementID.replace("leadsID_",""), {priority: "event"});
     Shiny.setInputValue("b221-loadSingleHints", elementID, {priority: "event"});
 
   });
-  
-  
+
+
   $('#b221-slideInRight').on('loadCollectionSlideIn',function () {
     var elementID = $(this)[0].children[0].id
     // console.log("LOAD COLLECTIONS SLIDE IN")
@@ -98,13 +98,13 @@ function hintsBasicUI() {
     $('#b221-close-button').addClass('open');
     $('.backdrop-nav').addClass('open');
   });
-  
+
   // SHOW COUNTRIES DROPDOWNS ON SELECT
   $('#b221-leadsTable').on('click','.top-row',function (event) {
     event.stopPropagation(); // prevent bubbling to .leads-item
   });
-  
-  
+
+
   $('#b221-leadsTable').on('click','.submission',function (event) {
     event.stopPropagation(); // prevent bubbling to .leads-item
   });
@@ -112,15 +112,15 @@ function hintsBasicUI() {
   $('#b221-leadsTable').on('change','.selectize-input input',function (event) {
     $(this.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
   });
-  
+
   $('#b221-leadsTable').on('change','.is-official input',function (event) {
     $(this.parentNode.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
   });
-  
+
   $('#b221-leadsTable').on('change','.top-row select',function (event) {
     $(this.parentNode.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
   });
-  
+
   $('#b221-leadsTable').on('change keyup paste','.comment input',function (event) {
     $(this.parentNode.parentNode.parentNode.parentNode).addClass('show-submission');
   });
@@ -132,26 +132,62 @@ function hintsBasicUI() {
     let current_country = $(country_select).val();
     let elementID =  $(country_select).attr('id').replace('country_','');
   })
-  
+
 }
 
 function slideInBasicUI() {
-  
+
   $('.backdrop-nav').on('click', function () {
     $('#b221-slideInRight').removeClass('open');
     $('#b221-close-button').removeClass('open');
   });
-  
+
   $('#b221-close-button').on('click', function () {
     $('#b221-slideInRight').removeClass('open');
     $('#b221-close-button').removeClass('open');
     $('.backdrop-nav').removeClass('open');
   });
-  
+
+  $('#b221-slideInRight').on('input','.textAreaCollection', function () {
+    var colID = $(this)[0].id.replace("textCollection_","");
+    $(`#renameCollection_${colID}`).addClass('visible');
+    console.log($(this));
+  });
+
+  $('#b221-slideInRight').on('click', '.addCollection', function () {
+    var colID = $(this)[0].id.replace("addCollection_","")
+    Shiny.setInputValue("b221-collectionClick", colID, {priority: "event"});
+  });
+
+  $('#b221-slideInRight').on('click', '.renameCollection', function () {
+    var colID = $(this)[0].id.replace("renameCollection_","")
+    var name = $(`#textCollection_${colID}`)[0].value;
+    output = ({id: colID, name: name});
+    Shiny.setInputValue("b221-renameCollection", JSON.stringify(output), {priority: "event"});
+    $(`#renameCollection_${colID}`).removeClass('visible');
+  });
+
+
+
+}
+
+function discardButton() {
+
+  $('#b221-slideInRight').on('click','#discardCollection-popup', function () {
+    $('#confirm-discard').addClass('show');
+  })
+
+  $('#b221-slideInRight').on('click','#confirm-discard .cancel', function () {
+    $('#confirm-discard').removeClass('show');
+})
+
+  $('#b221-slideInRight').on('click','#confirm-discard #b221-discardCollection', function () {
+    $('#confirm-discard').removeClass('show');
+  })
 }
 
 function markHints() {
-  
+
   $('#b221-slideInRight').on('click','#hintContainer .hint-title', function (e) {
     console.log(e);
     if(e.target.className == 'hint-title') {
@@ -183,7 +219,7 @@ function removeHint() {
       $(this).remove();
     });
   });
-    
+
   $('#b221-slideInRight').on('click', '.is-official',function () {
     // console.log($(this.parentNode.parentNode).hasClass('official'));
     if ($(this.parentNode.parentNode).hasClass('official')) {
@@ -266,25 +302,25 @@ removaldate})
     });
     // console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];
-  
+
     if (state == 'reactivate') {
         if (validate.some(checkNull)) {
-          Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});  
+          Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});
         } else {
           Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
-          $(`${type}`).addClass('reactivate'); 
-          $(`${type}`).removeClass('show-submission') 
-        }  
-      } else { 
+          $(`${type}`).addClass('reactivate');
+          $(`${type}`).removeClass('show-submission')
+        }
+      } else {
         Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
         $(`${type}`).addClass('dismiss');
-        $(`${type}`).removeClass('show-submission') 
+        $(`${type}`).removeClass('show-submission')
     }
   }
-  
+
     catch(error) {
       // console.log(error);
-      Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});  
+      Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});
     }
 
 }
@@ -295,9 +331,9 @@ function saveNewCollection() {
   // console.log("COLLETION HINT ID: "+hintId);
   var starredHint = null;
   var officialHint = [];
-  
+
   var childIds = [];
-  
+
     $("#hintContainer > div.hint-item").each((index, elem) => {
       if ($(elem).hasClass('starred')) {
         starredHint = elem.id.replace("hintId_","");
@@ -307,6 +343,13 @@ function saveNewCollection() {
       }
     childIds.push(parseInt(elem.id.replace("hintId_","")));
   });
-  
+
   Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint}), {priority: "event"});
+}
+
+
+function discardExistingCollection() {
+  var state = $('#b221-slideInRight .collectionHeader')[0].id;
+
+  Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({state}), {priority: "event"});
 }
