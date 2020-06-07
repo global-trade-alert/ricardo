@@ -577,7 +577,20 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     format = "yyyy-mm-dd")),
                tags$h4("Hints included"),
                tags$div(id="hintContainer",
-                        HTML(initialHints)))
+                        HTML(initialHints)),
+               tags$div(class="options-bar",
+                        tags$button(id="discardCollection-popup",
+                                    tags$i(class="fa fa-times"),
+                                    "Discard"),
+               tags$div(id="confirm-discard",
+                        tags$div(class="confirm-discard-inner",
+                                tags$p("You are discarding a collection"),
+                                tags$div(class="button-wrap",
+                                tags$button(class="cancel btn",
+                                            "Cancel"),
+                                actionButton(ns("discardCollection"),
+                                             label="Discard",
+                                             icon = icon("times")))))))
     )
     )
 
@@ -602,7 +615,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
 
     
     if (initial.slide.in()) {
-      runjs(paste0("markHints(); removeHint();"))
+      runjs(paste0("markHints(); removeHint(); discardButton();"))
       initial.slide.in <- initial.slide.in(FALSE)
     }
     
@@ -618,6 +631,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   
   observeEvent(input$saveCollection, {
     runjs('saveNewCollection();')
+  })
+  
+  observeEvent(input$discardCollection, {
+    runjs('discardExistingCollection();')
   })
   
   observeEvent(input$saveNewCollection, {
@@ -882,6 +899,29 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
   })
   
+  
+  # DISCARD EXISTING COLLECTION
+  observeEvent(input$discardExistingCollection, {
+    colData <- jsonlite::fromJSON(input$discardExistingCollection)
+    print(colData)
+    
+    if (colData$state == "newCollection") {
+      showNotification("This collection cannot be discarded, as it does not exist", duration = 3)
+    } else {
+      collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
+      print(paste0("THIS COLLECTION IS: ", collectionId))
+      
+      bt_delete_collection(collection.id=collectionId)
+      
+      runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+      runjs(paste0("$('#b221-close-button').removeClass('open');"))
+      runjs(paste0("$('.backdrop-nav').removeClass('open');"))
+      removeUI(selector = ".removeslideinui",immediate = T)
+    }
+    
+  })
+  
+  
   output$collectionTable <- DT::renderDataTable(DT::datatable(
     collections(),
     rownames = FALSE,
@@ -911,6 +951,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                             let product = data[8];
                             let type = data[9];
                             let jurisdiction = data[7];
+                            let collectionTitle = '<textarea id=\\'textCollection_'+data[0]+'\\' class=\\'textAreaCollection\\' type=\\'text\\'>'+data[1]+'</textarea>';
+                            let collectionSave = '<button id=\\'renameCollection_'+data[0]+'\\' class=\\'renameCollection btn\\'>Save</button>'
                             
                             let tags = '<div class=\\'tags\\'>'+assessment+date+jurisdiction+type+product+'</div>';
 
@@ -926,11 +968,11 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                           
                            $(row)[0].innerHTML = '';
                            $(row)
-                           .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'left\\'>'+tags+'<div class=\\'collection-title\\'>'+data[1]+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#coltooltip_'+data[0]+'\\' class=\\'coltooltip-create info\\'>'+tipped+'</div><div class=\\'icon\\'><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
+                           .append('<div id=\\'collection_'+data[0]+'\\' class=\\'collection-item\\'><div class=\\'left\\'>'+tags+'<div class=\\'collection-title\\'>'+collectionTitle+collectionSave+'</div></div><div class=\\'right\\'><div data-tooltip-content=\\'#coltooltip_'+data[0]+'\\' class=\\'coltooltip-create info\\'>'+tipped+'</div><div id=\\'addCollection_'+data[0]+'\\' class=\\'icon addCollection\\'><span class=\\'material-icons add\\'>add_circle</span></div></div></div>'+tpcontent);
 
                            return row; }"),
       preDrawCallback = JS('function() { Shiny.unbindAll(this.api().table().node()); }'), # reset
-      drawCallback = JS("function createTipped() {
+      drawCallback = JS("function() { Shiny.bindAll(this.api().table().node());
                               $('.coltooltip-create').tooltipster({
                                 theme: 'tooltipster-noir',
                                 contentCloning: true,
@@ -945,11 +987,11 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     click: true,
                                     scroll: true
                                 }
-                              })
+                              });
+                              console.log('TOOLTIPS CREATED');
                             }")),
     callback = JS(""),
-    extensions = "Select",
-    selection = "single"
+    selection = "none"
   ),
   server = F)
   
@@ -1124,7 +1166,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                               });
                               console.log('TOOLTIPS CREATED');
                             }")),
-    callback = JS("console.log('TEST');"),
+    callback = JS(""),
     extensions = "Select",
     selection = "single"
   ),
@@ -1375,9 +1417,20 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   })
   
   # SELECT ROWS MECHANISM COLLECTION TABLE
-  observeEvent(input$collectionTable_rows_selected, { 
-    chooseCollection <- collectionsOutput[input$collectionTable_rows_selected,c(1,2)]
-    collectionId = chooseCollection$collection.id
+  
+  observeEvent(input$renameCollection, {
+    print('SUCCESS SAVE')
+    print(input$renameCollection)
+    stats <- jsonlite::fromJSON(input$renameCollection)
+
+    collectionId <- as.numeric(stats$id)
+    collectionName <- stats$name
+    gta_sql_multiple_queries(paste0("UPDATE b221_collection_log SET collection_name = '",collectionName,"' WHERE collection_id = ",collectionId,";"), output.queries = 1)
+  })
+  
+  observeEvent(input$collectionClick, { 
+    collectionId = as.numeric(input$collectionClick)
+    collectionName <- gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT collection_name FROM b221_collection_log WHERE collection_id = ",collectionId,";")))
     collectionHints <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_id, hint_title FROM bt_hint_text WHERE hint_id IN (SELECT hint_id FROM b221_hint_collection WHERE collection_id = ",collectionId,");"))))
     
     initialHints <- unique(gta_sql_get_value(paste0("SELECT * FROM
@@ -1425,7 +1478,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       initialHints <- c()
     }
     
-    updateTextInput(session = session, inputId = "newCollection", value = chooseCollection$collection.name)
+    updateTextInput(session = session, inputId = "newCollection", value = collectionName)
     
     query = paste0("SELECT cltn_log.collection_id, cltn_log.collection_name, 
                         GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) SEPARATOR ' ; ') AS jurisdiction_name,
