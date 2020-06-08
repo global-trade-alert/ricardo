@@ -176,13 +176,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data;
                             }
                             
-                            let accepted = data != 'confirmed' ? '<img src=\"www/accept.png\" class=\"accept\"/>' : '',
-                                deleted = '<img src=\"www/delete.png\" class=\"delete\"/>',
-                                edit = '<img src=\"www/edit.png\" class=\"edit\"/>';
+                            let accepted = data != 'confirmed' ? '<img src=\"www/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
+                                deleted = '<img src=\"www/delete.png\" class=\"delete\" title=\"Remove entry\"/>',
+                                edit = '<img src=\"www/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
+                                duplicates = '<img src=\"www/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
+                                duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
 
                             
                             let output = `<div class=\"status-row\">
-                                              <div class=\"buttons-column\">${accepted + deleted + edit}</div>
+                                              <div class=\"buttons-column\">${accepted + deleted + edit + duplicates + duplicates_remove}</div>
                                               <div class=\"status-column\">
                                                 <div class=\"status-label\">${data}</div>
                                               </div>
@@ -398,7 +400,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       initComplete = JS("function(settings) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
-                            settings._searchPanes.regenerating = true //allow recalculation of searchPanes
+                            settings._searchPanes.regenerating = true // allow recalculation of searchPanes
 
       }"),
       
@@ -464,6 +466,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 id = data[1];
                                 
                               $(that).children().each(function(){
+                                if ($(this).attr('class') != 'duplicates-remove')
                                 $(this).on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
                               })
                         })
