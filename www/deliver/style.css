@@ -377,13 +377,6 @@ tr.deleted {
   background-color: #E6B0AA !important;
 }
 
-tr.duplicate-keep {
-  box-shadow: 0 0 2px deeppink,
-				0 0 5px rgba(0, 0, 0, 1),
-				inset 0 0 5px rgba(0, 0, 0, 1);
-	border-radius: 10px;
-}
-
 .editMode{
   width: 30%;
   height: 90%;
@@ -433,19 +426,65 @@ tr.duplicate-keep {
   color: black;
 }
 
-.duplicatesMode{
-    width: 20%;
-    height: 20%;
-    position: fixed;
-    top: 0px;
-    right: -350px;
-    background-color: #9370DB;
-    z-index: 99999;
-    top: 5%;
-    border-radius: 25px;
-    border: 2px solid navy;
+.keep-row {
+    width: 100%;
+    left: 0px;
+    background-color: rgba(243, 210, 63, 0.7);
+    position: absolute;
+    display: flex;
+    justify-items: center;
+    align-items: center;
+    border: 2px solid floralwhite;
 }
 
+.keep-row p {
+  position: absolute;
+  font-size: 2em;
+  font-weight: 800;
+  margin-left: 20px;
+}
+
+.remove-row {
+    width: 100%;
+    left: 0px;
+    background-color: rgba(197, 43, 76, 0.7);
+    position: absolute;
+    display: flex;
+    justify-items: center;
+    align-items: center;
+    border: 2px solid floralwhite;
+}
+
+.remove-row p {
+  font-size: 2em;
+  font-weight: 800;
+  margin-left: 50px;
+}
+
+input#save-dupl{
+    margin-right: 10px;
+    padding: 0.3em 1.2em;
+    border-radius: 2em;
+    font-weight: 600;
+    color: #FFFFFF;
+    background-color: rgba(242, 49, 49, 1);
+    text-align: center;
+}
+
+input#cancel-dupl{
+    margin-right: 10px;
+    padding: 0.3em 1.2em;
+    border-radius: 2em;
+    font-weight: 600;
+    color: #FFFFFF;
+    text-align: center;
+    background-color: rgba(49, 168, 242, 1);
+}
+
+.dupl-buttons{
+  position: absolute;
+  left: 45%;
+}
 
 #save-edit{
     float: right;
@@ -463,7 +502,6 @@ tr.duplicate-keep {
     transition: all 0.2s;
 }
 
-}
 #save-edit:hover{
     background-color:#4095c6;
 }

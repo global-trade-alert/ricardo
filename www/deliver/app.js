@@ -21,27 +21,6 @@ $( document ).ready(function() {
   let canvas = $('<div />').addClass('canvas');
   div_edit.append(header, canvas);
     $('body').append(div_edit);
-    
-    // add duplicates mode
-  let div_dupl = $('<div />').addClass('duplicatesMode'),
-      header_dupl = $('<h1 />').html('Remove Duplicates'),
-      canvas_dupl = $('<div />').addClass('canvas-dupl');
-        
-      div_dupl.append(header_dupl, canvas_dupl);
-      div_dupl.append($('<input id = "save-dupl" type="button" value="Remove rows"/>')),
-      div_dupl.append($('<input id = "cancel-dupl" type="button" value="Cancel"/>'));
-    $('body').append(div_dupl);
-      $('#save-dupl').on('click', function(){
-        let rows = [];
-        $('.duplicates-remove:checked').each(function() {
-          rows.push($(this).closest('tr').attr('id'));
-      });
-        rows.forEach(d => buttonsClicks.removeRow(d));
-        buttonsClicks.stopDuplicatesMode();
-      });
-      $('#cancel-dupl').on('click', function(){
-         buttonsClicks.stopDuplicatesMode();
-      });
 });
 
 const buttonsClicks = {
@@ -109,7 +88,7 @@ const buttonsClicks = {
               output.push($(this).val())
           });
           console.log(output)
-          that.updateRowData(output, id);
+          that.updateRowData(currentStatus, output, id);
           $('.overlay').click();
       })
       
@@ -131,47 +110,76 @@ const buttonsClicks = {
     },
     duplicate: function(status, id) {
       const that = this;
-      $( ".canvas-dupl" ).empty();
-      $(`tr#${id}`).addClass('duplicate-keep');
-      $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
-      $('.duplicates-remove').each(function(){ 
-        let id_this = $(this).closest('tr').attr('id');
-        if( id_this != id) {
-          $(this).css({'display': 'block'});
-          $(this).change(function(){
-            that.checkRowAsDuplicate();
-          })
-        } 
-      });
-      let p = $('<p />').html(`Keep row with Entry ID ${id}. Rows to remove: <span class=\"remove-rows\"></>`);
-      $( ".canvas-dupl" ).append(p);
+      let div_overlay = $('<div />')
+                              .addClass('keep-row')
+                              .css({ 'height': $(`tr#${id}`).height()});
+      div_overlay.append($('<p />').text('Choose duplicates of this Entry'));
+      let buttons = $('<div />').addClass('dupl-buttons')
+                        .append($('<input id = "save-dupl" type="button" value="Remove duplicates"/>'))
+                        .append($('<input id = "cancel-dupl" type="button" value="Cancel"/>'));
       
-        $( ".duplicatesMode" ).animate({
-          right: "+=350",
-          }, 1000, function() {
-              console.log('done')
-        });
+      div_overlay.append(buttons);
+      
+      $(`tr#${id}`).append(div_overlay);
+      
+      $('#save-dupl').on('click', function(){
+        let rows = [];
+        $('.remove-row').each(function() { //duplicates-remove:checked
+          rows.push($(this).closest('tr').attr('id'));
+      });
+        that.stopDuplicatesMode();
+        rows.forEach(d => that.removeRow(d));
+      });
+      $('#cancel-dupl').on('click', function(){
+         that.stopDuplicatesMode();
+      });
+      
+      $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
+      /*$('.duplicates-remove').each(function(){ 
+        let id_this = $(this).closest('tr').attr('id');
+        if( id_this != id);
+          $(this).css({'display': 'block'});
+          $(this).on('change', function(){
+            if ($(this).is(':checked')) {
+              that.addDuplicateOverlay(id_this);
+            } else {
+              that.removeDuplicateOverlay(id_this);
+            }
+        })
+      });*/
+      $('#DataTables_Table_0 tr').each(function(){
+          const this_row = $(this);
+          let id_this = this_row.attr('id');
+          if( id_this != id){
+            $(this).on('click', function(){
+                that.addDuplicateOverlay(id_this);
+                $(this).unbind('click', arguments.callee);
+            })
+          }
+      })
     },
     convertToConfirmed: function(className, id){
       $(`tr#${id}`).removeClass(className).addClass('confirmed').find('.status-label').text('confirmed');
       $(`tr#${id}`).find('.accept').remove();
       $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
+      this.rowAttachEvents('confirmed', id);
     },
     redrawDataTable: function(id){
       $('#DataTables_Table_0').DataTable().row(`tr#${id}`).invalidate().draw(false);
     },
     removeRow: function(id){
       //$(`tr#${id}`).fadeOut('fast', function(){
-        $('#DataTables_Table_0').DataTable().row(`tr#${id}`).remove().draw( false );
+        if (id != undefined);
+        $('#DataTables_Table_0').DataTable().row(`tr#${id}`).remove().draw(false);
       //});
     },
     updateSearchPanes: function(){
       $('#DataTables_Table_0').DataTable().settings()[0]._searchPanes.s.panes
                                             .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
     },
-    updateRowData: function(data, id){
-      let curr_status = $(`tr#${id}`).attr('class').match(/[a-z]+$/gi)[0];
-      $(`tr#${id}`).removeClass(curr_status);
+    updateRowData: function(currentStatus, data, id){
+      console.log(currentStatus)
+      $(`tr#${id}`).removeClass(currentStatus);
       $('#DataTables_Table_0').DataTable().row($(`tr#${id}`)).data(data);
       this.redrawDataTable();
       this.updateSearchPanes();
@@ -195,29 +203,47 @@ const buttonsClicks = {
         return output;
     },
     rowAttachEvents: function(status, id){
-        
         $(`tr#${id}`).find('.buttons-column').each(function(){
             let that = $(this);
             
               $(that).children().each(function(){
                 if ($(this).attr('class') != 'duplicates-remove')
-                $(this).on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
+                $(this).off('click').on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
               })
         })
     },
-    checkRowAsDuplicate: function(){
-      let output = [];
-      $('.duplicates-remove:checked').each(function() {
-          output.push($(this).closest('tr').attr('id'));
-      });
-      $('.remove-rows').text(`${output.join(';')}`)
-    },
     stopDuplicatesMode: function(){
-      $('tr.duplicate-keep').removeClass('duplicate-keep');
+      $('.keep-row').remove();
+      $('.remove-row').remove();
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': ''}) });
-      $('.duplicates-remove').each(function(){ $(this).css({'display': 'none'}) });
-      $( ".duplicatesMode" ).animate({ right: '-=350'}, 1000, function (){
-        $('.canvas-dupl').empty();
+      /*$('.duplicates-remove').each(function(){ 
+        $(this).off('change');
+        $(this).prop( "checked", false ).css({'display': 'none'});
+      });*/
+       $('#DataTables_Table_0 tr').each(function(){
+         $(this).off('click');
+      })
+    },
+    addDuplicateOverlay: function(id){
+      const that = this;
+      let div_overlay = $('<div />')
+                              .addClass('remove-row')
+                              .css({ 'height': $(`tr#${id}`).height()})
+                              
+      div_overlay.append($('<p />').text('Duplicate row'));
+      
+      $(`tr#${id}`).append(div_overlay);
+      $(`tr#${id}`).find('.remove-row').on('click', function(){ 
+          event.stopPropagation();
+          $(`tr#${id}`).on('click', function(){
+                const this_inner = $(this);
+                that.addDuplicateOverlay(id);
+                this_inner.unbind('click', arguments.callee);
+            });
+          $(this).remove();
       });
+    },
+    removeDuplicateOverlay: function(id){
+      
     }
 };
