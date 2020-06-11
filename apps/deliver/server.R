@@ -60,8 +60,14 @@ new_env$covid.data <-
 new_env$covid.data <- 
   new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
                        "gta.intervention.type","date.announced","date.implemented","date.removed",
-                       "description","source","intervention.type","products","instruments")]
+                       "description","source", "products","instruments")]
   
+observe({
+  products_unique <<-
+    gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
+  print(products_unique)
+})
+
 # SERVER
 deliverserver <- function(input, output, session, user, app, prm, ...) {
   
@@ -71,7 +77,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     data = new_env$covid.data, #retrieve_data(),
     colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Jurisdiction' = 5, 'Initial assessment' = 6, 'GTA intervention type' = 7, 
                  'Announcement date' = 8, 'Implementation date' = 9, 'Removal date' = 10, 'Description' = 11,
-                 'Source' = 12, 'Intervention Type' = 13, 'Products' = 14, 'Instruments' = 15),
+                 'Source' = 12, 'Products' = 13, 'Instruments' = 14),
     
     rownames = FALSE,
     escape = FALSE,
@@ -152,16 +158,12 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 11
           ),
           list(
-            width = "0%", # Intervention Type
+            width = "10%", # Products
             targets = 12
           ),
           list(
-            width = "10%", # Products
-            targets = 13
-          ),
-          list(
             width = "6%", # Instruments
-            targets = 14
+            targets = 13
           ),
           list(targets = '_all',
                createdCell = JS("function (td, cellData, rowData, row, col) {
@@ -213,7 +215,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             }
                }")
                ),
-          list(targets = 14,
+          list(targets = 13,
                render = JS("function (data, type, row) {
                             if (type === 'sp') {
                               return data.split(',')
@@ -258,7 +260,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                  )
                )
           ),
-          list(targets = 13,
+          list(targets = 12,
                render = JS("function (data, type, row) {
                             if (type === 'sp') {
                                 return data.split(',')
@@ -306,95 +308,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             searchPanes = list(
               show = FALSE
               ),
-            targets = c(1:3,6:12)#,12:22
-            ),
-          # list(
-          #   searchPanes = list(
-          #     header = 'Instruments and Products',
-          #     combiner = 'and',
-          #     options = list(
-          #       list(
-          #         label = 'export barrier',
-          #         value = DT::JS("function(rowData, rowIdx){
-          #           return /(?<![a-z]| )export barrier/g.test(rowData[11])
-          #           //rowData[11].includes('export barrier')
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'import barrier',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )import barrier/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'domestic subsidy',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )domestic subsidy/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'export subsidy',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )export subsidy/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'other',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )other/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'unclear',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )unclear/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'medical consumables',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )medical consumables/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'medical equipment',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )medical equipment/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'medicines or drugs',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )medicines or drugs/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'food',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )food/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'product other',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )product other/g.test(rowData[11])
-          #         }")
-          #       ),
-          #       list(
-          #         label = 'any medical product',
-          #         value = DT::JS("function(rowData, rowIdx){\
-          #           return /(?<![a-z]| )any medical product/g.test(rowData[11])
-          #         }")
-          #       )
-          #     )
-          #   ),
-          #   targets = 11
-          # ),
-          # Column visibility
-          list(
-            visible = FALSE,
-            targets = c(12) 
-          )
+            targets = c(1:3,6:11)#,12:22
+            )
         ),
       
       initComplete = JS("function(settings) {

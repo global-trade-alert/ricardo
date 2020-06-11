@@ -48,18 +48,29 @@ const buttonsClicks = {
             },
     edit: function(currentStatus, id) {
         const that = this;
-        console.log(this.getRowData(id));
         let rowData = this.getRowData(id);
+        console.log(rowData);
+        rowData.sort((a,b) => {
+            if (a.name == 'Description' | a.name== 'Source') {
+                return -1
+            } 
+        });
         rowData.forEach(function(d,i){
           
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
+            if (/date/g.test(d.name)){
+              input = $('<input />')
+                        .attr('type', 'text')
+                        .attr('id', `column-${d.index}`)
+                        .addClass('datepicker')
+                        .attr('current-date', `${d.data.length == 0 ? '' : d.data}`);
+            } else {
             if (d.data !== null && d.data.length < 100){
                 input = $('<textarea />')
                         .attr('id', `column-${d.index}`)
                         .attr('rows', 1)
                         .attr('cols', 30)
-                        //.css({'resize': 'none'})
                         .val(`${d.data}`);
             } else {
                   input = $('<textarea />')
@@ -68,7 +79,7 @@ const buttonsClicks = {
                         .attr('cols', 40)
                         .val(`${d.data}`);
             }
-            
+            }
                   
             $('.canvas').append(
               $('<div />').append(
@@ -82,10 +93,17 @@ const buttonsClicks = {
         $('<input type="button" id="save-edit" value="Save data" />')
         );
       
+      $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
+      $('.datepicker').each(function(){
+        if($(this).attr('current-date') != '')
+          $(this).bsDatepicker('setDate', $(this).attr('current-date'))
+      })
+       
       $('#save-edit').on('click', function(){
         let output= [];
-          $('.canvas div textarea').each(function(){
-              output.push($(this).val())
+          $('.canvas div textarea,.datepicker').each(function(){
+              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
+              output.push({ data: $(this).val(), index: parseInt(index) });
           });
           console.log(output)
           that.updateRowData(currentStatus, output, id);
@@ -180,24 +198,32 @@ const buttonsClicks = {
     updateRowData: function(currentStatus, data, id){
       console.log(currentStatus)
       $(`tr#${id}`).removeClass(currentStatus);
-      $('#DataTables_Table_0').DataTable().row($(`tr#${id}`)).data(data);
+      data.map(function(d){
+          $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
+      })
       this.redrawDataTable();
       this.updateSearchPanes();
-      this.rowAttachEvents(data[0], id);
+      this.rowAttachEvents(currentStatus, id);
     },
     getRowData: function(id){
         let columns = this.getColumnsNames();
+        let col_ind = columns.flatMap(d => d.index);
+        console.log(columns)
         let output = [];
         $('#DataTables_Table_0').DataTable().row($(`tr#${id}`)).data().forEach(function(d,i){
           d = d == null ? '' : d.toString();
-          output.push({data: d, name: columns[i].name, index: columns[i].index })
+          if (col_ind.indexOf(i) != -1)
+          output.push({data: d, name: columns.filter(d => d.index == i)[0].name, index: columns.filter(d => d.index == i)[0].index })
         })
         return output;
     },
     getColumnsNames: function(){
         let output = [];
+        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date', 
+                                'Removal date', 'Description', 'Source', 'Products', 'Instruments'];
+                                
         $('#DataTables_Table_0').DataTable().columns().every( function (i) {        
-              //if (this.visible())
+              if (filtered_columns.includes(this.header().innerHTML))
               output.push({ index: i, name: this.header().innerHTML})
         });
         return output;
