@@ -740,6 +740,10 @@ table.dataTable thead .sorting_desc {
 
 }
 
+#b221-singleHintsTable .hint-item .hint-title img {
+	height:30px;
+}
+
 #b221-collectionTable .collection-item .collection-title {
 	display:flex;
 	align-items: center;
@@ -943,6 +947,11 @@ table.dataTable thead .sorting_desc {
 	justify-content: flex-start;
 }
 
+#hintContainer .hint-item .hint-title img {
+	height:20px;
+	margin-right:10px;
+}
+
 #hintContainer .hint-item .bottom-options > div,
 #hintContainer .hint-item .bottom-options > a {
 	border-right:1px solid #86b8e8;
@@ -963,6 +972,10 @@ table.dataTable thead .sorting_desc {
 #hintContainer .hint-item .bottom-options .url {
 	cursor:pointer;
 	border-right:1px solid #86b8e8;
+}
+
+#hintContainer .hint-item .bottom-options .middle {
+	overflow:hidden;
 }
 
 #hintContainer .hint-item .bottom-options .is-processed img {
