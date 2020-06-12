@@ -195,7 +195,9 @@ function markHints() {
       $(this.parentNode.parentNode).removeClass('starred');
     } else {
       $('#b221-slideInRight #hintContainer .hint-item').removeClass('starred');
+      var starred = $(this.parentNode.parentNode)[0].id.replace("hintId_","");
       $(this.parentNode.parentNode).addClass('starred');
+      Shiny.setInputValue("b221-newStarred", starred, {priority: "event"});
     }
     }
 })
@@ -215,8 +217,10 @@ function removeHint() {
     // console.log($(this.parentNode.parentNode));
     event.stopPropagation();
     var removeElement = $(this.parentNode.parentNode);
+    var removeId = $(this.parentNode.parentNode)[0].id.replace("hintId_","");
     removeElement.fadeOut(300, function(){
       $(this).remove();
+      Shiny.setInputValue("b221-removeHint", removeId, {priority: "event"});
     });
   });
 
