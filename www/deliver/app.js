@@ -1,3 +1,9 @@
+// Global variables
+Shiny.addCustomMessageHandler('data_gta', function(data) {
+   data.Instruments = data.Instruments.map(d => d.replace('domestic subsidy (incl. tax cuts, rescues etc.)', 'domestic subsidy'));
+  window.data_gta = data;
+});
+
 const showMorecontent = function(type, id){
   $(`#toggle-${type}_${id}`).closest('td').find(`.${type}-less`).removeClass(`${type}-less`).addClass(`${type}-more`);
   $(`#toggle-${type}_${id}`).html('Show less');
@@ -50,7 +56,7 @@ const buttonsClicks = {
         const that = this;
         let rowData = this.getRowData(id);
         console.log(rowData);
-        rowData.sort((a,b) => {
+        rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode 
             if (a.name == 'Description' | a.name== 'Source') {
                 return -1
             } 
@@ -65,27 +71,42 @@ const buttonsClicks = {
                         .attr('id', `column-${d.index}`)
                         .addClass('datepicker')
                         .attr('current-date', `${d.data.length == 0 ? '' : d.data}`);
-            } else {
-            if (d.data !== null && d.data.length < 100){
-                input = $('<textarea />')
-                        .attr('id', `column-${d.index}`)
-                        .attr('rows', 1)
-                        .attr('cols', 30)
-                        .val(`${d.data}`);
-            } else {
-                  input = $('<textarea />')
+            } else if (/description|source/gi.test(d.name)) {
+              input = $('<textarea />')
                         .attr('id', `column-${d.index}`)
                         .attr('rows', 10)
                         .attr('cols', 40)
                         .val(`${d.data}`);
-            }
+            } else if (/product|instrument/gi.test(d.name)) {
+              let data = d.data.split(',');
+              console.log(data)
+              input = $('<select />')
+                      .attr('multiple', true)
+                      .attr('id', `column-${d.index}`)
+                      .addClass('products');
+                      
+                      
+                window.data_gta[d.name].map(function(d1,i) {
+                        let selected = data.includes(d1) ? 'selected' : '';
+                        input.append(
+                          `<option ${selected} value="${d1}">${d1}</option>`
+                         )
+                        })
+                        
             }
                   
             $('.canvas').append(
-              $('<div />').append(
-                          label, input
-                      )
+              $('<div />').addClass('inputs')
+              .append(label, input)
             )
+            
+            $('select.products').selectize({
+              maxItems: 6,
+              valueField: 'text',
+              labelField: 'text',
+              searchField: 'text',
+              create: false
+            });
             
         });
         
@@ -101,9 +122,10 @@ const buttonsClicks = {
        
       $('#save-edit').on('click', function(){
         let output= [];
-          $('.canvas div textarea,.datepicker').each(function(){
+          $('.canvas div textarea,.datepicker,select.products').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-              output.push({ data: $(this).val(), index: parseInt(index) });
+              let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              output.push({ data: value, index: parseInt(index) });
           });
           console.log(output)
           that.updateRowData(currentStatus, output, id);
@@ -122,7 +144,6 @@ const buttonsClicks = {
               });
               $(this).unbind('click', arguments.callee);
           });
-            console.log('done')
       });
   
     },
@@ -153,18 +174,6 @@ const buttonsClicks = {
       });
       
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
-      /*$('.duplicates-remove').each(function(){ 
-        let id_this = $(this).closest('tr').attr('id');
-        if( id_this != id);
-          $(this).css({'display': 'block'});
-          $(this).on('change', function(){
-            if ($(this).is(':checked')) {
-              that.addDuplicateOverlay(id_this);
-            } else {
-              that.removeDuplicateOverlay(id_this);
-            }
-        })
-      });*/
       $('#DataTables_Table_0 tr').each(function(){
           const this_row = $(this);
           let id_this = this_row.attr('id');

@@ -379,7 +379,7 @@ tr.deleted {
 
 .editMode{
   width: 30%;
-  height: 50%;
+  height: 55%;
   position: fixed;
   top: 0px;
   left:-540px;
@@ -400,7 +400,7 @@ tr.deleted {
 
 .canvas{
     position: relative;
-    width: 100%;
+    width: 98%;
     display: grid;
     grid-template-columns: 50% 50%;
     grid-template-rows: auto;
@@ -521,4 +521,16 @@ input#cancel-dupl{
 
 .remove {
   display: none;
+}
+
+label {
+  pointer-events: none;
+}
+
+.inputs {
+  width: 100%;
+}
+
+.canvas div textarea,.inputs input,select.products {
+  width: 100%;
 }

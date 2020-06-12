@@ -15,7 +15,8 @@ deliverui <- function(id) {
       tags$script(src="www/app.js")
     ),
     tags$div(class="removeui",
-             tags$div(class='remove', dateInput('remove_date', label=NULL)),
+             tags$div(class='remove', dateInput('remove_date', label=NULL),
+                      selectizeInput('remove_input', label=NULL, choices=NULL, width=10)),
              tags$div(class="wrap deliver",
                       tags$div(class="content",
                                tags$div(class="deliverTable",

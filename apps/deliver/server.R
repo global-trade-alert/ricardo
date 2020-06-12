@@ -1,75 +1,84 @@
 # Define reactive values used in this app module up here, these will be passed automatically
 # Don't forget to add these variables as function parameters as well
+# SERVER
 
-load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
-
-# preprocess data
-new_env$covid.data <-
-new_env$covid.data %>%
-  mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
-  mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
-  mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
-  mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
-  mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
-  mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
-  mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
-  mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
-  mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
-  mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
-  mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
-  mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
-  mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
-  mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-                          inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
-  select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-             inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
-             prd.med.drug, prd.other, prd.food, prd.med.any))
-
-new_env$covid.data$products <-
-  new_env$covid.data$products %>%
+  load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
+  
+  # preprocess data
+  new_env$covid.data <-
+    new_env$covid.data %>%
+    mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
+    mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
+    mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
+    mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
+    mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
+    mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
+    mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
+    mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
+    mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
+    mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
+    mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
+    mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
+    mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
+    mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
+                               inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
+    select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
+               inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
+               prd.med.drug, prd.other, prd.food, prd.med.any))
+  
+  new_env$covid.data$products <-
+    new_env$covid.data$products %>%
     str_replace_all("\\,{2,}", ",") %>%
     str_replace_all("^\\,", "") %>%
     str_replace_all("\\,$", "")
-
-new_env$covid.data$instruments <-
-  new_env$covid.data$instruments %>%
-  str_replace_all("\\,{2,}", ",") %>%
-  str_replace_all("^\\,", "") %>%
-  str_replace_all("\\,$", "")
-
-# create confirmation column with random values
-new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
-new_env$covid.data <- 
-  new_env$covid.data %>%
-  mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
-  mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
-  mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
-  mutate(confirmation = str_replace(confirmation, "4", "deleted"))
-
-# create users involved column with random users
-new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
-new_env$covid.data <- 
-  new_env$covid.data %>%
-  mutate(users = str_replace(users, "1", "LG,PB")) %>%
-  mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
-  mutate(users = str_replace(users, "3", "JF")) %>%
-  mutate(users = str_replace(users, "4", "DR,JF")) %>%
-  mutate(users = str_replace(users, "5", "OR")) %>%
-  mutate(users = str_replace(users, "6", "KM"))
-
-new_env$covid.data <- 
-  new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
-                       "gta.intervention.type","date.announced","date.implemented","date.removed",
-                       "description","source", "products","instruments")]
   
-observe({
-  products_unique <<-
-    gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
-  print(products_unique)
-})
+  new_env$covid.data$products <-
+    new_env$covid.data$products %>%
+      str_replace_all("any medical product", "uncertain")
+  
+  new_env$covid.data$instruments <-
+    new_env$covid.data$instruments %>%
+    str_replace_all("\\,{2,}", ",") %>%
+    str_replace_all("^\\,", "") %>%
+    str_replace_all("\\,$", "")
+  
+  # create confirmation column with random values
+  new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
+  new_env$covid.data <- 
+    new_env$covid.data %>%
+    mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
+    mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
+    mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
+    mutate(confirmation = str_replace(confirmation, "4", "deleted"))
+  
+  # create users involved column with random users
+  new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
+  new_env$covid.data <- 
+    new_env$covid.data %>%
+    mutate(users = str_replace(users, "1", "LG,PB")) %>%
+    mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
+    mutate(users = str_replace(users, "3", "JF")) %>%
+    mutate(users = str_replace(users, "4", "DR,JF")) %>%
+    mutate(users = str_replace(users, "5", "OR")) %>%
+    mutate(users = str_replace(users, "6", "KM"))
+  
+  new_env$covid.data <- 
+    new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
+                         "gta.intervention.type","date.announced","date.implemented","date.removed",
+                         "description","source", "products","instruments")]
 
-# SERVER
+
 deliverserver <- function(input, output, session, user, app, prm, ...) {
+  
+  observe({
+    products_unique <-
+      gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
+    instruments_unique <-
+      gta_sql_get_value("SELECT intervention_type_name FROM b221_intervention_type_list")
+    
+      session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
+                                                                Instruments = instruments_unique)))
+  })
   
   ns <- NS("deliver")
   
@@ -138,15 +147,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 6
           ),
           list(
-            width = "5%", # Announcement date
+            width = "3%", # Announcement date
             targets = 7
           ),
           list(
-            width = "5%", # Implementation date
+            width = "3%", # Implementation date
             targets = 8
           ),
           list(
-            width = "5%", # Removal date
+            width = "3%", # Removal date
             targets = 9
           ), # 43%
           list(
@@ -158,11 +167,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 11
           ),
           list(
-            width = "10%", # Products
+            width = "11%", # Products
             targets = 12
           ),
           list(
-            width = "6%", # Instruments
+            width = "11%", # Instruments
             targets = 13
           ),
           list(targets = '_all',
@@ -393,6 +402,5 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     selection = "none"
     ),
   server = F)
-  
   
 }
