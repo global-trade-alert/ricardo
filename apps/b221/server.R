@@ -4,7 +4,6 @@
 # SERVER
 b221server <- function(input, output, session, user, app, prm, ...) {
   
-  
   # Set encoding for all tables, to make filtering in DT work
   gta_sql_get_value('SET NAMES utf8;')
   
