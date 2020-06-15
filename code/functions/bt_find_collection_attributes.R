@@ -1,6 +1,6 @@
 bt_find_collection_attributes=function(new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
                                        product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, announcement.date = NULL, implementation.date = NULL, removal.date = NULL){
-
+  
   hints.id = unique(hints.id)
   hints.id=hints.id[!is.na(hints.id)]
   
@@ -63,7 +63,7 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
     } else {
       collectionChanged = T # Collection must have changed in this scenario, otherwise it could not be saved
     }
-  
+    
   } else {
     collectionChanged = T
   }
