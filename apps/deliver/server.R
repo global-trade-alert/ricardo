@@ -75,9 +75,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
     instruments_unique <-
       gta_sql_get_value("SELECT intervention_type_name FROM b221_intervention_type_list")
+    jurisdiction_unique <-
+      gta_sql_get_value("SELECT jurisdiction_name FROM gta_jurisdiction_list")
+    assessment_unique <-
+      gta_sql_get_value("SELECT assessment_name FROM b221_assessment_list")
     
       session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
-                                                                Instruments = instruments_unique)))
+                                                                Instruments = instruments_unique,
+                                                                Jurisdiction = jurisdiction_unique,
+                                                                'Initial assessment' = assessment_unique)))
   })
   
   ns <- NS("deliver")
@@ -147,19 +153,19 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 6
           ),
           list(
-            width = "3%", # Announcement date
+            width = "4%", # Announcement date
             targets = 7
           ),
           list(
-            width = "3%", # Implementation date
+            width = "4%", # Implementation date
             targets = 8
           ),
           list(
-            width = "3%", # Removal date
+            width = "4%", # Removal date
             targets = 9
           ), # 43%
           list(
-            width = "25%", # Description
+            width = "24%", # Description
             targets = 10
           ),
           list(
@@ -167,11 +173,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 11
           ),
           list(
-            width = "11%", # Products
+            width = "10%", # Products
             targets = 12
           ),
           list(
-            width = "11%", # Instruments
+            width = "10%", # Instruments
             targets = 13
           ),
           list(targets = '_all',
@@ -214,6 +220,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                         ${users}
                                      </div>`
                }")
+          ),
+          list(targets = 4,
+               render = JS("function (data, type, row){
+                            if (type === 'sp') {
+                              return data.split(',')
+                            }
+                            return data;
+               }"),
+               searchPanes = list(
+                 orthogonal = 'sp'
+               )
           ),
           list(targets = 7,
                render = JS("function(data,type,row){
@@ -325,6 +342,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
                             settings._searchPanes.regenerating = true // allow recalculation of searchPanes
+                            
 
       }"),
       
@@ -340,7 +358,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                            $('#hide').length == 0 ?
                            $('#DataTables_Table_0').wrap('<div id=\"hide\" style=\"display: none\"</div>'): //make table invisible before adjustments
                            0;
-                                                           
+                           
+                          //$('#DataTables_Table_0_wrapper thead').wrap('<div id=\"hide_1\" style=\"display: none\"</div>')
                            // check if text length is bigger than tr height
                             function isEllipsisActive($jQueryObject) {
                                 return ($jQueryObject[0].offsetHeight < $jQueryObject[0].scrollHeight);
@@ -352,7 +371,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             })
                             .then(() => {
                                 $('#hide').css({'display': ''});
-                                
                                   api.$('.description-less').each(function(){ // all un-opened descriptions
                                   let id = api.row( $(this).closest('tr') ).id();
                                 

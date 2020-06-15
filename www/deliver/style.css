@@ -184,6 +184,10 @@ body {
   word-wrap:break-word;
 }
 
+#DataTables_Table_0_wrapper thead {
+  word-break: break-word;
+}
+
 table .prd-label {
 
     font-size: 0.9em;

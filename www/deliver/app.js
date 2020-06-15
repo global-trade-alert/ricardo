@@ -1,7 +1,8 @@
 // Global variables
 Shiny.addCustomMessageHandler('data_gta', function(data) {
    data.Instruments = data.Instruments.map(d => d.replace('domestic subsidy (incl. tax cuts, rescues etc.)', 'domestic subsidy'));
-  window.data_gta = data;
+   data['Initial assessment'].push('restrictive')
+    window.data_gta = data;
 });
 
 const showMorecontent = function(type, id){
@@ -65,46 +66,86 @@ const buttonsClicks = {
           
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
-            if (/date/g.test(d.name)){
-              input = $('<input />')
+            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
+              case 'date':
+                
+                input = $('<input />')
                         .attr('type', 'text')
                         .attr('id', `column-${d.index}`)
                         .addClass('datepicker')
                         .attr('current-date', `${d.data.length == 0 ? '' : d.data}`);
-            } else if (/description|source/gi.test(d.name)) {
-              input = $('<textarea />')
+                break;
+              case 'description':
+              case 'source':
+                
+                input = $('<textarea />')
                         .attr('id', `column-${d.index}`)
                         .attr('rows', 10)
                         .attr('cols', 40)
                         .val(`${d.data}`);
-            } else if (/product|instrument/gi.test(d.name)) {
-              let data = d.data.split(',');
-              console.log(data)
-              input = $('<select />')
-                      .attr('multiple', true)
+                break;
+              case 'product':
+              case 'instrument':
+              case 'jurisdiction':
+                
+                let data = d.data.split(',');
+                console.log(data)
+                input = $('<select />')
+                        .attr('multiple', true)
+                        .attr('id', `column-${d.index}`)
+                        .addClass('products');
+                  window.data_gta[d.name].map(function(d1,i) {
+                          let selected = data.includes(d1) ? 'selected' : '';
+                          input.append(
+                            `<option ${selected} value="${d1}">${d1}</option>`
+                           )
+                          })
+                break;
+              case 'documentation status':
+                
+                let checked = /^official source/gi.test(d.data) ? true : false;
+                input = $('<input />')
+                        .attr('type', 'checkbox')
+                        .attr('checked', checked)
+                        .attr('id', `column-${d.index}`)
+                        .addClass('doc-status');
+                        
+                label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
+                break;
+              case 'assessment':
+                
+                input = $('<select />')
                       .attr('id', `column-${d.index}`)
-                      .addClass('products');
-                      
-                      
+                      .addClass('assessment');
+         
                 window.data_gta[d.name].map(function(d1,i) {
-                        let selected = data.includes(d1) ? 'selected' : '';
+                      let selected = d1 == d.data ? 'selected' : '';
                         input.append(
-                          `<option ${selected} value="${d1}">${d1}</option>`
+                          `<option value="${d1}" ${selected}>${d1}</option>`
                          )
                         })
-                        
-            }
+                break;
                   
-            $('.canvas').append(
-              $('<div />').addClass('inputs')
-              .append(label, input)
-            )
+            }
+            
+            if (input != undefined) {
+                $('.canvas').append(
+                $('<div />').addClass('inputs')
+                .append(label, input)
+              )
+            }
+
             
             $('select.products').selectize({
               maxItems: 6,
               valueField: 'text',
               labelField: 'text',
               searchField: 'text',
+              create: false
+            });
+          
+            $('select.assessment').selectize({
+              maxItems: 1,
               create: false
             });
             
@@ -122,9 +163,15 @@ const buttonsClicks = {
        
       $('#save-edit').on('click', function(){
         let output= [];
-          $('.canvas div textarea,.datepicker,select.products').each(function(){
+          $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
               let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              output.push({ data: value, index: parseInt(index) });
+          });
+          
+          $('.doc-status').each(function(){ // separate for documentation status
+              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
+              let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
               output.push({ data: value, index: parseInt(index) });
           });
           console.log(output)
@@ -229,7 +276,7 @@ const buttonsClicks = {
     getColumnsNames: function(){
         let output = [];
         let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date', 
-                                'Removal date', 'Description', 'Source', 'Products', 'Instruments'];
+                                'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
                                 
         $('#DataTables_Table_0').DataTable().columns().every( function (i) {        
               if (filtered_columns.includes(this.header().innerHTML))
@@ -277,8 +324,5 @@ const buttonsClicks = {
             });
           $(this).remove();
       });
-    },
-    removeDuplicateOverlay: function(id){
-      
     }
 };
