@@ -4,6 +4,7 @@
 # SERVER
 b221server <- function(input, output, session, user, app, prm, ...) {
   
+  
   # Set encoding for all tables, to make filtering in DT work
   gta_sql_get_value('SET NAMES utf8;')
   
@@ -62,7 +63,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   })
   
   # OUTPUT LEADS TABLE
-  
   output$leadsTable <- DT::renderDataTable(DT::datatable(
     names(),
     rownames = FALSE,
@@ -179,6 +179,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                 var data=table.row(this).data();
       }); hintsBasicUI(); submitSingleHint();",if(prm$autosubmit==1){"callLeadsDismiss(); checkLeads();"} else {"checkLeadsManual();"}))
   })
+  
+  
+  # Main Table --------------------------------------------------------------
   
   # TABLE OUTPUT FOR PREDEFINED LIST OF WORDS
   names <- eventReactive(input$loadMoreLeads, {
@@ -345,6 +348,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
   })
   
+  
+  # Collection UI: Collection Button ----------------------------------------
+  
   # OBSERVE CLICKS ON COLLECTION BUTTON AND OPEN SLIDEIN
   observeEvent(input$collectionAdd, {
     # runjs("Shiny.unbindAll($('#b221-collectionTable')[0]);")
@@ -510,7 +516,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       initSingleHint$tpcontent <- tpcontent
       
       initialHints <- generate_initial_hints(initSingleHint, initSingle = T)
-
+      
       slideInState = "newCollection"
       
       locked = ""
@@ -554,17 +560,17 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     selected = initialAssessment,
                                     multiple = F),
                         dateInput(ns("initAnnouncement"),
-                                    label="Announcement Date",
-                                    value = initialAnnouncement, startview = Sys.Date(),
-                                    format = "yyyy-mm-dd"),
+                                  label="Announcement Date",
+                                  value = initialAnnouncement, startview = Sys.Date(),
+                                  format = "yyyy-mm-dd"),
                         dateInput(ns("initImplementation"),
-                                    label="Implementation Date",
-                                    value = initialImplementation, startview = Sys.Date(),
-                                    format = "yyyy-mm-dd"),
+                                  label="Implementation Date",
+                                  value = initialImplementation, startview = Sys.Date(),
+                                  format = "yyyy-mm-dd"),
                         dateInput(ns("initRemoval"),
-                                    label="Removal Date",
-                                    value = initialRemoval, startview = Sys.Date(),
-                                    format = "yyyy-mm-dd")),
+                                  label="Removal Date",
+                                  value = initialRemoval, startview = Sys.Date(),
+                                  format = "yyyy-mm-dd")),
                tags$h4("Hints included"),
                tags$div(id="hintContainer",
                         HTML(initialHints)),
@@ -572,18 +578,18 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                         tags$button(id="discardCollection-popup",
                                     tags$i(class="fa fa-times"),
                                     "Discard"),
-               tags$div(id="confirm-discard",
-                        tags$div(class="confirm-discard-inner",
-                                tags$p("You are discarding a collection"),
-                                tags$div(class="button-wrap",
-                                tags$button(class="cancel btn",
-                                            "Cancel"),
-                                actionButton(ns("discardCollection"),
-                                             label="Discard",
-                                             icon = icon("times")))))))
+                        tags$div(id="confirm-discard",
+                                 tags$div(class="confirm-discard-inner",
+                                          tags$p("You are discarding a collection"),
+                                          tags$div(class="button-wrap",
+                                                   tags$button(class="cancel btn",
+                                                               "Cancel"),
+                                                   actionButton(ns("discardCollection"),
+                                                                label="Discard",
+                                                                icon = icon("times")))))))
     )
     )
-
+    
     runjs("$('#b221-slideInRight').addClass('open');")
     runjs("$('#b221-slideInRight').trigger('loadCollectionSlideIn');console.log('2 loading collection slide in');")
     runjs("$('.tooltip-create-top').tooltipster({
@@ -602,7 +608,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                 }
                               })")
     runjs(paste0(" slideInBasicUI();"))
-
+    
     
     if (initial.slide.in()) {
       runjs(paste0("markHints(); removeHint(); discardButton();"))
@@ -626,6 +632,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   observeEvent(input$discardCollection, {
     runjs('discardExistingCollection();')
   })
+  
+  
+  # Collection UI: Save Collection ------------------------------------------
   
   observeEvent(input$saveNewCollection, {
     colData <- jsonlite::fromJSON(input$saveNewCollection)
@@ -856,6 +865,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   })
   
   
+  
+  # Collection UI: Discard Collection ---------------------------------------
+  
   # DISCARD EXISTING COLLECTION
   observeEvent(input$discardExistingCollection, {
     colData <- jsonlite::fromJSON(input$discardExistingCollection)
@@ -953,9 +965,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   
   
   
-
-# Collection UI: Collection Table -----------------------------------------
-
+  
+  # Collection UI: Collection Table -----------------------------------------
+  
   # LOAD COLLECTIONS FOR COLLECTIONS SLIDE IN
   collections <- eventReactive(input$loadCollections, {
     
@@ -1133,9 +1145,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   ),
   server = F)
   
-
-# Collection UI: Single Hints Table ---------------------------------------
-
+  
+  # Collection UI: Single Hints Table ---------------------------------------
+  
   # LOAD SINGLE HINTS FOR COLLECTIONS SLIDE IN
   singleHints <- eventReactive(input$loadSingleHints, {
     print("SingleHintRefresh refresh")
@@ -1226,9 +1238,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     singleHintOutput <<- singleHintOutput
   })
   
-
-# Collection UI: Select Single Hints  -------------------------------------
-
+  
+  # Collection UI: Select Single Hints  -------------------------------------
+  
   # SELECT ROWS MECHANISM HITNS TABLE
   observeEvent(input$singleHintsTable_rows_selected, { 
     moveHint <- singleHintOutput[input$singleHintsTable_rows_selected,]
@@ -1275,7 +1287,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     initialHints <- generate_initial_hints(initSingleHint)
     
     initialHints <- gsub("[\r\n]", "", initialHints)
-      
+    
     reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
     
     # If hint state == 2 or 8 and it is not an intervention -> add to collection
@@ -1391,21 +1403,21 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   
   
   
-
-# Collection UI: Rename Collections ---------------------------------------
-
+  
+  # Collection UI: Rename Collections ---------------------------------------
+  
   observeEvent(input$renameCollection, {
     print('SUCCESS SAVE')
     print(input$renameCollection)
     stats <- jsonlite::fromJSON(input$renameCollection)
-
+    
     collectionId <- as.numeric(stats$id)
     collectionName <- stats$name
     gta_sql_multiple_queries(paste0("UPDATE b221_collection_log SET collection_name = '",collectionName,"' WHERE collection_id = ",collectionId,";"), output.queries = 1)
   })
   
-
-# Collection UI: Select Collection ----------------------------------------
+  
+  # Collection UI: Select Collection ----------------------------------------
   
   # SELECT ROWS MECHANISM COLLECTION TABLE
   observeEvent(input$collectionClick, { 
@@ -1416,6 +1428,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     initialHints <- get_info_by_collection_id(collection.id = collectionId)
     
     hint.container$hint.ids <- c(unique(initialHints$hint.id))
+    
+    # check if gta intervention amongst hints
+    gtaHint <- FALSE
     
     if (nrow(initialHints)>0) {
       initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
@@ -1435,9 +1450,13 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                       '</div></div>')
       
       initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
-    
+      
+      if (any(initialHints$is.intervention == 1)) {
+        gtaHint <- TRUE
+      }
+      
       initialHints = gsub("'","\"",generate_initial_hints(initialHints))
-        
+      
     } else {
       initialHints <- c()
     }
@@ -1472,6 +1491,15 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     updateDateInput(session = session, inputId = "initAnnouncement", value = unlist(strsplit(collectionStats$announcement.date, " ; ")))
     updateDateInput(session = session, inputId = "initImplementation", value = unlist(strsplit(collectionStats$implementation.date, " ; ")))
     updateDateInput(session = session, inputId = "initRemoval", value = unlist(strsplit(collectionStats$removal.date, " ; ")))
+    
+    # if gta intervention in collection: Lock collection values
+    if (gtaHint){
+      lockHint <- lockHint(TRUE)
+      runjs(paste0("$('.initialValues').addClass('locked')"))
+    } else {
+      lockHint <- lockHint(FALSE)
+      runjs(paste0("$('.initialValues').removeClass('locked')"))
+    }
     
     
     runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
