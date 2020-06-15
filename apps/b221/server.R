@@ -62,7 +62,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   })
   
   # OUTPUT LEADS TABLE
-  
   output$leadsTable <- DT::renderDataTable(DT::datatable(
     names(),
     rownames = FALSE,
@@ -179,6 +178,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                 var data=table.row(this).data();
       }); hintsBasicUI(); submitSingleHint();",if(prm$autosubmit==1){"callLeadsDismiss(); checkLeads();"} else {"checkLeadsManual();"}))
   })
+  
+
+# Main Table --------------------------------------------------------------
   
   # TABLE OUTPUT FOR PREDEFINED LIST OF WORDS
   names <- eventReactive(input$loadMoreLeads, {
@@ -344,6 +346,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     # b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
     
   })
+  
+
+# Collection UI: Collection Button ----------------------------------------
   
   # OBSERVE CLICKS ON COLLECTION BUTTON AND OPEN SLIDEIN
   observeEvent(input$collectionAdd, {
@@ -627,6 +632,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     runjs('discardExistingCollection();')
   })
   
+
+# Collection UI: Save Collection ------------------------------------------
+  
   observeEvent(input$saveNewCollection, {
     colData <- jsonlite::fromJSON(input$saveNewCollection)
     
@@ -855,6 +863,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
   })
   
+  
+
+# Collection UI: Discard Collection ---------------------------------------
   
   # DISCARD EXISTING COLLECTION
   observeEvent(input$discardExistingCollection, {
@@ -1417,6 +1428,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     hint.container$hint.ids <- c(unique(initialHints$hint.id))
     
+    # check if gta intervention amongst hints
+    gtaHint <- FALSE
+    
     if (nrow(initialHints)>0) {
       initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
       
@@ -1436,6 +1450,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       
       initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
     
+      if (any(initialHints$is.intervention == 1)) {
+        gtaHint <- TRUE
+      }
+      
       initialHints = gsub("'","\"",generate_initial_hints(initialHints))
         
     } else {
@@ -1473,6 +1491,15 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     updateDateInput(session = session, inputId = "initImplementation", value = unlist(strsplit(collectionStats$implementation.date, " ; ")))
     updateDateInput(session = session, inputId = "initRemoval", value = unlist(strsplit(collectionStats$removal.date, " ; ")))
     
+    # if gta intervention in collection: Lock collection values
+    if (gtaHint){
+      lockHint <- lockHint(TRUE)
+      runjs(paste0("$('.initialValues').addClass('locked')"))
+    } else {
+      lockHint <- lockHint(FALSE)
+      runjs(paste0("$('.initialValues').removeClass('locked')"))
+    }
+  
     
     runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
     runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))
