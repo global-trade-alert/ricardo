@@ -3,16 +3,17 @@
  addResourcePath(prefix = 'www', directoryPath = paste0(path,'www/deliver'))
 
 deliverui <- function(id) {
-
   # Create a namespace function using the provided id
   ns <- NS(id)
   
   # START UI
   tagList(
     fluidPage(
+    shinyjs::useShinyjs(),
     theme = "www/style.css",
     tags$head(
-      tags$script(src="www/app.js")
+      tags$script(src="www/app.js"),
+      tags$script(src="https://code.jquery.com/ui/1.12.1/jquery-ui.js")
     ),
     tags$div(class="removeui",
              tags$div(class='remove', dateInput('remove_date', label=NULL),

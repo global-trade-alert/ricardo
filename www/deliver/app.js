@@ -28,29 +28,70 @@ $( document ).ready(function() {
   let canvas = $('<div />').addClass('canvas');
   div_edit.append(header, canvas);
     $('body').append(div_edit);
+  let a_prompt = $('<button />')
+                  .attr('id', 'prompt')
+                  .html('click here'),
+      div_prompt = $('<div />')
+                      .attr('id','prompt-form')
+                      .attr('hidden', 'hidden')
+                      .append(
+                        $('<p />')
+                            .text('some text')
+                      );
+                  
+    $('body').append(a_prompt, div_prompt);
+    
+    $(function() {
+      $("#prompt-form").dialog({
+        autoOpen: false,
+        show: {
+          effect: "blind",
+          duration: 1000
+        },
+        hide: {
+          effect: "explode",
+          duration: 1000
+        }
+      });
+      $("#prompt").click(function() {
+        $("#prompt-form").dialog("open");
+        return false;
+      });
+    });
+
 });
 
 const buttonsClicks = {
+    restore: function(currentStatus, id){
+              const that = this;
+              this.convertToConfirmed('deleted', id);
+              $(`tr#${id}`).find('.restore').attr('style', 'display: none');
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              this.redrawDataTable();
+              this.updateSearchPanes();
+    },
     accept: function(currentStatus, id) {
-              if(['new', 'updated'].includes(currentStatus)){
-                  this.convertToConfirmed('new updated', id);
-                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                  this.redrawDataTable();
-              } else {
-                  this.removeRow(id);
-              }
+              this.convertToConfirmed('new updated', id);
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              this.redrawDataTable();
               this.updateSearchPanes();
             },
     delete: function(currentStatus, id) {
               const that = this;
               if(['new', 'updated', 'confirmed'].includes(currentStatus)){
-                  this.removeRow(id);
+                  //this.removeRow(id);
+                  this.convertToDeleted(currentStatus, id);
+                  //$(`tr#${id}`).find('.delete').on('click', function(){ that.delete('deleted', id) })
+                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+                  //this.redrawDataTable();
               } else {
-                  this.convertToConfirmed('deleted', id);
+                  /*this.convertToConfirmed('deleted', id);
                   $(`tr#${id}`).find('.delete').on('click', function(){ that.delete('confirmed', id) })
                   $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                  this.redrawDataTable();
+                  this.redrawDataTable();*/
+                  this.removeRow(id);
               }
+              this.redrawDataTable();
               this.updateSearchPanes();
             },
     edit: function(currentStatus, id) {
@@ -238,6 +279,13 @@ const buttonsClicks = {
       $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
       this.rowAttachEvents('confirmed', id);
     },
+    convertToDeleted: function(className, id){
+      $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');
+      $(`tr#${id}`).find('.accept').remove();
+      $(`tr#${id}`).find('.restore').attr('style', 'display: ');
+      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'deleted';
+      this.rowAttachEvents('deleted', id);
+    },
     redrawDataTable: function(id){
       $('#DataTables_Table_0').DataTable().row(`tr#${id}`).invalidate().draw(false);
     },
@@ -324,5 +372,8 @@ const buttonsClicks = {
             });
           $(this).remove();
       });
+    },
+    addDeletePrompt: function(){
+      
     }
 };

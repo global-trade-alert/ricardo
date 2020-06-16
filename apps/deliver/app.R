@@ -5,12 +5,12 @@ gtasql::gta_sql_kill_connections()
 # SET PATHS
 gta_setwd()
 # ----------------------------   set this path on staging environment
-# setwd( "~/Dropbox/GTA cloud/")
-# path <<- "0 dev/ricardo-lg/"
+setwd( "~/Dropbox/GTA cloud/")
+path <<- "0 dev/ricardo-lg/"
 
 # ----------------------------   LG local path
- setwd("~/Dropbox/")
- path <<- "ricardo-lg/" 
+ # setwd("~/Dropbox/")
+ # path <<- "ricardo-lg/" 
 # APP SETUP
 source(paste0(path,"apps/deliver/setup.R"), local = F)
 
@@ -20,6 +20,7 @@ source(paste0(path,"apps/deliver/server.R"), local = F)
 
 # LOAD FUNCTIONS
 source(paste0(path,"apps/deliver/functions/retrieve_data.R"))
+
 
 
 shinyApp(
@@ -41,5 +42,5 @@ shinyApp(
       gta_sql_pool_close()
     })
   },
-  options = list(launch.browser=F, port=4109)
+  options = list(launch.browser=T, port=4109)
 )

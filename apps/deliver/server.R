@@ -193,15 +193,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data;
                             }
                             
-                            let accepted = data != 'confirmed' ? '<img src=\"www/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
-                                deleted = '<img src=\"www/delete.png\" class=\"delete\" title=\"Remove entry\"/>',
+                            let accepted = !/confirmed|deleted/gi.test(data) ? '<img src=\"www/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
+                                deleted = '<img src=\"www/delete.svg\" class=\"delete\" title=\"Remove entry\"/>',
+                                restore = /deleted/gi.test(data) ? '<img src=\"www/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\"/>' : 
+                                '<img src=\"www/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\" style=\"display:none\"/>',
                                 edit = '<img src=\"www/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
                                 duplicates = '<img src=\"www/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
 
                             
                             let output = `<div class=\"status-row\">
-                                              <div class=\"buttons-column\">${accepted + deleted + edit + duplicates + duplicates_remove}</div>
+                                              <div class=\"buttons-column\">${accepted + restore + deleted + edit + duplicates + duplicates_remove}</div>
                                               <div class=\"status-column\">
                                                 <div class=\"status-label\">${data}</div>
                                               </div>

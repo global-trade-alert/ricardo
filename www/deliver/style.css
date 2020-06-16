@@ -1,3 +1,4 @@
+@import url("//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css");
 @charset "UTF-8";
 /* CSS Document */
 
@@ -236,7 +237,7 @@ table .usr-label {
     padding: 0px 5px 0px 5px;
 }
 
-.accept, .delete, .edit, .duplicate {
+.accept, .restore, .delete, .edit, .duplicate {
     width: 2.1em;
     padding: 3px 2px 0px 2px;
 }
@@ -245,7 +246,7 @@ table .usr-label {
   display: none;
 }
 
-.accept:hover, .delete:hover, .edit:hover, .duplicate:hover {
+.accept:hover, .restore:hover, .delete:hover, .edit:hover, .duplicate:hover {
 	opacity: 0.6;
 	transform: scale(1.3);
 }
