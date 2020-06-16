@@ -1022,7 +1022,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
     initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
     
-    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
+    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT date FROM bt_hint_date WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
     
     # weight.jur=100
     # weight.int.type=1
@@ -1188,21 +1188,22 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
     initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
     initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
-    initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
+    initialProduct <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
     
     initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
     initialType <- ifelse(is.null(initialType),character(0),initialType)
     initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
     initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
     
-    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
+    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT registration_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
     
-    # weight.jur=100
-    # weight.int.type=1
-    # weight.assessment=1
-    # weight.date=.1
-    # weight.product=1
-    # 
+    ## sorting hints
+    weight.jur=10000
+    weight.int.type=1
+    weight.assessment=1
+    weight.date=.1
+    weight.product=1
+    
     # singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
     #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
     #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
@@ -1210,9 +1211,41 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
     # 
     # singleHintOutput$order[singleHintOutput$order<0]=0
-    # 
-    # singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+
+    singleHintOutput$order=0
+    singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)] = weight.jur + singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)]
+    singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)] =          weight.int.type + singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)]
+    singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)] =      weight.product + singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)]
+    singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T) ]=      weight.assessment + singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T)]
     
+    if(any(!is.na(initialDate))){
+      initialDate=initialDate[!is.na(initialDate)]
+      
+      singleHintOutput$date.numeric=log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(singleHintOutput$hint.date)))+1))
+      singleHintOutput$order=singleHintOutput$order+weight.date * singleHintOutput$date.numeric
+    }
+    
+
+    singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+    
+    if(length(initialJurisdictions)>0){
+      
+      top.rows=max(nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T))),
+                   min(500,
+                       200 + nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T)))))
+      
+    } else {
+      top.rows=500
+    }
+    
+    singleHintOutput=singleHintOutput[1:top.rows,]
+    
+    singleHintOutput$order=NULL
+    singleHintOutput$date.numeric=NULL
+    
+    
+    # if(length(initialJurisdictions)>0){singleHintOutput=subset(singleHintOutput, tolower(jurisdiction.name) %in% tolower(initialJurisdictions))}
+
     
     ## generate HTML
     
