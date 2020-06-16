@@ -30,17 +30,28 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
     product = na.omit(unique(pull.intervention.attributes$product.group.id))
     if(length(product)==0){product=1}
     
-    implementation.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 2)$date))
-    if(abs(implementation.date)==Inf){implementation.date=NA}
     
-    removal.date = na.omit(max(subset(tidyr::spread(pull.intervention.attributes, key='date.type.id', value='date'), !is.na(`2`))$`3`))
-    if(abs(removal.date)==Inf){removal.date=NA}
+    # JF replaced this on 200616
+    # implementation.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 2)$date))
+    # if(abs(implementation.date)==Inf){implementation.date=NA}
+    
+    if(nrow(subset(pull.intervention.attributes, date.type.id == 2 & is.na(date)==F))>0){
+      implementation.date=min(subset(pull.intervention.attributes, date.type.id == 2 & is.na(date)==F)$date)
+    } else {
+      implementation.date=NULL
+    }
+    
+    # JF replaced this on 200616
+    # removal.date = na.omit(max(subset(tidyr::spread(pull.intervention.attributes, key='date.type.id', value='date'), !is.na(`2`))$`3`))
+    # if(abs(removal.date)==Inf){removal.date=NA}
+    
+    if(nrow(subset(pull.intervention.attributes, date.type.id == 3 & is.na(date)==F))>0){
+      removal.date=min(subset(pull.intervention.attributes, date.type.id == 3 & is.na(date)==F)$date)
+    } else {
+      removal.date=NULL
+    }
+    
   }
-  
-  
-  ## removing -INf dates
-  if(is.na(as.Date(as.character(removal.date), "%Y-%m-%d")))
-  
   
   # check if collection's attributes were changed
   if(!is.null(collection.id)){
