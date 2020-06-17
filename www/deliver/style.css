@@ -171,6 +171,7 @@ label {
 
 /* GENERAL TABLE DESIGN */
 
+
 #deliver-deliverTable table tr {
 	display:flex;
 }
@@ -183,11 +184,20 @@ label {
 	flex-basis:100px;
 }
 
-#deliver-deliverTable table tbody tr td.smallPadding {
-	padding:calc(5px + 0.2vw) !important;
+#deliver-deliverTable table tr th {
+	word-break: break-word;
+	box-sizing: border-box;
 }
 
-#deliver-deliverTable table .status,
+#deliver-deliverTable table tbody tr td.smallPadding {
+	padding:calc(5px + 0.2vw) calc(2px + 0.2vw) !important;
+}
+
+#deliver-deliverTable table .status {
+	flex-grow:0;
+	flex-basis:100px;
+}
+
 #deliver-deliverTable table .documentation-status,
 #deliver-deliverTable table .jurisdiction,
 #deliver-deliverTable table .type,
@@ -208,8 +218,6 @@ label {
 	flex-basis: 50px;
 }
 
-
-
 /*------------------------------------HERE GOES LG STYLE DECLARATIONS ------------------------------------------ */
 
 body {
@@ -225,44 +233,23 @@ body {
   word-wrap:break-word;
 }
 
-table .prd-label {
-
-    font-size: 0.9em;
-    border: 1px solid grey;
-    border-radius: 20px;
-    background-color: #FFA07A;
-    color: black;
-    text-align: center;
-    padding: 0px 5px 0px 5px;
+table .status-label span {
+	color:#FFFFFF;
 }
 
+table .usr-label,
+table .prd-label,
 table .instr-label {
-
-    font-size: 0.9em;
-    border: 1px solid grey;
-    border-radius: 20px;
-    background-color: #76D7C4;
-    color: black;
-    text-align: center;
-    padding: 0px 5px 0px 5px;
-}
-
-table .status-label {
-
-    font-size: 1em;
-    color: #FFFFFF;
-}
-
-table .usr-label {
-
-    font-size: 0.9em;
-    font-weight: bold;
-    border: 1px solid grey;
-    border-radius: 20px;
-    background-color: gainsboro;
-    color: black;
-    text-align: center;
-    padding: 0px 5px 0px 5px;
+	font-size: 1em;
+	font-weight: bold;
+	border-radius: 3px;
+	background-color: #8e8e8e;
+	color: #ffffff;
+	text-align: center;
+	display: inline-block;
+	margin-right: 5px;
+	margin-bottom: 5px;
+	padding: 0px 4px;
 }
 
 .accept, .delete, .edit, .duplicate {
@@ -286,13 +273,30 @@ table .usr-label {
 }
 
 .more-less {
-  background-color: #DCDCDC;
-  border: 1px solid #2F4F4F;
-  color: black;
+  background-color: transparent;
+  border: none;
+  color: #ababab;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  border-radius: 10px;
+	transition:background-color 0.5s ease-out;
+	padding:5px;
+}
+
+.more-less:hover {
+  background-color: #eeeeee;
+  border-radius: 5px;
+	transition:background-color 0.5s ease-out;
+}
+
+.more-less span {
+  transform:rotate(0deg);
+	transition:transform 0.5s ease-out;
+}
+
+.more-less.open span {
+  transform:rotate(45deg);
+	transition:transform 0.5s ease-out;
 }
 
 .description-less {
@@ -353,19 +357,15 @@ table .usr-label {
 }
 
 .buttons-column {
+	display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 5px;
+  padding: calc(5px + 0.2vw);
 }
 
 .status-row{
   display: flex;
 	flex-direction:row;
-}
-
-.box-usr-label{
-  display: flex;
-  flex-direction: column;
-  flex-flow: wrap;
-  white-space: nowrap;
-  justify-content: center;
 }
 
 .ann-date {
@@ -388,6 +388,11 @@ div.dtsp-columns-5 {
 table.dataTable thead th {
     font-weight: bold;
     font-size: 1em;
+}
+
+#deliver-deliverTable tbody tr .status-column {
+	min-height: 50px;
+  padding: 0px 5px;
 }
 
 tr.new .status-column {

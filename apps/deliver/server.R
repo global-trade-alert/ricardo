@@ -116,7 +116,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       select = list(
         searchPanes = list(
           style = 'multi'
-        )
+        ),
+        style='api'
       ),
       autoWidth = FALSE,
       columnDefs = list(
@@ -210,7 +211,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             
                             let output = `<div class=\"status-row\">
                                               <div class=\"status-column \">
-                                                <div class=\"status-label ${data}\">${status}</div>
+                                                <div class=\"status-label ${data}\" alt=\\'${data}\\'>${status}</div>
                                               </div>
                                               <div class=\"buttons-column\">${accepted + deleted + edit + duplicates + duplicates_remove}</div>
                                           </div>`;
@@ -388,7 +389,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                     if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
                                         $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
                                                                           class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
-                                                                          Show More</button>`)
+                                                                          <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
                                     }
                                 })
                             })
