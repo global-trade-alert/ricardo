@@ -5,7 +5,6 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
   if(is.null(hints.id) | length(hints.id)< 1) stop('hints.id must be numeric or NA and at least length 1, expected is a vector')
   if(!xor(is.null(new.collection.name), is.null(collection.id))) stop('either collection.id or new.collection.name must be a provided, not both, not neither')
   if(!is.numeric(collection.id) & !is.character(new.collection.name)) stop('collection.id or new.collection.name must be numeric or character respectively (only one can be provided)')
-  if(length(starred.hint.id)!=1) stop('starred hint can only be length 1, use NA to indicate no starred hint')
   
   hints.id = unique(hints.id)
   hints.id=hints.id[!is.na(hints.id)]
@@ -98,7 +97,10 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       
       # star hints
       gta_sql_get_value(paste0("DELETE FROM b221_collection_star WHERE b221_collection_star.collection_id = ",collection.id,";"))
-      if(!is.na(starred.hint.id)) gta_sql_get_value(paste0("INSERT INTO b221_collection_star VALUES ",paste0("(",collection.id,",",starred.hint.id,")", collapse = ','),';'))
+      if(!is.na(starred.hint.id)){
+        gta_sql_multiple_queries(paste("INSERT INTO b221_collection_star VALUES ",paste0("(",paste0(collection.id,",",starred.hint.id),")"),collapse='; '),
+                                 1)
+      }
       
     } else {
       gta_sql_get_value(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,";"))
@@ -507,7 +509,13 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
       gta_sql_get_value(paste0("INSERT INTO b221_hint_collection VALUES ",paste0("(",hints.id,",",collection.id,")", collapse = ',')))
       gta_sql_get_value(paste0("DELETE FROM b221_collection_star WHERE b221_collection_star.collection_id = ",collection.id,";"))
-      if(!is.na(starred.hint.id)) gta_sql_get_value(paste0("INSERT INTO b221_collection_star VALUES ",paste0("(",collection.id,",",starred.hint.id,")", collapse = ','),';'))
+      
+      if(!is.na(starred.hint.id)){
+        
+        gta_sql_multiple_queries(paste("INSERT INTO b221_collection_star VALUES ",paste0("(",paste0(collection.id,",",starred.hint.id),")"),collapse='; '),
+                                 1)
+      }
+      
     } else {
       gta_sql_get_value(sprintf(paste0("DELETE FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id," OR b221_hint_collection.hint_id IN (%s);"),paste(hints.id, collapse = ',')))
       gta_sql_get_value(paste0("DELETE FROM b221_collection_star WHERE b221_collection_star.collection_id = ",collection.id,";"))
