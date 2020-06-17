@@ -97,13 +97,23 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       searchPanes = list(
         cascadePanes = TRUE,
         viewTotal = TRUE,
-        emptyMessage = "<i><b>no products</b></i>"
+        emptyMessage = "<i><b>no products</b></i>",
+        dtOpts = list(
+          select = list(
+            style = "multi"
+          )
+        )
       ),
       
       language = list(
         searchPanes = list(
           count = '{total} found',
           countFiltered = '{shown} / {total}'
+        )
+      ),
+      select = list(
+        searchPanes = list(
+          style = 'multi'
         )
       ),
       autoWidth = FALSE,
@@ -178,10 +188,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data;
                             }
                             
-                            let accepted = data != 'confirmed' ? '<img src=\"www/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
-                                deleted = '<img src=\"www/delete.png\" class=\"delete\" title=\"Remove entry\"/>',
-                                edit = '<img src=\"www/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
-                                duplicates = '<img src=\"www/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
+                            let accepted = data != 'confirmed' ? '<img src=\"www/deliver/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
+                                deleted = '<img src=\"www/deliver/delete.png\" class=\"delete\" title=\"Remove entry\"/>',
+                                edit = '<img src=\"www/deliver/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
+                                duplicates = '<img src=\"www/deliver/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
 
                             
@@ -246,6 +256,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                    initComplete = JS("function(){
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
+                          
+                         
                    }"),
                    drawCallback = JS("function(settings){
                                      const api = this.api();

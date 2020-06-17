@@ -38,14 +38,14 @@
 	padding-right:calc(20px + 1vw);
 	display: flex;
 	flex-direction: row;
-	justify-content: center;	
+	justify-content: center;
 	z-index:1;
 }
 
 .control-bar > div {
 	display:flex;
 	padding: 0px;
-	padding-left:15px;	
+	padding-left:15px;
 }
 
 .control-bar button,
@@ -221,7 +221,7 @@ table .status-label {
 }
 
 table .usr-label {
-  
+
     font-size: 0.9em;
     font-weight: bold;
     border: 1px solid grey;
@@ -521,4 +521,26 @@ input#cancel-dupl{
 
 .remove {
   display: none;
+}
+
+
+/* ----------------------------------------- CSS PB ----------------------------------------- */
+
+#search-pane-toggle-button {
+	width:100%;
+	padding:calc(10px + 1vw);
+	background-color:#f7f7f7;
+	border-radius:5px;
+	cursor:pointer;
+}
+
+
+.deliver {
+	padding:calc(20px + 1vw);
+	padding-top:calc(80px + 2vw);
+}
+
+.deliver > .content {
+	max-width:1640px;
+	margin:0 auto;
 }

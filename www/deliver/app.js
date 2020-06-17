@@ -14,9 +14,9 @@ const showLesscontent = function(type, id){
 $( document ).ready(function() {
   let overlay = $('<div />').addClass('overlay');
     $('body').append(overlay);
-    
+
     // add edit mode
-  let div_edit = $('<div />').addClass('editMode');  
+  let div_edit = $('<div />').addClass('editMode');
   let header = $('<h1 />').html('Edit Mode');
   let canvas = $('<div />').addClass('canvas');
   div_edit.append(header, canvas);
@@ -53,10 +53,10 @@ const buttonsClicks = {
         rowData.sort((a,b) => {
             if (a.name == 'Description' | a.name== 'Source') {
                 return -1
-            } 
+            }
         });
         rowData.forEach(function(d,i){
-          
+
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
             if (/date/g.test(d.name)){
@@ -80,25 +80,25 @@ const buttonsClicks = {
                         .val(`${d.data}`);
             }
             }
-                  
+
             $('.canvas').append(
               $('<div />').append(
                           label, input
                       )
             )
-            
+
         });
-        
+
       $('.canvas').append(
         $('<input type="button" id="save-edit" value="Save data" />')
         );
-      
+
       $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
       $('.datepicker').each(function(){
         if($(this).attr('current-date') != '')
           $(this).bsDatepicker('setDate', $(this).attr('current-date'))
       })
-       
+
       $('#save-edit').on('click', function(){
         let output= [];
           $('.canvas div textarea,.datepicker').each(function(){
@@ -109,13 +109,13 @@ const buttonsClicks = {
           that.updateRowData(currentStatus, output, id);
           $('.overlay').click();
       })
-      
+
       $('.overlay').css({'display': 'block'});
-                              
+
       $( ".editMode" ).animate({
           left: "+=540",
         }, 1000, function() {
-          $('.overlay').on('click', function(){ 
+          $('.overlay').on('click', function(){
               $(this).css({ 'display': 'none' });
               $( ".editMode" ).animate({ left: '-=540'}, 1000, function (){
                   $('.canvas').empty();
@@ -124,7 +124,7 @@ const buttonsClicks = {
           });
             console.log('done')
       });
-  
+
     },
     duplicate: function(status, id) {
       const that = this;
@@ -135,11 +135,11 @@ const buttonsClicks = {
       let buttons = $('<div />').addClass('dupl-buttons')
                         .append($('<input id = "save-dupl" type="button" value="Remove duplicates"/>'))
                         .append($('<input id = "cancel-dupl" type="button" value="Cancel"/>'));
-      
+
       div_overlay.append(buttons);
-      
+
       $(`tr#${id}`).append(div_overlay);
-      
+
       $('#save-dupl').on('click', function(){
         let rows = [];
         $('.remove-row').each(function() { //duplicates-remove:checked
@@ -151,9 +151,9 @@ const buttonsClicks = {
       $('#cancel-dupl').on('click', function(){
          that.stopDuplicatesMode();
       });
-      
+
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
-      /*$('.duplicates-remove').each(function(){ 
+      /*$('.duplicates-remove').each(function(){
         let id_this = $(this).closest('tr').attr('id');
         if( id_this != id);
           $(this).css({'display': 'block'});
@@ -219,10 +219,10 @@ const buttonsClicks = {
     },
     getColumnsNames: function(){
         let output = [];
-        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date', 
+        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
                                 'Removal date', 'Description', 'Source', 'Products', 'Instruments'];
-                                
-        $('#DataTables_Table_0').DataTable().columns().every( function (i) {        
+
+        $('#DataTables_Table_0').DataTable().columns().every( function (i) {
               if (filtered_columns.includes(this.header().innerHTML))
               output.push({ index: i, name: this.header().innerHTML})
         });
@@ -231,7 +231,7 @@ const buttonsClicks = {
     rowAttachEvents: function(status, id){
         $(`tr#${id}`).find('.buttons-column').each(function(){
             let that = $(this);
-            
+
               $(that).children().each(function(){
                 if ($(this).attr('class') != 'duplicates-remove')
                 $(this).off('click').on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
@@ -242,7 +242,7 @@ const buttonsClicks = {
       $('.keep-row').remove();
       $('.remove-row').remove();
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': ''}) });
-      /*$('.duplicates-remove').each(function(){ 
+      /*$('.duplicates-remove').each(function(){
         $(this).off('change');
         $(this).prop( "checked", false ).css({'display': 'none'});
       });*/
@@ -255,11 +255,11 @@ const buttonsClicks = {
       let div_overlay = $('<div />')
                               .addClass('remove-row')
                               .css({ 'height': $(`tr#${id}`).height()})
-                              
+
       div_overlay.append($('<p />').text('Duplicate row'));
-      
+
       $(`tr#${id}`).append(div_overlay);
-      $(`tr#${id}`).find('.remove-row').on('click', function(){ 
+      $(`tr#${id}`).find('.remove-row').on('click', function(){
           event.stopPropagation();
           $(`tr#${id}`).on('click', function(){
                 const this_inner = $(this);
@@ -270,6 +270,6 @@ const buttonsClicks = {
       });
     },
     removeDuplicateOverlay: function(id){
-      
+
     }
 };
