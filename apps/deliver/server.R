@@ -106,6 +106,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       ),
       
       language = list(
+        search = "_INPUT_",
+        searchPlaceholder = "Filter",
         searchPanes = list(
           count = '{total} found',
           countFiltered = '{shown} / {total}'
@@ -121,69 +123,84 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
        # set columns widths
           list(
             width = "5%",  # Confirmation status
-            targets = 0
+            targets = 0,
+            className = "dt-head-left"
           ),
           list(
             width = "3%",  # Entry ID
-            targets = 1
+            targets = 1,
+            className = "dt-head-left"
           ),
           list(
             width = "3%",  # Users
-            targets = 2
+            targets = 2,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # Documentation status
-            targets = 3
+            targets = 3,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # Jurisdiction
-            targets = 4
+            targets = 4,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # Initial assessment
-            targets = 5
+            targets = 5,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # GTA intervention type
-            targets = 6
+            targets = 6,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # Announcement date
-            targets = 7
+            targets = 7,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # Implementation date
-            targets = 8
+            targets = 8,
+            className = "dt-head-left"
           ),
           list(
             width = "5%", # Removal date
-            targets = 9
+            targets = 9,
+            className = "dt-head-left"
           ), # 43%
           list(
             width = "25%", # Description
-            targets = 10
+            targets = 10,
+            className = "dt-head-left"
           ),
           list(
             width = "13%", # Source
-            targets = 11
+            targets = 11,
+            className = "dt-head-left"
           ),
           list(
             width = "10%", # Products
-            targets = 12
+            targets = 12,
+            className = "dt-head-left"
           ),
           list(
             width = "6%", # Instruments
-            targets = 13
+            targets = 13,
+            className = "dt-head-left"
           ),
           list(targets = '_all',
                createdCell = JS("function (td, cellData, rowData, row, col) {
-                                  $(td).css('padding', '1px')
+                                  $(td).css('padding', '0px')
                                 }
                                 ")),
           list(targets = c(0:9),
                className = 'dt-center'),
           list(targets = 0,
                render = JS("function (data, type, row){
+
                             if (type === 'sp') {
                               return data;
                             }
@@ -193,13 +210,23 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 edit = '<img src=\"www/deliver/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
                                 duplicates = '<img src=\"www/deliver/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
+                                
+                            if (data == 'confirmed') {
+                              var status = '<span class=\\'material-icons\\'>check</span>';
+                            } else if (data == 'deleted') {
+                              var status = '<span class=\\'material-icons\\'>delete</span>';
+                            } else if (data == 'updated') {
+                              var status = '<span class=\\'material-icons\\'>update</span>';
+                            } else if (data == 'new') {
+                              var status = '<span class=\\'material-icons\\'>fiber_new</span>';
 
+                            }
                             
                             let output = `<div class=\"status-row\">
-                                              <div class=\"buttons-column\">${accepted + deleted + edit + duplicates + duplicates_remove}</div>
-                                              <div class=\"status-column\">
-                                                <div class=\"status-label\">${data}</div>
+                                              <div class=\"status-column \">
+                                                <div class=\"status-label ${data}\">${status}</div>
                                               </div>
+                                              <div class=\"buttons-column\">${accepted + deleted + edit + duplicates + duplicates_remove}</div>
                                           </div>`;
                                    
                             return output;
@@ -257,6 +284,19 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
                           
+                           // Add toggle button to bottom of search panes
+                          console.log('TESTING ADD BUTTON FUNCTION');
+                          let newNode = document.createElement('div');
+                          newNode.setAttribute('id', 'search-pane-toggle-button');
+                          let innerNode = document.createElement('span');
+                          innerNode.setAttribute('class','material-icons');
+                          innerNode.innerHTML = 'expand_less';
+                          newNode.appendChild(innerNode);
+                          console.log($('#deliver-deliverTable .dtsp-panesContainer'));
+                          let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer')[0];
+                          referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+                          
+                          searchPaneUI();
                          
                    }"),
                    drawCallback = JS("function(settings){
@@ -373,8 +413,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               const api = this.api();
                               
                                api.$('.status-label').each(function(){
-                                  let type = $(this).text();
-                                  $(this).closest('tr').addClass(type)
+                                  let type = $(this)[0].className;
+                                  $(this).closest('tr').addClass(type.replace('status-label ',''))
                                 })
                               
                               let data = api.rows( { page: 'current' } ).data();

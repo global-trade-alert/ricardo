@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* CSS Document */
 
-/*GTA B221 _____________________________________________________________*/
+/*GTA DELIVER _____________________________________________________________*/
 
 
 /* GENERAL SETTINGS */
@@ -169,6 +169,8 @@ label {
 	color:#0E4E8C;
 }
 
+/* GENERAL TABLE DESIGN */
+
 /*------------------------------------HERE GOES LG STYLE DECLARATIONS ------------------------------------------ */
 
 body {
@@ -208,16 +210,8 @@ table .instr-label {
 
 table .status-label {
 
-    font-size: 0.9em;
-    padding: 1px 10px;
-    border: 1px solid #d2d2d2;
-    border-radius: 20px;
-    background-color: #008080;
-    float: none;
-    color: white;
-    text-align: center;
-    margin-top: 0.6em;
-    max-width: 55px;
+    font-size: 1em;
+    color: #FFFFFF;
 }
 
 table .usr-label {
@@ -315,9 +309,7 @@ table .usr-label {
 
 .status-column{
   display: flex;
-  flex-direction: column;
-  flex-flow: wrap;
-  white-space: nowrap;
+  align-items: center;
   justify-content: center;
 }
 
@@ -325,10 +317,8 @@ table .usr-label {
 }
 
 .status-row{
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr 1fr;
-  justify-items: center;
+  display: flex;
+	flex-direction:row;
 }
 
 .box-usr-label{
@@ -361,20 +351,20 @@ table.dataTable thead th {
     font-size: 1em;
 }
 
-tr.new {
-  background-color: #ABEBC6 !important;
+tr.new .status-column {
+	background-color: #0096ff;
 }
 
-tr.updated {
-  background-color: #AED6F1 !important;
+tr.updated .status-column {
+	background-color: #ffe10b;
 }
 
-tr.confirmed {
-  background-color: #F7DC6F !important;
+tr.confirmed .status-column {
+	background-color: #25e178;
 }
 
-tr.deleted {
-  background-color: #E6B0AA !important;
+tr.deleted .status-column {
+	background-color: #ff5a47;
 }
 
 .editMode{
@@ -526,15 +516,6 @@ input#cancel-dupl{
 
 /* ----------------------------------------- CSS PB ----------------------------------------- */
 
-#search-pane-toggle-button {
-	width:100%;
-	padding:calc(10px + 1vw);
-	background-color:#f7f7f7;
-	border-radius:5px;
-	cursor:pointer;
-}
-
-
 .deliver {
 	padding:calc(20px + 1vw);
 	padding-top:calc(80px + 2vw);
@@ -543,4 +524,75 @@ input#cancel-dupl{
 .deliver > .content {
 	max-width:1640px;
 	margin:0 auto;
+}
+
+/* SEARCH PANES STYLING */
+
+#search-pane-toggle-button {
+	width:100%;
+	cursor:pointer;
+	text-align: center;
+}
+
+#search-pane-toggle-button span {
+	color:#909090;
+	font-size: 7em;
+	transform: scaleY(0.7);
+	transition:transform 0.5s ease-out;
+}
+
+.collapsePanes #search-pane-toggle-button span {
+	color:#909090;
+	font-size: 7em;
+	transform: scaleY(-0.7);
+	transition:transform 0.5s ease-out;
+}
+
+
+.deliver #deliver-deliverTable .dtsp-panesContainer {
+	max-height:500px;
+	height:30vh;
+	overflow:hidden;
+	transition:max-height 0.5s ease-out;
+	border:none;
+	background-color:rgba(0,0,0,0.05);
+	padding: 0px;
+  margin: 0px;
+}
+
+.deliver #deliver-deliverTable.collapsePanes .dtsp-panesContainer {
+	max-height:0px;
+	overflow:hidden;
+	transition:max-height 0.5s ease-out;
+}
+
+.deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-subRow1,
+.deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-subRow2 {
+	width:100%;
+}
+
+/* TD SPECIAL PADDINGS */
+td.addPadding {
+	padding:10px !important;
+}
+
+
+/* FILTER / SEARCH FIELD */
+
+.deliver #deliver-deliverTable .dataTables_filter {
+	width:100%;
+}
+
+.deliver #deliver-deliverTable .dataTables_filter input {
+	width:100%;
+	margin:0;
+	border-radius:5px;
+	background-color:rgba(0,0,0,0.05);
+	border:none;
+	padding:10px;
+}
+
+.deliver #deliver-deliverTable .dataTables_filter label {
+	padding:0;
+	width:100%;
 }

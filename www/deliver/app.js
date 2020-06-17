@@ -273,3 +273,11 @@ const buttonsClicks = {
 
     }
 };
+
+// On button click #search-pane-toggle-button collapse searchpanes
+function searchPaneUI() {
+  console.log('Toggling Class');
+$('#deliver-deliverTable').on('click','#search-pane-toggle-button', function(){
+  $('#deliver-deliverTable').toggleClass('collapsePanes');
+});
+}
