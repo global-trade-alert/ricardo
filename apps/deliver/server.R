@@ -192,7 +192,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data;
                             }
                             
-                            let accepted = data != 'confirmed' ? '<img src=\"www/deliver/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
+                            let accepted = data != 'confirmed' ? '<img src=\"www/deliver/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '<div></div>',
                                 deleted = '<img src=\"www/deliver/delete.png\" class=\"delete\" title=\"Remove entry\"/>',
                                 edit = '<img src=\"www/deliver/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
                                 duplicates = '<img src=\"www/deliver/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
