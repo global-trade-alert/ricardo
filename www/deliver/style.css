@@ -171,6 +171,45 @@ label {
 
 /* GENERAL TABLE DESIGN */
 
+#deliver-deliverTable table tr {
+	display:flex;
+}
+
+#deliver-deliverTable table tr td,
+#deliver-deliverTable table tr th {
+	display:flex;
+	flex:1;
+	overflow:hidden;
+	flex-basis:100px;
+}
+
+#deliver-deliverTable table tbody tr td.smallPadding {
+	padding:calc(5px + 0.2vw) !important;
+}
+
+#deliver-deliverTable table .status,
+#deliver-deliverTable table .documentation-status,
+#deliver-deliverTable table .jurisdiction,
+#deliver-deliverTable table .type,
+#deliver-deliverTable table .source,
+#deliver-deliverTable table .products,
+#deliver-deliverTable table .instruments {
+	flex-grow:0;
+	flex-basis: 80px;
+}
+
+#deliver-deliverTable table .entry-id,
+#deliver-deliverTable table .users,
+#deliver-deliverTable table .assessment,
+#deliver-deliverTable table .announcement-date,
+#deliver-deliverTable table .removal-date,
+#deliver-deliverTable table .implementation-date {
+	flex-grow:0;
+	flex-basis: 50px;
+}
+
+
+
 /*------------------------------------HERE GOES LG STYLE DECLARATIONS ------------------------------------------ */
 
 body {

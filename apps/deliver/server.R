@@ -121,75 +121,61 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       autoWidth = FALSE,
       columnDefs = list(
        # set columns widths
-          list(
-            width = "5%",  # Confirmation status
+          list(  # Confirmation status
             targets = 0,
-            className = "dt-head-left"
+            className = "dt-head-left status"
           ),
-          list(
-            width = "3%",  # Entry ID
+          list(  # Entry ID
             targets = 1,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding entry-id"
           ),
-          list(
-            width = "3%",  # Users
+          list(  # Users
             targets = 2,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding users"
           ),
-          list(
-            width = "5%", # Documentation status
+          list( # Documentation status
             targets = 3,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding documentation-status"
           ),
-          list(
-            width = "5%", # Jurisdiction
+          list( # Jurisdiction
             targets = 4,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding jurisdiction"
           ),
-          list(
-            width = "5%", # Initial assessment
+          list( # Initial assessment
             targets = 5,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding assessment"
           ),
-          list(
-            width = "5%", # GTA intervention type
+          list( # GTA intervention type
             targets = 6,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding type"
           ),
-          list(
-            width = "5%", # Announcement date
+          list( # Announcement date
             targets = 7,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding announcement-date"
           ),
-          list(
-            width = "5%", # Implementation date
+          list(  # Implementation date
             targets = 8,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding implementation-date"
           ),
-          list(
-            width = "5%", # Removal date
+          list(  # Removal date
             targets = 9,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding removal-date"
           ), # 43%
-          list(
-            width = "25%", # Description
+          list(  # Description
             targets = 10,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding description"
           ),
-          list(
-            width = "13%", # Source
+          list(  # Source,
             targets = 11,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding source"
           ),
-          list(
-            width = "10%", # Products
+          list(  # Products
             targets = 12,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding products"
           ),
-          list(
-            width = "6%", # Instruments
+          list(  # Instruments
             targets = 13,
-            className = "dt-head-left"
+            className = "dt-head-left smallPadding instruments"
           ),
           list(targets = '_all',
                createdCell = JS("function (td, cellData, rowData, row, col) {
