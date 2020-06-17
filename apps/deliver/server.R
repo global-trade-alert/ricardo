@@ -79,11 +79,13 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       gta_sql_get_value("SELECT jurisdiction_name FROM gta_jurisdiction_list")
     assessment_unique <-
       gta_sql_get_value("SELECT assessment_name FROM b221_assessment_list")
+    discard_reason <- list('reason1', 'reason2', 'reason3', 'reason4', 'reason5', 'reason6')
     
       session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
                                                                 Instruments = instruments_unique,
                                                                 Jurisdiction = jurisdiction_unique,
-                                                                'Initial assessment' = assessment_unique)))
+                                                                'Initial assessment' = assessment_unique,
+                                                                discard_reason = discard_reason)))
   })
   
   ns <- NS("deliver")

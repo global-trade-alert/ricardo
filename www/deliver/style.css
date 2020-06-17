@@ -539,3 +539,18 @@ label {
 .canvas div textarea,.inputs input,select.products {
   width: 100%;
 }
+
+#prompt-form fieldset {
+  display: flex;
+}
+
+#prompt-form textarea {
+  height: 75px;
+  width: 100%;
+}
+
+.prompt-error {
+  border: 1px solid #f1a899;
+  background: #fddfdf;
+  color: #5f3f3f;
+}

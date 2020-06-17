@@ -17,8 +17,8 @@ const showLesscontent = function(type, id){
   $(`#toggle-${type}_${id}`).attr('onclick', `showMorecontent(\"${type}\",${id})`)
 }
 
-// add the overlay initially
 $( document ).ready(function() {
+    // add the overlay initially
   let overlay = $('<div />').addClass('overlay');
     $('body').append(overlay);
     
@@ -28,36 +28,46 @@ $( document ).ready(function() {
   let canvas = $('<div />').addClass('canvas');
   div_edit.append(header, canvas);
     $('body').append(div_edit);
-  let a_prompt = $('<button />')
-                  .attr('id', 'prompt')
-                  .html('click here'),
+    
+    // add html for discard prompt
       div_prompt = $('<div />')
                       .attr('id','prompt-form')
                       .attr('hidden', 'hidden')
-                      .append(
-                        $('<p />')
-                            .text('some text')
+                      .html(
+                        '<p>Please, indicate a discard reason</p>\
+                        <form>\
+                          <fieldset>\
+                           <label for="reason">Select reason</label>\
+                            <select id="reason" class="discard">\
+                              <option></option>\
+                            </select>\
+                           <label for="other">other</label>\
+                            <textarea id="other"></textarea>\
+                          </fieldset>\
+                        </form>'
                       );
                   
-    $('body').append(a_prompt, div_prompt);
+    $('body').append(div_prompt);
     
-    $(function() {
-      $("#prompt-form").dialog({
-        autoOpen: false,
-        show: {
-          effect: "blind",
-          duration: 1000
-        },
-        hide: {
-          effect: "explode",
-          duration: 1000
-        }
-      });
-      $("#prompt").click(function() {
-        $("#prompt-form").dialog("open");
-        return false;
-      });
-    });
+    (async() => {
+      while(!window.hasOwnProperty("data_gta")) // wait till data_gta is loaded
+          await new Promise(resolve => setTimeout(resolve, 1000));
+       window.data_gta.discard_reason.map(function(d) {
+                $('select#reason').append(
+                  `<option value="${d}">${d}</option>`
+                 )
+                });
+                
+            $('select#reason').selectize({
+              maxItems: 6,
+              valueField: 'text',
+              labelField: 'text',
+              placeholder: "Choose reason...",
+              create: false
+            });
+    })();
+ 
+
 
 });
 
@@ -79,16 +89,10 @@ const buttonsClicks = {
     delete: function(currentStatus, id) {
               const that = this;
               if(['new', 'updated', 'confirmed'].includes(currentStatus)){
-                  //this.removeRow(id);
-                  this.convertToDeleted(currentStatus, id);
-                  //$(`tr#${id}`).find('.delete').on('click', function(){ that.delete('deleted', id) })
-                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                  //this.redrawDataTable();
+                  that.addDeletePrompt(currentStatus, id);
+                  /*that.convertToDeleted(currentStatus, id);
+                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';*/
               } else {
-                  /*this.convertToConfirmed('deleted', id);
-                  $(`tr#${id}`).find('.delete').on('click', function(){ that.delete('confirmed', id) })
-                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                  this.redrawDataTable();*/
                   this.removeRow(id);
               }
               this.redrawDataTable();
@@ -373,7 +377,45 @@ const buttonsClicks = {
           $(this).remove();
       });
     },
-    addDeletePrompt: function(){
-      
+    addDeletePrompt: function(currentStatus, id){
+      const that = this;
+          $(function() {
+            $("#prompt-form").dialog({
+                  autoOpen: false,
+                  height: 300,
+                  width: 250,
+                  modal: true,
+                  resizable: false,
+                  buttons: {
+                    OK: function() {
+                      let selected = $('select#reason').selectize()[0].selectize.getValue(),
+                          other = $('#prompt-form textarea').val(),
+                          reasons = selected.concat(other).filter(d => d != '').join(',');
+                          
+                      if (reasons.length == 0){
+                        $('#other').addClass( "prompt-error" );
+                        $('#prompt-form div.selectize-input').addClass( "prompt-error" );
+                      } else {
+                        that.convertToDeleted(currentStatus, id);
+                        $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+                        $(this).dialog( "close" );
+                        that.redrawDataTable();
+                        that.updateSearchPanes();
+                      }
+                      console.log({selected: selected, other: other})
+                    },
+                    cancel: function(){
+                      $(this).dialog( "close" );
+                    }
+                  },
+                  open: function(){
+                      $('select#reason').selectize()[0].selectize.clear();
+                      $('.prompt-error').removeClass( "prompt-error" );
+                      $('#prompt-form textarea').val('');
+                  }
+              });
+          $("#prompt-form").dialog("open");
+          //$("#prompt-form").parent().draggable( "disable" );
+        });
     }
 };
