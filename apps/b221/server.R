@@ -1213,10 +1213,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     # singleHintOutput$order[singleHintOutput$order<0]=0
 
     singleHintOutput$order=0
-    singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)] = weight.jur + singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)]
-    singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)] =          weight.int.type + singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)]
-    singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)] =      weight.product + singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)]
-    singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T) ]=      weight.assessment + singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T)]
+    if(is.na(initialJurisdictions)==F) { singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)] = weight.jur + singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)]}
+    if(is.na(initialType)==F) { singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)] =          weight.int.type + singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)]}
+    if(is.na(initialProduct)==F) { singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)] =      weight.product + singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)]}
+    if(is.na(initialAssessment)==F) { singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T) ]=      weight.assessment + singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T)]}
     
     if(any(!is.na(initialDate))){
       initialDate=initialDate[!is.na(initialDate)]
