@@ -9,12 +9,14 @@ deliverui <- function(id) {
   # START UI
   tagList(
     fluidPage(
-    shinyjs::useShinyjs(),
-    theme = "www/style.css",
-    tags$head(
-      tags$script(src="www/app.js"),
-      tags$script(src="https://code.jquery.com/ui/1.12.1/jquery-ui.js")
-    ),
+      shinyjs::useShinyjs(),
+      theme = "www/deliver/style.css",
+      tags$head(
+        tags$script(src="www/deliver/app.js"),
+        tags$script(src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"),
+        tags$script(src="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.3.0/js/bootstrap-datepicker.js"),
+        tags$link(rel="stylesheet", type="text/css", href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css")
+      ),
     tags$div(class="removeui",
              tags$div(class='remove', dateInput('remove_date', label=NULL),
                       selectizeInput('remove_input', label=NULL, choices=NULL, width=10)),
@@ -23,11 +25,8 @@ deliverui <- function(id) {
                                tags$div(class="deliverTable",
                                         dataTableOutput(ns("deliverTable"))) # Initialize selectize),
                       ),
-                      tags$div(class="control-bar",
-                               tags$div(id="loadMoreButton",
-                                        actionButton(ns("loadMoreDeliver"),
-                                                     "Refresh",
-                                                     class="blue")))
+                      tags$div(id="searchPanes"),
+                      tags$div(class="control-bar")
 
              )
   )

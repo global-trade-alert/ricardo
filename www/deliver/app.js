@@ -7,23 +7,23 @@ Shiny.addCustomMessageHandler('data_gta', function(data) {
 
 const showMorecontent = function(type, id){
   $(`#toggle-${type}_${id}`).closest('td').find(`.${type}-less`).removeClass(`${type}-less`).addClass(`${type}-more`);
-  $(`#toggle-${type}_${id}`).html('Show less');
+  $(`#toggle-${type}_${id}`).addClass('open');
   $(`#toggle-${type}_${id}`).attr('onclick', `showLesscontent(\"${type}\",${id})`)
 }
 
 const showLesscontent = function(type, id){
   $(`#toggle-${type}_${id}`).closest('td').find(`.${type}-more`).removeClass(`${type}-more`).addClass(`${type}-less`);
-  $(`#toggle-${type}_${id}`).html('Show more');
+  $(`#toggle-${type}_${id}`).removeClass('open');
   $(`#toggle-${type}_${id}`).attr('onclick', `showMorecontent(\"${type}\",${id})`)
 }
 
 $( document ).ready(function() {
     // add the overlay initially
   let overlay = $('<div />').addClass('overlay');
-    $('body').append(overlay);
-    
+    $('body').hide().append(overlay).fadeIn(300);
+
     // add edit mode
-  let div_edit = $('<div />').addClass('editMode');  
+  let div_edit = $('<div />').addClass('editMode');
   let header = $('<h1 />').html('Edit Mode');
   let canvas = $('<div />').addClass('canvas');
   div_edit.append(header, canvas);
@@ -105,10 +105,10 @@ const buttonsClicks = {
         rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode 
             if (a.name == 'Description' | a.name== 'Source') {
                 return -1
-            } 
+            }
         });
         rowData.forEach(function(d,i){
-          
+
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
             switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
@@ -179,7 +179,6 @@ const buttonsClicks = {
                 .append(label, input)
               )
             }
-
             
             $('select.products').selectize({
               maxItems: 6,
@@ -195,17 +194,17 @@ const buttonsClicks = {
             });
             
         });
-        
+
       $('.canvas').append(
         $('<input type="button" id="save-edit" value="Save data" />')
         );
-      
+
       $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
       $('.datepicker').each(function(){
         if($(this).attr('current-date') != '')
           $(this).bsDatepicker('setDate', $(this).attr('current-date'))
       })
-       
+
       $('#save-edit').on('click', function(){
         let output= [];
           $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
@@ -223,21 +222,21 @@ const buttonsClicks = {
           that.updateRowData(currentStatus, output, id);
           $('.overlay').click();
       })
-      
-      $('.overlay').css({'display': 'block'});
-                              
+
+      $('.overlay').addClass('show');
+
       $( ".editMode" ).animate({
           left: "+=540",
         }, 1000, function() {
-          $('.overlay').on('click', function(){ 
-              $(this).css({ 'display': 'none' });
+          $('.overlay').on('click', function(){
+              $(this).removeClass('show');
               $( ".editMode" ).animate({ left: '-=540'}, 1000, function (){
                   $('.canvas').empty();
               });
               $(this).unbind('click', arguments.callee);
           });
       });
-  
+
     },
     duplicate: function(status, id) {
       const that = this;
@@ -248,11 +247,11 @@ const buttonsClicks = {
       let buttons = $('<div />').addClass('dupl-buttons')
                         .append($('<input id = "save-dupl" type="button" value="Remove duplicates"/>'))
                         .append($('<input id = "cancel-dupl" type="button" value="Cancel"/>'));
-      
+
       div_overlay.append(buttons);
-      
+
       $(`tr#${id}`).append(div_overlay);
-      
+
       $('#save-dupl').on('click', function(){
         let rows = [];
         $('.remove-row').each(function() { //duplicates-remove:checked
@@ -264,8 +263,9 @@ const buttonsClicks = {
       $('#cancel-dupl').on('click', function(){
          that.stopDuplicatesMode();
       });
-      
+
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
+
       $('#DataTables_Table_0 tr').each(function(){
           const this_row = $(this);
           let id_this = this_row.attr('id');
@@ -327,10 +327,12 @@ const buttonsClicks = {
     },
     getColumnsNames: function(){
         let output = [];
+
         let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date', 
                                 'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
                                 
         $('#DataTables_Table_0').DataTable().columns().every( function (i) {        
+          
               if (filtered_columns.includes(this.header().innerHTML))
               output.push({ index: i, name: this.header().innerHTML})
         });
@@ -339,7 +341,7 @@ const buttonsClicks = {
     rowAttachEvents: function(status, id){
         $(`tr#${id}`).find('.buttons-column').each(function(){
             let that = $(this);
-            
+
               $(that).children().each(function(){
                 if ($(this).attr('class') != 'duplicates-remove')
                 $(this).off('click').on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
@@ -350,7 +352,7 @@ const buttonsClicks = {
       $('.keep-row').remove();
       $('.remove-row').remove();
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': ''}) });
-      /*$('.duplicates-remove').each(function(){ 
+      /*$('.duplicates-remove').each(function(){
         $(this).off('change');
         $(this).prop( "checked", false ).css({'display': 'none'});
       });*/
@@ -363,11 +365,11 @@ const buttonsClicks = {
       let div_overlay = $('<div />')
                               .addClass('remove-row')
                               .css({ 'height': $(`tr#${id}`).height()})
-                              
+
       div_overlay.append($('<p />').text('Duplicate row'));
-      
+
       $(`tr#${id}`).append(div_overlay);
-      $(`tr#${id}`).find('.remove-row').on('click', function(){ 
+      $(`tr#${id}`).find('.remove-row').on('click', function(){
           event.stopPropagation();
           $(`tr#${id}`).on('click', function(){
                 const this_inner = $(this);
@@ -419,3 +421,11 @@ const buttonsClicks = {
         });
     }
 };
+
+// On button click #search-pane-toggle-button collapse searchpanes
+function searchPaneUI() {
+  console.log('Toggling Class');
+$('#deliver-deliverTable').on('click','#search-pane-toggle-button', function(){
+  $('#deliver-deliverTable').toggleClass('collapsePanes');
+});
+}

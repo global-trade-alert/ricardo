@@ -102,7 +102,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       rowId = JS("function(d) {
         return d[1];
       }"),
-      pageLength = 30,
+      pageLength = 300,
       scrollX = FALSE,
 
       deferRender = TRUE,
@@ -114,101 +114,125 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       searchPanes = list(
         cascadePanes = TRUE,
         viewTotal = TRUE,
-        emptyMessage = "<i><b>no products</b></i>"
+        emptyMessage = "<i><b>no products</b></i>",
+        dtOpts = list(
+          select = list(
+            style = "multi"
+          )
+        )
       ),
       
       language = list(
+        search = "_INPUT_",
+        searchPlaceholder = "Filter",
         searchPanes = list(
           count = '{total} found',
           countFiltered = '{shown} / {total}'
         )
       ),
+      select = list(
+        searchPanes = list(
+          style = 'multi'
+        ),
+        style='api'
+      ),
       autoWidth = FALSE,
       columnDefs = list(
        # set columns widths
-          list(
-            width = "5%",  # Confirmation status
-            targets = 0
+          list(  # Confirmation status
+            targets = 0,
+            className = "dt-head-left status"
           ),
-          list(
-            width = "3%",  # Entry ID
-            targets = 1
+          list(  # Entry ID
+            targets = 1,
+            className = "dt-head-left smallPadding entry-id"
           ),
-          list(
-            width = "3%",  # Users
-            targets = 2
+          list(  # Users
+            targets = 2,
+            className = "dt-head-left smallPadding users"
           ),
-          list(
-            width = "5%", # Documentation status
-            targets = 3
+          list( # Documentation status
+            targets = 3,
+            className = "dt-head-left smallPadding documentation-status"
           ),
-          list(
-            width = "5%", # Jurisdiction
-            targets = 4
+          list( # Jurisdiction
+            targets = 4,
+            className = "dt-head-left smallPadding jurisdiction"
           ),
-          list(
-            width = "5%", # Initial assessment
-            targets = 5
+          list( # Initial assessment
+            targets = 5,
+            className = "dt-head-left smallPadding assessment"
           ),
-          list(
-            width = "5%", # GTA intervention type
-            targets = 6
+          list( # GTA intervention type
+            targets = 6,
+            className = "dt-head-left smallPadding type"
           ),
-          list(
-            width = "4%", # Announcement date
-            targets = 7
+          list( # Announcement date
+            targets = 7,
+            className = "dt-head-left smallPadding announcement-date"
           ),
-          list(
-            width = "4%", # Implementation date
-            targets = 8
+          list(  # Implementation date
+            targets = 8,
+            className = "dt-head-left smallPadding implementation-date"
           ),
-          list(
-            width = "4%", # Removal date
-            targets = 9
+          list(  # Removal date
+            targets = 9,
+            className = "dt-head-left smallPadding removal-date"
           ), # 43%
-          list(
-            width = "24%", # Description
-            targets = 10
+          list(  # Description
+            targets = 10,
+            className = "dt-head-left smallPadding description"
           ),
-          list(
-            width = "13%", # Source
-            targets = 11
+          list(  # Source,
+            targets = 11,
+            className = "dt-head-left smallPadding source"
           ),
-          list(
-            width = "10%", # Products
-            targets = 12
+          list(  # Products
+            targets = 12,
+            className = "dt-head-left smallPadding products"
           ),
-          list(
-            width = "10%", # Instruments
-            targets = 13
+          list(  # Instruments
+            targets = 13,
+            className = "dt-head-left smallPadding instruments"
           ),
           list(targets = '_all',
                createdCell = JS("function (td, cellData, rowData, row, col) {
-                                  $(td).css('padding', '1px')
+                                  $(td).css('padding', '0px')
                                 }
                                 ")),
           list(targets = c(0:9),
                className = 'dt-center'),
           list(targets = 0,
                render = JS("function (data, type, row){
+
                             if (type === 'sp') {
                               return data;
                             }
                             
-                            let accepted = !/confirmed|deleted/gi.test(data) ? '<img src=\"www/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '',
-                                deleted = '<img src=\"www/delete.svg\" class=\"delete\" title=\"Remove entry\"/>',
-                                restore = /deleted/gi.test(data) ? '<img src=\"www/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\"/>' : 
-                                '<img src=\"www/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\" style=\"display:none\"/>',
-                                edit = '<img src=\"www/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
-                                duplicates = '<img src=\"www/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
+                            let accepted = !/confirmed|deleted/gi.test(data) ? '<div class=\"accept\" title=\"Confirm entry\"><img src=\"www/deliver/accept.svg\"/></div>' : '<div></div>',
+                                deleted = '<div class=\"delete\" title=\"Remove entry\"><img src=\"www/deliver/delete.svg\"/></div>',
+                                restore = /deleted/gi.test(data) ? '<img src=\"www/deliver/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\"/>' : 
+                                '<img src=\"www/deliver/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\" style=\"display:none\"/>',
+                                edit = '<div class=\"edit\" title=\"Edit Entry\"><img src=\"www/deliver/edit.svg\"/></div>',
+                                duplicates = '<div class=\"duplicate\" title=\"Remove duplicates\"><img src=\"www/deliver/duplicate.svg\"/></div>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
+                                
+                            if (data == 'confirmed') {
+                              var status = '<span class=\\'material-icons\\'>check</span>';
+                            } else if (data == 'deleted') {
+                              var status = '<span class=\\'material-icons\\'>delete</span>';
+                            } else if (data == 'updated') {
+                              var status = '<span class=\\'material-icons\\'>update</span>';
+                            } else if (data == 'new') {
+                              var status = '<span class=\\'material-icons\\'>fiber_new</span>';
 
+                            }
                             
                             let output = `<div class=\"status-row\">
-                                              <div class=\"buttons-column\">${accepted + restore + deleted + edit + duplicates + duplicates_remove}</div>
-                                              <div class=\"status-column\">
-                                                <div class=\"status-label\">${data}</div>
+                                              <div class=\"status-column \">
+                                                <div class=\"status-label ${data}\" alt=\\'${data}\\'>${status}</div>
                                               </div>
+                                              <div class=\"buttons-column\">${accepted + restore + deleted + edit + duplicates + duplicates_remove}</div>
                                           </div>`;
                                    
                             return output;
@@ -251,24 +275,16 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data.split(',')
                             }
                             let output = data.split(',').map(d => `<div class=\"instr-label\">${d}</div>`);
-                            
-                            let left = [];
-                            let right = [];
+
+                            let all = [];
                             
                             for (let i in output){
-                              if (output.length % 2 == 0) {
-                                  i < output.length / 2 ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              } else {
-                                  i < Math.ceil(output.length / 2) ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              }
+                              all.push(output[i])
                             }
                             
-                            left = `<div class = \"col-left\">${left.join('')}</div>`;
-                            right = `<div class = \"col-right\">${right.join('')}</div>`;
-                            
-                            return data != '' ? `<div class=\"box-item-label\">${left + right}</div>` : '';
+                            all = `<div class = \"col-left\">${all.join('')}</div>`;
+
+                            return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
                searchPanes = list(
                  orthogonal = 'sp',
@@ -276,6 +292,21 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                    initComplete = JS("function(){
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
+                          
+                           // Add toggle button to bottom of search panes
+                          console.log('TESTING ADD BUTTON FUNCTION');
+                          let newNode = document.createElement('div');
+                          newNode.setAttribute('id', 'search-pane-toggle-button');
+                          let innerNode = document.createElement('span');
+                          innerNode.setAttribute('class','material-icons');
+                          innerNode.innerHTML = 'expand_less';
+                          newNode.appendChild(innerNode);
+                          console.log($('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow'));
+                          let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow')[0];
+                          referenceNode.appendChild(newNode);
+                          
+                          searchPaneUI();
+                         
                    }"),
                    drawCallback = JS("function(settings){
                                      const api = this.api();
@@ -296,23 +327,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 return data.split(',')
                             } 
                             let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
-                            let left = [];
-                            let right = [];
                             
+                            let all = [];
+
                             for (let i in output){
-                              if (output.length % 2 == 0) {
-                                  i < output.length / 2 ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              } else {
-                                  i < Math.ceil(output.length / 2) ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              }
+                              all.push(output[i])
                             }
                             
-                            left = `<div class = \"col-left\">${left.join('')}</div>`;
-                            right = `<div class = \"col-right\">${right.join('')}</div>`;
-                            
-                            return data != '' ? `<div class=\"box-item-label\">${left + right}</div>` : '';
+                            all = `<div class = \"col-left\">${all.join('')}</div>`;
+                            return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
                searchPanes = list(
                  orthogonal = 'sp'
@@ -381,7 +404,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                     if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
                                         $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
                                                                           class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
-                                                                          Show More</button>`)
+                                                                          <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
                                     }
                                 })
                             })
@@ -392,8 +415,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               const api = this.api();
                               
                                api.$('.status-label').each(function(){
-                                  let type = $(this).text();
-                                  $(this).closest('tr').addClass(type)
+                                  let type = $(this)[0].className;
+                                  $(this).closest('tr').addClass(type.replace('status-label ',''))
                                 })
                               
                               let data = api.rows( { page: 'current' } ).data();
