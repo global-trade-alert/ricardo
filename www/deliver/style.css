@@ -1,3 +1,4 @@
+@import url("//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css");
 @charset "UTF-8";
 /* CSS Document */
 
@@ -469,7 +470,7 @@ tr.deleted .status-column {
 
 .editMode{
   width: 30%;
-  height: 50%;
+  height: 55%;
   position: fixed;
   top: 0px;
   left:-540px;
@@ -490,7 +491,7 @@ tr.deleted .status-column {
 
 .canvas{
     position: relative;
-    width: 100%;
+    width: 98%;
     display: grid;
     grid-template-columns: 50% 50%;
     grid-template-rows: auto;
@@ -633,7 +634,6 @@ input#cancel-dupl{
 .remove {
   display: none;
 }
-
 
 /* ----------------------------------------- CSS PB ----------------------------------------- */
 
@@ -858,4 +858,31 @@ td.addPadding {
 .deliver #deliver-deliverTable .dataTables_filter label {
 	padding:0;
 	width:100%;
+}
+
+label {
+  pointer-events: none;
+}
+
+.inputs {
+  width: 100%;
+}
+
+.canvas div textarea,.inputs input,select.products {
+  width: 100%;
+}
+
+#prompt-form fieldset {
+  display: flex;
+}
+
+#prompt-form textarea {
+  height: 75px;
+  width: 100%;
+}
+
+.prompt-error {
+  border: 1px solid #f1a899;
+  background: #fddfdf;
+  color: #5f3f3f;
 }

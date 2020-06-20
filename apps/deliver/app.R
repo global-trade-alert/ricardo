@@ -9,8 +9,8 @@ gta_setwd()
 path <<- "0 dev/ricardo-deliver-ui/"
 
 # ----------------------------   LG local path
-# setwd("~/Dropbox/")
-# path <<- "ricardo-lg/" 
+ # setwd("~/Dropbox/")
+ # path <<- "ricardo-lg/" 
 # APP SETUP
 source(paste0(path,"apps/deliver/setup.R"), local = F)
 
@@ -20,6 +20,7 @@ source(paste0(path,"apps/deliver/server.R"), local = F)
 
 # LOAD FUNCTIONS
 source(paste0(path,"apps/deliver/functions/retrieve_data.R"))
+
 
 
 shinyApp(
