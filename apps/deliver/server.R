@@ -1,75 +1,92 @@
 # Define reactive values used in this app module up here, these will be passed automatically
 # Don't forget to add these variables as function parameters as well
+# SERVER
 
-load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
-
-# preprocess data
-new_env$covid.data <-
-new_env$covid.data %>%
-  mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
-  mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
-  mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
-  mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
-  mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
-  mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
-  mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
-  mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
-  mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
-  mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
-  mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
-  mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
-  mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
-  mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-                          inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
-  select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-             inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
-             prd.med.drug, prd.other, prd.food, prd.med.any))
-
-new_env$covid.data$products <-
-  new_env$covid.data$products %>%
+  load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
+  
+  # preprocess data
+  new_env$covid.data <-
+    new_env$covid.data %>%
+    mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
+    mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
+    mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
+    mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
+    mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
+    mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
+    mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
+    mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
+    mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
+    mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
+    mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
+    mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
+    mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
+    mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
+                               inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
+    select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
+               inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
+               prd.med.drug, prd.other, prd.food, prd.med.any))
+  
+  new_env$covid.data$products <-
+    new_env$covid.data$products %>%
     str_replace_all("\\,{2,}", ",") %>%
     str_replace_all("^\\,", "") %>%
     str_replace_all("\\,$", "")
-
-new_env$covid.data$instruments <-
-  new_env$covid.data$instruments %>%
-  str_replace_all("\\,{2,}", ",") %>%
-  str_replace_all("^\\,", "") %>%
-  str_replace_all("\\,$", "")
-
-# create confirmation column with random values
-new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
-new_env$covid.data <- 
-  new_env$covid.data %>%
-  mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
-  mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
-  mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
-  mutate(confirmation = str_replace(confirmation, "4", "deleted"))
-
-# create users involved column with random users
-new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
-new_env$covid.data <- 
-  new_env$covid.data %>%
-  mutate(users = str_replace(users, "1", "LG,PB")) %>%
-  mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
-  mutate(users = str_replace(users, "3", "JF")) %>%
-  mutate(users = str_replace(users, "4", "DR,JF")) %>%
-  mutate(users = str_replace(users, "5", "OR")) %>%
-  mutate(users = str_replace(users, "6", "KM"))
-
-new_env$covid.data <- 
-  new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
-                       "gta.intervention.type","date.announced","date.implemented","date.removed",
-                       "description","source", "products","instruments")]
   
-observe({
-  products_unique <<-
-    gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
-  print(products_unique)
-})
+  new_env$covid.data$products <-
+    new_env$covid.data$products %>%
+      str_replace_all("any medical product", "uncertain")
+  
+  new_env$covid.data$instruments <-
+    new_env$covid.data$instruments %>%
+    str_replace_all("\\,{2,}", ",") %>%
+    str_replace_all("^\\,", "") %>%
+    str_replace_all("\\,$", "")
+  
+  # create confirmation column with random values
+  new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
+  new_env$covid.data <- 
+    new_env$covid.data %>%
+    mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
+    mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
+    mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
+    mutate(confirmation = str_replace(confirmation, "4", "deleted"))
+  
+  # create users involved column with random users
+  new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
+  new_env$covid.data <- 
+    new_env$covid.data %>%
+    mutate(users = str_replace(users, "1", "LG,PB")) %>%
+    mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
+    mutate(users = str_replace(users, "3", "JF")) %>%
+    mutate(users = str_replace(users, "4", "DR,JF")) %>%
+    mutate(users = str_replace(users, "5", "OR")) %>%
+    mutate(users = str_replace(users, "6", "KM"))
+  
+  new_env$covid.data <- 
+    new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
+                         "gta.intervention.type","date.announced","date.implemented","date.removed",
+                         "description","source", "products","instruments")]
 
-# SERVER
+
 deliverserver <- function(input, output, session, user, app, prm, ...) {
+  
+  observe({
+    products_unique <-
+      gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
+    instruments_unique <-
+      gta_sql_get_value("SELECT intervention_type_name FROM b221_intervention_type_list")
+    jurisdiction_unique <-
+      gta_sql_get_value("SELECT jurisdiction_name FROM gta_jurisdiction_list")
+    assessment_unique <-
+      gta_sql_get_value("SELECT assessment_name FROM b221_assessment_list")
+    discard_reason <- list('reason1', 'reason2', 'reason3', 'reason4', 'reason5', 'reason6')
+    
+      session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
+                                                                Instruments = instruments_unique,
+                                                                Jurisdiction = jurisdiction_unique,
+                                                                'Initial assessment' = assessment_unique,
+                                                                discard_reason = discard_reason)))
+  })
   
   ns <- NS("deliver")
   
@@ -192,8 +209,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data;
                             }
                             
-                            let accepted = data != 'confirmed' ? '<div class=\"accept\" title=\"Confirm entry\"><img src=\"www/deliver/accept.svg\"/></div>' : '<div></div>',
+                            let accepted = !/confirmed|deleted/gi.test(data) ? '<div class=\"accept\" title=\"Confirm entry\"><img src=\"www/deliver/accept.svg\"/></div>' : '<div></div>',
                                 deleted = '<div class=\"delete\" title=\"Remove entry\"><img src=\"www/deliver/delete.svg\"/></div>',
+                                restore = /deleted/gi.test(data) ? '<img src=\"www/deliver/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\"/>' : 
+                                '<img src=\"www/deliver/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\" style=\"display:none\"/>',
                                 edit = '<div class=\"edit\" title=\"Edit Entry\"><img src=\"www/deliver/edit.svg\"/></div>',
                                 duplicates = '<div class=\"duplicate\" title=\"Remove duplicates\"><img src=\"www/deliver/duplicate.svg\"/></div>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
@@ -213,7 +232,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                               <div class=\"status-column \">
                                                 <div class=\"status-label ${data}\" alt=\\'${data}\\'>${status}</div>
                                               </div>
-                                              <div class=\"buttons-column\">${accepted + deleted + edit + duplicates + duplicates_remove}</div>
+                                              <div class=\"buttons-column\">${accepted + restore + deleted + edit + duplicates + duplicates_remove}</div>
                                           </div>`;
                                    
                             return output;
@@ -229,6 +248,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                         ${users}
                                      </div>`
                }")
+          ),
+          list(targets = 4,
+               render = JS("function (data, type, row){
+                            if (type === 'sp') {
+                              return data.split(',')
+                            }
+                            return data;
+               }"),
+               searchPanes = list(
+                 orthogonal = 'sp'
+               )
           ),
           list(targets = 7,
                render = JS("function(data,type,row){
@@ -339,6 +369,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
                             settings._searchPanes.regenerating = true // allow recalculation of searchPanes
+                            
 
       }"),
       
@@ -354,7 +385,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                            $('#hide').length == 0 ?
                            $('#DataTables_Table_0').wrap('<div id=\"hide\" style=\"display: none\"</div>'): //make table invisible before adjustments
                            0;
-                                                           
+                           
+                          //$('#DataTables_Table_0_wrapper thead').wrap('<div id=\"hide_1\" style=\"display: none\"</div>')
                            // check if text length is bigger than tr height
                             function isEllipsisActive($jQueryObject) {
                                 return ($jQueryObject[0].offsetHeight < $jQueryObject[0].scrollHeight);
@@ -366,7 +398,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             })
                             .then(() => {
                                 $('#hide').css({'display': ''});
-                                
                                   api.$('.description-less').each(function(){ // all un-opened descriptions
                                   let id = api.row( $(this).closest('tr') ).id();
                                 
@@ -416,6 +447,5 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     selection = "none"
     ),
   server = F)
-  
   
 }

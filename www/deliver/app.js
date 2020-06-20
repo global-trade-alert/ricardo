@@ -1,3 +1,10 @@
+// Global variables
+Shiny.addCustomMessageHandler('data_gta', function(data) {
+   data.Instruments = data.Instruments.map(d => d.replace('domestic subsidy (incl. tax cuts, rescues etc.)', 'domestic subsidy'));
+   data['Initial assessment'].push('restrictive')
+    window.data_gta = data;
+});
+
 const showMorecontent = function(type, id){
   $(`#toggle-${type}_${id}`).closest('td').find(`.${type}-less`).removeClass(`${type}-less`).addClass(`${type}-more`);
   $(`#toggle-${type}_${id}`).addClass('open');
@@ -10,8 +17,8 @@ const showLesscontent = function(type, id){
   $(`#toggle-${type}_${id}`).attr('onclick', `showMorecontent(\"${type}\",${id})`)
 }
 
-// add the overlay initially
 $( document ).ready(function() {
+    // add the overlay initially
   let overlay = $('<div />').addClass('overlay');
     $('body').hide().append(overlay).fadeIn(300);
 
@@ -21,36 +28,81 @@ $( document ).ready(function() {
   let canvas = $('<div />').addClass('canvas');
   div_edit.append(header, canvas);
     $('body').append(div_edit);
+    
+    // add html for discard prompt
+      div_prompt = $('<div />')
+                      .attr('id','prompt-form')
+                      .attr('hidden', 'hidden')
+                      .html(
+                        '<p>Please, indicate a discard reason</p>\
+                        <form>\
+                          <fieldset>\
+                           <label for="reason">Select reason</label>\
+                            <select id="reason" class="discard">\
+                              <option></option>\
+                            </select>\
+                           <label for="other">other</label>\
+                            <textarea id="other"></textarea>\
+                          </fieldset>\
+                        </form>'
+                      );
+                  
+    $('body').append(div_prompt);
+    
+    (async() => {
+      while(!window.hasOwnProperty("data_gta")) // wait till data_gta is loaded
+          await new Promise(resolve => setTimeout(resolve, 1000));
+       window.data_gta.discard_reason.map(function(d) {
+                $('select#reason').append(
+                  `<option value="${d}">${d}</option>`
+                 )
+                });
+                
+            $('select#reason').selectize({
+              maxItems: 6,
+              valueField: 'text',
+              labelField: 'text',
+              placeholder: "Choose reason...",
+              create: false
+            });
+    })();
+ 
+
+
 });
 
 const buttonsClicks = {
+    restore: function(currentStatus, id){
+              const that = this;
+              this.convertToConfirmed('deleted', id);
+              $(`tr#${id}`).find('.restore').attr('style', 'display: none');
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              this.redrawDataTable();
+              this.updateSearchPanes();
+    },
     accept: function(currentStatus, id) {
-              if(['new', 'updated'].includes(currentStatus)){
-                  this.convertToConfirmed('new updated', id);
-                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                  this.redrawDataTable();
-              } else {
-                  this.removeRow(id);
-              }
+              this.convertToConfirmed('new updated', id);
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              this.redrawDataTable();
               this.updateSearchPanes();
             },
     delete: function(currentStatus, id) {
               const that = this;
               if(['new', 'updated', 'confirmed'].includes(currentStatus)){
-                  this.removeRow(id);
+                  that.addDeletePrompt(currentStatus, id);
+                  /*that.convertToDeleted(currentStatus, id);
+                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';*/
               } else {
-                  this.convertToConfirmed('deleted', id);
-                  $(`tr#${id}`).find('.delete').on('click', function(){ that.delete('confirmed', id) })
-                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                  this.redrawDataTable();
+                  this.removeRow(id);
               }
+              this.redrawDataTable();
               this.updateSearchPanes();
             },
     edit: function(currentStatus, id) {
         const that = this;
         let rowData = this.getRowData(id);
         console.log(rowData);
-        rowData.sort((a,b) => {
+        rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode 
             if (a.name == 'Description' | a.name== 'Source') {
                 return -1
             }
@@ -59,34 +111,88 @@ const buttonsClicks = {
 
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
-            if (/date/g.test(d.name)){
-              input = $('<input />')
+            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
+              case 'date':
+                
+                input = $('<input />')
                         .attr('type', 'text')
                         .attr('id', `column-${d.index}`)
                         .addClass('datepicker')
                         .attr('current-date', `${d.data.length == 0 ? '' : d.data}`);
-            } else {
-            if (d.data !== null && d.data.length < 100){
+                break;
+              case 'description':
+              case 'source':
+                
                 input = $('<textarea />')
-                        .attr('id', `column-${d.index}`)
-                        .attr('rows', 1)
-                        .attr('cols', 30)
-                        .val(`${d.data}`);
-            } else {
-                  input = $('<textarea />')
                         .attr('id', `column-${d.index}`)
                         .attr('rows', 10)
                         .attr('cols', 40)
                         .val(`${d.data}`);
+                break;
+              case 'product':
+              case 'instrument':
+              case 'jurisdiction':
+                
+                let data = d.data.split(',');
+                console.log(data)
+                input = $('<select />')
+                        .attr('multiple', true)
+                        .attr('id', `column-${d.index}`)
+                        .addClass('products');
+                  window.data_gta[d.name].map(function(d1,i) {
+                          let selected = data.includes(d1) ? 'selected' : '';
+                          input.append(
+                            `<option ${selected} value="${d1}">${d1}</option>`
+                           )
+                          })
+                break;
+              case 'documentation status':
+                
+                let checked = /^official source/gi.test(d.data) ? true : false;
+                input = $('<input />')
+                        .attr('type', 'checkbox')
+                        .attr('checked', checked)
+                        .attr('id', `column-${d.index}`)
+                        .addClass('doc-status');
+                        
+                label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
+                break;
+              case 'assessment':
+                
+                input = $('<select />')
+                      .attr('id', `column-${d.index}`)
+                      .addClass('assessment');
+         
+                window.data_gta[d.name].map(function(d1,i) {
+                      let selected = d1 == d.data ? 'selected' : '';
+                        input.append(
+                          `<option value="${d1}" ${selected}>${d1}</option>`
+                         )
+                        })
+                break;
+                  
             }
+            
+            if (input != undefined) {
+                $('.canvas').append(
+                $('<div />').addClass('inputs')
+                .append(label, input)
+              )
             }
-
-            $('.canvas').append(
-              $('<div />').append(
-                          label, input
-                      )
-            )
-
+            
+            $('select.products').selectize({
+              maxItems: 6,
+              valueField: 'text',
+              labelField: 'text',
+              searchField: 'text',
+              create: false
+            });
+          
+            $('select.assessment').selectize({
+              maxItems: 1,
+              create: false
+            });
+            
         });
 
       $('.canvas').append(
@@ -101,9 +207,16 @@ const buttonsClicks = {
 
       $('#save-edit').on('click', function(){
         let output= [];
-          $('.canvas div textarea,.datepicker').each(function(){
+          $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-              output.push({ data: $(this).val(), index: parseInt(index) });
+              let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              output.push({ data: value, index: parseInt(index) });
+          });
+          
+          $('.doc-status').each(function(){ // separate for documentation status
+              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
+              let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
+              output.push({ data: value, index: parseInt(index) });
           });
           console.log(output)
           that.updateRowData(currentStatus, output, id);
@@ -122,7 +235,6 @@ const buttonsClicks = {
               });
               $(this).unbind('click', arguments.callee);
           });
-            console.log('done')
       });
 
     },
@@ -153,18 +265,7 @@ const buttonsClicks = {
       });
 
       $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
-      /*$('.duplicates-remove').each(function(){
-        let id_this = $(this).closest('tr').attr('id');
-        if( id_this != id);
-          $(this).css({'display': 'block'});
-          $(this).on('change', function(){
-            if ($(this).is(':checked')) {
-              that.addDuplicateOverlay(id_this);
-            } else {
-              that.removeDuplicateOverlay(id_this);
-            }
-        })
-      });*/
+
       $('#DataTables_Table_0 tr').each(function(){
           const this_row = $(this);
           let id_this = this_row.attr('id');
@@ -181,6 +282,13 @@ const buttonsClicks = {
       $(`tr#${id}`).find('.accept').remove();
       $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
       this.rowAttachEvents('confirmed', id);
+    },
+    convertToDeleted: function(className, id){
+      $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');
+      $(`tr#${id}`).find('.accept').remove();
+      $(`tr#${id}`).find('.restore').attr('style', 'display: ');
+      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'deleted';
+      this.rowAttachEvents('deleted', id);
     },
     redrawDataTable: function(id){
       $('#DataTables_Table_0').DataTable().row(`tr#${id}`).invalidate().draw(false);
@@ -219,10 +327,12 @@ const buttonsClicks = {
     },
     getColumnsNames: function(){
         let output = [];
-        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
-                                'Removal date', 'Description', 'Source', 'Products', 'Instruments'];
 
-        $('#DataTables_Table_0').DataTable().columns().every( function (i) {
+        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date', 
+                                'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
+                                
+        $('#DataTables_Table_0').DataTable().columns().every( function (i) {        
+          
               if (filtered_columns.includes(this.header().innerHTML))
               output.push({ index: i, name: this.header().innerHTML})
         });
@@ -269,8 +379,46 @@ const buttonsClicks = {
           $(this).remove();
       });
     },
-    removeDuplicateOverlay: function(id){
-
+    addDeletePrompt: function(currentStatus, id){
+      const that = this;
+          $(function() {
+            $("#prompt-form").dialog({
+                  autoOpen: false,
+                  height: 300,
+                  width: 250,
+                  modal: true,
+                  resizable: false,
+                  buttons: {
+                    OK: function() {
+                      let selected = $('select#reason').selectize()[0].selectize.getValue(),
+                          other = $('#prompt-form textarea').val(),
+                          reasons = selected.concat(other).filter(d => d != '').join(',');
+                          
+                      if (reasons.length == 0){
+                        $('#other').addClass( "prompt-error" );
+                        $('#prompt-form div.selectize-input').addClass( "prompt-error" );
+                      } else {
+                        that.convertToDeleted(currentStatus, id);
+                        $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+                        $(this).dialog( "close" );
+                        that.redrawDataTable();
+                        that.updateSearchPanes();
+                      }
+                      console.log({selected: selected, other: other})
+                    },
+                    cancel: function(){
+                      $(this).dialog( "close" );
+                    }
+                  },
+                  open: function(){
+                      $('select#reason').selectize()[0].selectize.clear();
+                      $('.prompt-error').removeClass( "prompt-error" );
+                      $('#prompt-form textarea').val('');
+                  }
+              });
+          $("#prompt-form").dialog("open");
+          //$("#prompt-form").parent().draggable( "disable" );
+        });
     }
 };
 
