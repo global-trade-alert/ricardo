@@ -1,12 +1,12 @@
 # APP
 rm(list=ls())
+library(gtalibrary)
 gtasql::gta_sql_kill_connections()
 
 # SET PATHS
 gta_setwd()
 # ----------------------------   set this path on staging environment
-setwd( "~/Dropbox/GTA cloud/")
-path <<- "0 dev/ricardo-lg/"
+path <<- "0 dev/ricardo-deliver-ui/"
 
 # ----------------------------   LG local path
  # setwd("~/Dropbox/")
@@ -42,5 +42,5 @@ shinyApp(
       gta_sql_pool_close()
     })
   },
-  options = list(launch.browser=T, port=4109)
+  options = list(launch.browser=F)
 )

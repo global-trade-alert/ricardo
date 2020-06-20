@@ -211,8 +211,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             
                             let accepted = !/confirmed|deleted/gi.test(data) ? '<div class=\"accept\" title=\"Confirm entry\"><img src=\"www/deliver/accept.svg\"/></div>' : '<div></div>',
                                 deleted = '<div class=\"delete\" title=\"Remove entry\"><img src=\"www/deliver/delete.svg\"/></div>',
-                                restore = /deleted/gi.test(data) ? '<img src=\"www/deliver/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\"/>' : 
-                                '<img src=\"www/deliver/restore_page-black-18dp.svg\" class=\"restore\" title=\"Recover entry\" style=\"display:none\"/>',
+                                restore = /deleted/gi.test(data) ? '<div class=\"restore\" title=\"Recover entry\"><img src=\"www/deliver/restore_page-black-18dp.svg\"/></div>' : 
+                                '<div class=\"restore\" title=\"Recover entry\" style=\"display:none\"><img src=\"www/deliver/restore_page-black-18dp.svg\"/></div>',
                                 edit = '<div class=\"edit\" title=\"Edit Entry\"><img src=\"www/deliver/edit.svg\"/></div>',
                                 duplicates = '<div class=\"duplicate\" title=\"Remove duplicates\"><img src=\"www/deliver/duplicate.svg\"/></div>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
