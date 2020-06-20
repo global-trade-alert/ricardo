@@ -85,7 +85,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       rowId = JS("function(d) {
         return d[1];
       }"),
-      pageLength = 30,
+      pageLength = 300,
       scrollX = FALSE,
 
       deferRender = TRUE,
@@ -192,10 +192,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data;
                             }
                             
-                            let accepted = data != 'confirmed' ? '<img src=\"www/deliver/accept.png\" class=\"accept\" title=\"Confirm entry\"/>' : '<div></div>',
-                                deleted = '<img src=\"www/deliver/delete.png\" class=\"delete\" title=\"Remove entry\"/>',
-                                edit = '<img src=\"www/deliver/edit.png\" class=\"edit\" title=\"Edit Entry\"/>',
-                                duplicates = '<img src=\"www/deliver/duplicate.png\" class=\"duplicate\" title=\"Remove duplicates\"/>',
+                            let accepted = data != 'confirmed' ? '<div class=\"accept\" title=\"Confirm entry\"><img src=\"www/deliver/accept.svg\"/></div>' : '<div></div>',
+                                deleted = '<div class=\"delete\" title=\"Remove entry\"><img src=\"www/deliver/delete.svg\"/></div>',
+                                edit = '<div class=\"edit\" title=\"Edit Entry\"><img src=\"www/deliver/edit.svg\"/></div>',
+                                duplicates = '<div class=\"duplicate\" title=\"Remove duplicates\"><img src=\"www/deliver/duplicate.svg\"/></div>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
                                 
                             if (data == 'confirmed') {
@@ -245,24 +245,16 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               return data.split(',')
                             }
                             let output = data.split(',').map(d => `<div class=\"instr-label\">${d}</div>`);
-                            
-                            let left = [];
-                            let right = [];
+
+                            let all = [];
                             
                             for (let i in output){
-                              if (output.length % 2 == 0) {
-                                  i < output.length / 2 ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              } else {
-                                  i < Math.ceil(output.length / 2) ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              }
+                              all.push(output[i])
                             }
                             
-                            left = `<div class = \"col-left\">${left.join('')}</div>`;
-                            right = `<div class = \"col-right\">${right.join('')}</div>`;
-                            
-                            return data != '' ? `<div class=\"box-item-label\">${left + right}</div>` : '';
+                            all = `<div class = \"col-left\">${all.join('')}</div>`;
+
+                            return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
                searchPanes = list(
                  orthogonal = 'sp',
@@ -279,9 +271,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           innerNode.setAttribute('class','material-icons');
                           innerNode.innerHTML = 'expand_less';
                           newNode.appendChild(innerNode);
-                          console.log($('#deliver-deliverTable .dtsp-panesContainer'));
-                          let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer')[0];
-                          referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+                          console.log($('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow'));
+                          let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow')[0];
+                          referenceNode.appendChild(newNode);
                           
                           searchPaneUI();
                          
@@ -305,23 +297,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 return data.split(',')
                             } 
                             let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
-                            let left = [];
-                            let right = [];
                             
+                            let all = [];
+
                             for (let i in output){
-                              if (output.length % 2 == 0) {
-                                  i < output.length / 2 ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              } else {
-                                  i < Math.ceil(output.length / 2) ? left.push(output[i]) : 
-                                                right.push(output[i])
-                              }
+                              all.push(output[i])
                             }
                             
-                            left = `<div class = \"col-left\">${left.join('')}</div>`;
-                            right = `<div class = \"col-right\">${right.join('')}</div>`;
-                            
-                            return data != '' ? `<div class=\"box-item-label\">${left + right}</div>` : '';
+                            all = `<div class = \"col-left\">${all.join('')}</div>`;
+                            return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
                searchPanes = list(
                  orthogonal = 'sp'

@@ -24,11 +24,7 @@ deliverui <- function(id) {
                                         dataTableOutput(ns("deliverTable"))) # Initialize selectize),
                       ),
                       tags$div(id="searchPanes"),
-                      tags$div(class="control-bar",
-                               tags$div(id="loadMoreButton",
-                                        actionButton(ns("loadMoreDeliver"),
-                                                     "Refresh",
-                                                     class="blue")))
+                      tags$div(class="control-bar")
 
              )
   )

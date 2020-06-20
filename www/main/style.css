@@ -226,7 +226,7 @@ button.blue:active {
 }
 
 .header {
-	width:100%;
+	width:auto;
 	display:flex;
 	position: fixed;
 	transition:all 0.2s ease-out;

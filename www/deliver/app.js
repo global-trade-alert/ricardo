@@ -13,7 +13,7 @@ const showLesscontent = function(type, id){
 // add the overlay initially
 $( document ).ready(function() {
   let overlay = $('<div />').addClass('overlay');
-    $('body').append(overlay);
+    $('body').hide().append(overlay).fadeIn(300);
 
     // add edit mode
   let div_edit = $('<div />').addClass('editMode');
@@ -110,13 +110,13 @@ const buttonsClicks = {
           $('.overlay').click();
       })
 
-      $('.overlay').css({'display': 'block'});
+      $('.overlay').addClass('show');
 
       $( ".editMode" ).animate({
           left: "+=540",
         }, 1000, function() {
           $('.overlay').on('click', function(){
-              $(this).css({ 'display': 'none' });
+              $(this).removeClass('show');
               $( ".editMode" ).animate({ left: '-=540'}, 1000, function (){
                   $('.canvas').empty();
               });
