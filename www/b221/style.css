@@ -6,6 +6,11 @@
 
 /* GENERAL SETTINGS */
 
+.content .b221 {
+	padding:calc(30px + 1vw);
+	padding-top:calc(80px + 1vw);
+}
+
 .submitButton {
 	color:#FFFFFF;
 	width:100%;
@@ -26,11 +31,6 @@
 }
 
 /* LEADS LIST */
-
-.leadsTable {
-	padding: calc(20px + 1vw);
-	padding-top:calc(80px + 2vw);
-}
 
 #b221-leadsTable {
 	max-width:800px;
@@ -67,8 +67,8 @@ table.dataTable tbody td {
 	border:none;
 }
 
-table.dataTable thead .sorting, 
-table.dataTable thead .sorting_asc, 
+table.dataTable thead .sorting,
+table.dataTable thead .sorting_asc,
 table.dataTable thead .sorting_desc {
     color: #808080;
     padding-top: 0px;
@@ -638,7 +638,7 @@ table.dataTable thead .sorting_desc {
 	flex-grow:0;
 	border-left:1px solid #dadada;
 	flex-shrink: 0;
-  flex-basis: auto;	
+  flex-basis: auto;
 	flex-direction:column;
 }
 
@@ -863,19 +863,19 @@ table.dataTable thead .sorting_desc {
 @media(max-width:1200px) {
 	#hintContainer {
 	  grid-template-columns: 1fr 1fr 1fr;
-	}	
+	}
 }
 
 @media(max-width:992px) {
 	#hintContainer {
 	  grid-template-columns: 1fr 1fr;
-	}	
+	}
 }
 
 @media(max-width:768px) {
 	#hintContainer {
 	  grid-template-columns: 1fr;
-	}	
+	}
 }
 
 #hintContainer .hint-item > div {
@@ -1058,21 +1058,21 @@ table.dataTable thead .sorting_desc {
 	.initialValues {
 		display:grid;
 		grid-template-columns: 1fr 1fr;
-	}	
+	}
 }
 
 @media (max-width:992px) {
 	.initialValues {
 		display:grid;
 		grid-template-columns: 1fr 1fr;
-	}	
+	}
 }
 
 @media (max-width:768px) {
 	.initialValues {
 		display:grid;
 		grid-template-columns: 1fr;
-	}	
+	}
 }
 
 /* CONTROL BAR */
@@ -1085,14 +1085,14 @@ table.dataTable thead .sorting_desc {
 	padding-right:calc(20px + 1vw);
 	display: flex;
 	flex-direction: row;
-	justify-content: center;	
+	justify-content: center;
 	z-index:1;
 }
 
 .control-bar > div {
 	display:flex;
 	padding: 0px;
-	padding-left:15px;	
+	padding-left:15px;
 }
 
 .control-bar button,

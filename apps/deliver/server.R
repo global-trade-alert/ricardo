@@ -81,6 +81,12 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       gta_sql_get_value("SELECT assessment_name FROM b221_assessment_list")
     discard_reason <- list('reason1', 'reason2', 'reason3', 'reason4', 'reason5', 'reason6')
     
+    print(list(Products = products_unique,
+               Instruments = instruments_unique,
+               Jurisdiction = jurisdiction_unique,
+               'Initial assessment' = assessment_unique,
+               discard_reason = discard_reason))
+    
       session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
                                                                 Instruments = instruments_unique,
                                                                 Jurisdiction = jurisdiction_unique,
@@ -211,8 +217,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             
                             let accepted = !/confirmed|deleted/gi.test(data) ? '<div class=\"accept\" title=\"Confirm entry\"><img src=\"www/deliver/accept.svg\"/></div>' : '<div></div>',
                                 deleted = '<div class=\"delete\" title=\"Remove entry\"><img src=\"www/deliver/delete.svg\"/></div>',
-                                restore = /deleted/gi.test(data) ? '<div class=\"restore\" title=\"Recover entry\"><img src=\"www/deliver/restore_page-black-18dp.svg\"/></div>' : 
-                                '<div class=\"restore\" title=\"Recover entry\" style=\"display:none\"><img src=\"www/deliver/restore_page-black-18dp.svg\"/></div>',
+                                restore = /deleted/gi.test(data) ? '<div class=\"restore\" title=\"Recover entry\"><img src=\"www/deliver/restore.svg\"/></div>' : 
+                                '<div></div>',
                                 edit = '<div class=\"edit\" title=\"Edit Entry\"><img src=\"www/deliver/edit.svg\"/></div>',
                                 duplicates = '<div class=\"duplicate\" title=\"Remove duplicates\"><img src=\"www/deliver/duplicate.svg\"/></div>',
                                 duplicates_remove = '<input type=\"checkbox\" class=\"duplicates-remove\">';
@@ -229,10 +235,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             }
                             
                             let output = `<div class=\"status-row\">
+                                              <div class=\\'button-wrap\\'><div class=\"buttons-column\">${accepted + restore + deleted + edit + duplicates + duplicates_remove}</div></div>
                                               <div class=\"status-column \">
                                                 <div class=\"status-label ${data}\" alt=\\'${data}\\'>${status}</div>
                                               </div>
-                                              <div class=\"buttons-column\">${accepted + restore + deleted + edit + duplicates + duplicates_remove}</div>
                                           </div>`;
                                    
                             return output;

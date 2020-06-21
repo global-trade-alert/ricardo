@@ -1,5 +1,6 @@
 // Global variables
 Shiny.addCustomMessageHandler('data_gta', function(data) {
+    // running into session problems because of shiny module
    data.Instruments = data.Instruments.map(d => d.replace('domestic subsidy (incl. tax cuts, rescues etc.)', 'domestic subsidy'));
    data['Initial assessment'].push('restrictive')
     window.data_gta = data;
@@ -24,11 +25,17 @@ $( document ).ready(function() {
 
     // add edit mode
   let div_edit = $('<div />').addClass('editMode');
+  let headerWrap = $('<div />').addClass('header');
   let header = $('<h1 />').html('Edit Mode');
   let canvas = $('<div />').addClass('canvas');
-  div_edit.append(header, canvas);
+  headerWrap.append(header);
+  div_edit.append(headerWrap, canvas);
     $('body').append(div_edit);
-    
+// Append button to editMode
+  $('.editMode .header').append(
+    $('<button type="button" id="save-edit"><img src="www/deliver/save.svg" style="margin-right:10px;"/>Save data</button>')
+    );
+
     // add html for discard prompt
       div_prompt = $('<div />')
                       .attr('id','prompt-form')
@@ -46,9 +53,9 @@ $( document ).ready(function() {
                           </fieldset>\
                         </form>'
                       );
-                  
+
     $('body').append(div_prompt);
-    
+
     (async() => {
       while(!window.hasOwnProperty("data_gta")) // wait till data_gta is loaded
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -57,7 +64,7 @@ $( document ).ready(function() {
                   `<option value="${d}">${d}</option>`
                  )
                 });
-                
+
             $('select#reason').selectize({
               maxItems: 6,
               valueField: 'text',
@@ -66,7 +73,7 @@ $( document ).ready(function() {
               create: false
             });
     })();
- 
+
 
 
 });
@@ -100,20 +107,21 @@ const buttonsClicks = {
             },
     edit: function(currentStatus, id) {
         const that = this;
+
         let rowData = this.getRowData(id);
         console.log(rowData);
-        rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode 
+        rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode
             if (a.name == 'Description' | a.name== 'Source') {
                 return -1
             }
         });
-        rowData.forEach(function(d,i){
 
+        rowData.forEach(function(d,i){
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
             switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
               case 'date':
-                
+
                 input = $('<input />')
                         .attr('type', 'text')
                         .attr('id', `column-${d.index}`)
@@ -122,23 +130,24 @@ const buttonsClicks = {
                 break;
               case 'description':
               case 'source':
-                
+
                 input = $('<textarea />')
                         .attr('id', `column-${d.index}`)
-                        .attr('rows', 10)
+                        .attr('rows', 5)
                         .attr('cols', 40)
                         .val(`${d.data}`);
                 break;
               case 'product':
               case 'instrument':
               case 'jurisdiction':
-                
+
                 let data = d.data.split(',');
                 console.log(data)
                 input = $('<select />')
                         .attr('multiple', true)
                         .attr('id', `column-${d.index}`)
                         .addClass('products');
+
                   window.data_gta[d.name].map(function(d1,i) {
                           let selected = data.includes(d1) ? 'selected' : '';
                           input.append(
@@ -147,22 +156,22 @@ const buttonsClicks = {
                           })
                 break;
               case 'documentation status':
-                
+
                 let checked = /^official source/gi.test(d.data) ? true : false;
                 input = $('<input />')
                         .attr('type', 'checkbox')
                         .attr('checked', checked)
                         .attr('id', `column-${d.index}`)
                         .addClass('doc-status');
-                        
+
                 label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
                 break;
               case 'assessment':
-                
+
                 input = $('<select />')
                       .attr('id', `column-${d.index}`)
                       .addClass('assessment');
-         
+
                 window.data_gta[d.name].map(function(d1,i) {
                       let selected = d1 == d.data ? 'selected' : '';
                         input.append(
@@ -170,16 +179,32 @@ const buttonsClicks = {
                          )
                         })
                 break;
-                  
+
             }
-            
+
+
             if (input != undefined) {
+              if (i <= 1) {
                 $('.canvas').append(
-                $('<div />').addClass('inputs')
+                $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
                 .append(label, input)
               )
+              // display the first two normally, wrap the others in a div to display as grid
+            } else {
+                if (i == 2) {
+                  $('.canvas').append(
+                    $('<div />').addClass(`form-grid`)
+                  )
+                  }
+                if (i >= 2) {
+                  $('.canvas .form-grid').append(
+                    $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
+                    .append(label, input)
+                  )
+                }
             }
-            
+            }
+
             $('select.products').selectize({
               maxItems: 6,
               valueField: 'text',
@@ -187,17 +212,13 @@ const buttonsClicks = {
               searchField: 'text',
               create: false
             });
-          
+
             $('select.assessment').selectize({
               maxItems: 1,
               create: false
             });
-            
-        });
 
-      $('.canvas').append(
-        $('<input type="button" id="save-edit" value="Save data" />')
-        );
+        });
 
       $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
       $('.datepicker').each(function(){
@@ -212,7 +233,7 @@ const buttonsClicks = {
               let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
               output.push({ data: value, index: parseInt(index) });
           });
-          
+
           $('.doc-status').each(function(){ // separate for documentation status
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
               let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
@@ -224,18 +245,14 @@ const buttonsClicks = {
       })
 
       $('.overlay').addClass('show');
-
-      $( ".editMode" ).animate({
-          left: "+=540",
-        }, 1000, function() {
-          $('.overlay').on('click', function(){
-              $(this).removeClass('show');
-              $( ".editMode" ).animate({ left: '-=540'}, 1000, function (){
-                  $('.canvas').empty();
-              });
-              $(this).unbind('click', arguments.callee);
-          });
+      $('.overlay').on('click', function(){
+          $(this).removeClass('show');
+          $( ".editMode" ).removeClass('show');
+          $('.canvas').empty();
+          $(this).unbind('click', arguments.callee);
       });
+
+      $( ".editMode" ).addClass('show');
 
     },
     duplicate: function(status, id) {
@@ -328,11 +345,11 @@ const buttonsClicks = {
     getColumnsNames: function(){
         let output = [];
 
-        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date', 
+        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
                                 'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
-                                
-        $('#DataTables_Table_0').DataTable().columns().every( function (i) {        
-          
+
+        $('#DataTables_Table_0').DataTable().columns().every( function (i) {
+
               if (filtered_columns.includes(this.header().innerHTML))
               output.push({ index: i, name: this.header().innerHTML})
         });
@@ -393,7 +410,7 @@ const buttonsClicks = {
                       let selected = $('select#reason').selectize()[0].selectize.getValue(),
                           other = $('#prompt-form textarea').val(),
                           reasons = selected.concat(other).filter(d => d != '').join(',');
-                          
+
                       if (reasons.length == 0){
                         $('#other').addClass( "prompt-error" );
                         $('#prompt-form div.selectize-input').addClass( "prompt-error" );
