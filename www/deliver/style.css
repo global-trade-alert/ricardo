@@ -497,18 +497,18 @@ tr.deleted .status-column {
 	margin:0;
 }
 
-.editMode .header {
+.editMode .editMode-header {
 	display:flex;
 	background-color: rgba(0,0,0,0.2);
   padding: calc(10px + 1vw);
 }
 
-.editMode .header h1 {
+.editMode .editMode-header h1 {
 	display:flex;
 	flex:1;
 }
 
-.editMode .header #save-edit {
+.editMode .editMode-header #save-edit {
 	display:flex;
 	flex:1;
 	flex-grow: 0;
@@ -521,12 +521,12 @@ tr.deleted .status-column {
 	transition:all 0.5s ease-out;
 }
 
-.editMode .header #save-edit:hover {
+.editMode .editMode-header #save-edit:hover {
 	background-color:rgba(0,0,0,0.4);
 	transition:all 0.5s ease-out;
 }
 
-.editMode .header #save-edit img {
+.editMode .editMode-header #save-edit img {
 	margin-right: 10px;
 	height: 20px;
 }
