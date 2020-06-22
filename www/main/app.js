@@ -1,5 +1,13 @@
 $(document).ready(function() {
 
+// Add message handlers for apps
+Shiny.addCustomMessageHandler('data_gta', function(data) {
+    // running into session problems because of shiny module
+   data.Instruments = data.Instruments.map(d => d.replace('domestic subsidy (incl. tax cuts, rescues etc.)', 'domestic subsidy'));
+   data['Initial assessment'].push('restrictive')
+    window.data_gta = data;
+});
+
 // END OF INIT
 
 // MENU
@@ -99,7 +107,7 @@ function editDeleteApps() {
     var elementID = $(this.parentNode)[0].id
     Shiny.setInputValue("settings-editApp", elementID, {priority: "event"});
   });
-  
+
   $('#appList').on('click', '.deleteApp',function () {
     var elementID = $(this.parentNode)[0].id
     Shiny.setInputValue("settings-deleteApp", elementID, {priority: "event"});

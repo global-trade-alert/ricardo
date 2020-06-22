@@ -1,10 +1,4 @@
 // Global variables
-Shiny.addCustomMessageHandler('data_gta', function(data) {
-    // running into session problems because of shiny module
-   data.Instruments = data.Instruments.map(d => d.replace('domestic subsidy (incl. tax cuts, rescues etc.)', 'domestic subsidy'));
-   data['Initial assessment'].push('restrictive')
-    window.data_gta = data;
-});
 
 const showMorecontent = function(type, id){
   $(`#toggle-${type}_${id}`).closest('td').find(`.${type}-less`).removeClass(`${type}-less`).addClass(`${type}-more`);
@@ -25,14 +19,14 @@ $( document ).ready(function() {
 
     // add edit mode
   let div_edit = $('<div />').addClass('editMode');
-  let headerWrap = $('<div />').addClass('header');
+  let headerWrap = $('<div />').addClass('editMode-header');
   let header = $('<h1 />').html('Edit Mode');
   let canvas = $('<div />').addClass('canvas');
   headerWrap.append(header);
   div_edit.append(headerWrap, canvas);
     $('body').append(div_edit);
 // Append button to editMode
-  $('.editMode .header').append(
+  $('.editMode .editMode-header').append(
     $('<button type="button" id="save-edit"><img src="www/deliver/save.svg" style="margin-right:10px;"/>Save data</button>')
     );
 
