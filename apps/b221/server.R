@@ -4,7 +4,6 @@
 # SERVER
 b221server <- function(input, output, session, user, app, prm, ...) {
   
-  
   # Set encoding for all tables, to make filtering in DT work
   gta_sql_get_value('SET NAMES utf8;')
   
@@ -54,6 +53,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   assessment.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT assessment_name, assessment_id FROM b221_assessment_list;"))
   product.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT product_group_name, product_group_id FROM b221_product_group_list;"))
   type.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT intervention_type_name, intervention_type_id FROM b221_intervention_type_list;"))
+  discard_reasons.list <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_id, discard_reason_name FROM bt_discard_reason_list;"))
   
   # UPDATE DATE OF CREATION OF APP.R WHEN CLOSING, PREVENTS CACHING OF CSS AND JS
   onStop(function() {
@@ -180,6 +180,22 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       }); hintsBasicUI(); submitSingleHint();",if(prm$autosubmit==1){"callLeadsDismiss(); checkLeads();"} else {"checkLeadsManual();"}))
   })
   
+  # Discard UI ----------------------------------------------------------------------------
+  
+  observe({
+    discard_select  = selectizeInput(inputId='some',
+                                     selected = NULL, 
+                                     label = 'Discard reason',
+                                     choices = discard_reasons.list$discard.reason.name,
+                                     multiple = TRUE,
+                                     options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
+    discard_other = textInput(inputId='discard-other', 'Other', value = "", width = 300,
+                              placeholder = 'Type other reason...')
+    
+    insertUI(immediate = F, selector = ".confirm-discard-inner",ui = tagList(
+      discard_select, discard_other)
+    )
+  })
 
 # Main Table --------------------------------------------------------------
   
@@ -577,16 +593,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                tags$div(class="options-bar",
                         tags$button(id="discardCollection-popup",
                                     tags$i(class="fa fa-times"),
-                                    "Delete Collection"),
-               tags$div(id="confirm-discard",
-                        tags$div(class="confirm-discard-inner",
-                                tags$p("You are deleting a collection"),
-                                tags$div(class="button-wrap",
-                                tags$button(class="cancel btn",
-                                            "Cancel"),
-                                actionButton(ns("discardCollection"),
-                                             label="Delete",
-                                             icon = icon("times")))))))
+                                    "Delete Collection")
+                        ))
     )
     )
 
@@ -611,7 +619,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
 
     
     if (initial.slide.in()) {
-      runjs(paste0("markHints(); removeHint(); discardButton();"))
+      runjs(paste0("markHints(); removeHint(); slideInDiscardButton(); "))
       initial.slide.in <- initial.slide.in(FALSE)
     }
     
@@ -876,15 +884,18 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     if (colData$state == "newCollection") {
       showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
     } else {
+      
+      runjs(paste0("$('#confirm-discard').addClass('show');"))
+      
       collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
       print(paste0("THIS COLLECTION IS: ", collectionId))
-      
-      bt_delete_collection(collection.id=collectionId)
-      
-      runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
-      runjs(paste0("$('#b221-close-button').removeClass('open');"))
-      runjs(paste0("$('.backdrop-nav').removeClass('open');"))
-      removeUI(selector = ".removeslideinui",immediate = T)
+      # 
+      # bt_delete_collection(collection.id=collectionId)
+      # 
+      # runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+      # runjs(paste0("$('#b221-close-button').removeClass('open');"))
+      # runjs(paste0("$('.backdrop-nav').removeClass('open');"))
+      # removeUI(selector = ".removeslideinui",immediate = T)
     }
     
   })

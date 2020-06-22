@@ -1148,7 +1148,7 @@ table.dataTable thead .sorting_desc {
 	justify-content: flex-end;
 }
 
-#collectionValues .options-bar #discardCollection-popup {
+#discardCollection-popup {
 	background-color: #2485e6;
   color: #FFFFFF;
   height: 40px;
@@ -1158,12 +1158,13 @@ table.dataTable thead .sorting_desc {
 	cursor:pointer;
 }
 
-#collectionValues .options-bar #discardCollection-popup:hover {
+#discardCollection-popup:hover {
 	background-color:#175da2;
 	transition:background-color 0.2s ease-out;
 }
 
-#collectionValues .options-bar #confirm-discard {
+#confirm-discard {
+  position: fixed !important;
 	opacity:0;
 	visibility: hidden;
 	transition: all 0.5s ease-out;
@@ -1176,13 +1177,13 @@ table.dataTable thead .sorting_desc {
   z-index: 1000;
 }
 
-#collectionValues .options-bar #confirm-discard.show {
+#confirm-discard.show {
 	opacity:1;
 	visibility: visible;
 	transition: all 0.5s ease-out;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner {
+#confirm-discard .confirm-discard-inner {
 		background-color: #FFFFFF;
     width: 90%;
     border-radius: 5px;
@@ -1195,7 +1196,7 @@ table.dataTable thead .sorting_desc {
     padding: calc(25px + 1vw);
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner p {
+#confirm-discard .confirm-discard-inner p {
 	width: 100%;
 	padding-bottom: 10px;
 	font-size: 1em;
@@ -1203,25 +1204,25 @@ table.dataTable thead .sorting_desc {
 	text-align: center;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner .button-wrap {
+#confirm-discard .confirm-discard-inner .button-wrap {
 	width:100%;
 	display:grid;
 	grid-template-columns: 1fr 1fr;
 	grid-gap: 20px;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner button {
+#confirm-discard .confirm-discard-inner button {
 	height:40px;
 	cursor:pointer;
 	transition:all 0.2s ease-out;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner button.cancel:hover {
+#confirm-discard .confirm-discard-inner button.cancel:hover {
 	background-color:#dbdbdb;
 	transition:all 0.2s ease-out;
 }
 
-#collectionValues .options-bar #b221-discardCollection {
+#b221-discardCollection {
 	background-color:#ee3e3e;
 	color:#FFFFFF;
 	transition:background-color 0.2s ease-out;
@@ -1229,13 +1230,13 @@ table.dataTable thead .sorting_desc {
 	height:40px;
 }
 
-#collectionValues .options-bar #b221-discardCollection:hover {
+#b221-discardCollection:hover {
 	background-color:#c63131;
 	color:#FFFFFF;
 	transition:background-color 0.2s ease-out;
 }
 
-#collectionValues .options-bar #b221-discardCollection i {
+#b221-discardCollection i {
 	margin-right:5px;
 }
 

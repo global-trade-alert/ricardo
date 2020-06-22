@@ -1,8 +1,5 @@
 // FUNCTIONS
 
-
-
-
 // REACTIVATING LEADS ITEM
 function checkLeads() {
   $('#b221-leadsTable').on('click', '.leads-item .right-col .evaluate',function (e) {
@@ -171,20 +168,35 @@ function slideInBasicUI() {
 
 }
 
-function discardButton() {
+function slideInDiscardButton() {
 
   $('#b221-slideInRight').on('click','#discardCollection-popup', function () {
     $('#confirm-discard').addClass('show');
   })
+}
 
-  $('#b221-slideInRight').on('click','#confirm-discard .cancel', function () {
+function discardButton() {
+
+  $('#confirm-discard .cancel').on('click', function () {
     $('#confirm-discard').removeClass('show');
 })
 
-  $('#b221-slideInRight').on('click','#confirm-discard #b221-discardCollection', function () {
+  $('#confirm-discard #b221-discardCollection').on('click', function () {
     $('#confirm-discard').removeClass('show');
   })
 }
+
+//WAIT TILL #discard-confirm IS LOADED AND ADD discardButton() to it;
+ new Promise((resolve, reject) => {
+      if ($('#confirm-discard') != null);
+      resolve();
+  })
+  .then(() => {
+    console.log('#confirm-discard is added')
+    discardButton();
+  })
+
+
 
 function markHints() {
 

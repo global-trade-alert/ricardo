@@ -8,6 +8,7 @@ b221ui <- function(id) {
   tagList(
     fluidPage(
     theme = "www/b221/style.css",
+    useShinyjs(),
     tags$head(
       tags$script(src="www/b221/app.js"),
       tags$script(src="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.3.0/js/bootstrap-datepicker.js"),
@@ -49,7 +50,16 @@ b221ui <- function(id) {
                                         )
              )
              )
-  )
+  ),
+  tags$div(id="confirm-discard",
+           tags$div(class="confirm-discard-inner",
+                    tags$p("You are deleting a collection"),
+                    tags$div(class="button-wrap",
+                             tags$button(class="cancel btn",
+                                         "Cancel"),
+                             actionButton(ns("discardCollection"),
+                                          label="Delete",
+                                          icon = icon("times")))))
   )
   )
   
