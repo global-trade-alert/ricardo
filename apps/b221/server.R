@@ -577,15 +577,15 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                tags$div(class="options-bar",
                         tags$button(id="discardCollection-popup",
                                     tags$i(class="fa fa-times"),
-                                    "Discard"),
+                                    "Delete Collection"),
                tags$div(id="confirm-discard",
                         tags$div(class="confirm-discard-inner",
-                                tags$p("You are discarding a collection"),
+                                tags$p("You are deleting a collection"),
                                 tags$div(class="button-wrap",
                                 tags$button(class="cancel btn",
                                             "Cancel"),
                                 actionButton(ns("discardCollection"),
-                                             label="Discard",
+                                             label="Delete",
                                              icon = icon("times")))))))
     )
     )
@@ -874,7 +874,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(colData)
     
     if (colData$state == "newCollection") {
-      showNotification("This collection cannot be discarded, as it does not exist", duration = 3)
+      showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
     } else {
       collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
       print(paste0("THIS COLLECTION IS: ", collectionId))
