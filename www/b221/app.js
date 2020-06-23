@@ -42,8 +42,12 @@ function checkLeadsManual() {
       if (elementType == "discard" && ! $(this).hasClass('dismiss')) {
           $(changeEl).removeClass('reactivate');
           $(changeEl).addClass('dismiss');
+          
           // Shiny.setInputValue("b221-checkLeadsClick", [elementType, elementID], {priority: "event"});
-          collectData(`#${elementID}`,'dismiss');
+          //collectData(`#${elementID}`,'dismiss');
+          $('#confirm-discard').addClass(`show ${elementID}`);
+          $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
+          $('#discard-other').val(''); //clear discard-other
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
           // console.log(`#${elementID}`);
@@ -172,18 +176,31 @@ function slideInDiscardButton() {
 
   $('#b221-slideInRight').on('click','#discardCollection-popup', function () {
     $('#confirm-discard').addClass('show');
+    $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
+    $('#discard-other').val(''); //clear discard-other
   })
 }
 
 function discardButton() {
 
+// CANCEL BUTTON
   $('#confirm-discard .cancel').on('click', function () {
     $('#confirm-discard').removeClass('show');
+  let id = $('#confirm-discard').attr('class').match(/leadsID_.*/gi); //checks if pop-up was initiated from .evaluate button
+  if (id != null){
+    $(`#${id[0]}`).removeClass('dismiss');
+  }
+    
+  $('#confirm-discard').removeClass (function (index, className) {
+      return (className.match (/leadsID_.*/gi) || []).join(' ');
+  });
 })
 
+// DELETE COLLECTION BUTTON
   $('#confirm-discard #b221-discardCollection').on('click', function () {
-    $('#confirm-discard').removeClass('show');
+
   })
+  
 }
 
 //WAIT TILL #discard-confirm IS LOADED AND ADD discardButton() to it;
@@ -365,7 +382,33 @@ function saveNewCollection() {
 
 
 function discardExistingCollection() {
-  var state = $('#b221-slideInRight .collectionHeader')[0].id;
+  var state = $('#b221-slideInRight .collectionHeader').length > 0 ? $('#b221-slideInRight .collectionHeader')[0].id : null;
+  let reasons = collectReasons();
+  console.log(reasons)
+  console.log(state)
+  if (state == null) {
+    let id = $('#confirm-discard').attr('class').match(/(?<=leadsID_).*/gi)[0];
+    Shiny.setInputValue("b221-discardSingleCollection", JSON.stringify({ reasons, id: id }), {priority: "event"});
+    console.log('single')
+  } else {
+    Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons }), {priority: "event"});
+    console.log('multiple')
+  }
+  if (reasons != null) {
+    $('#confirm-discard').removeClass('show');
+    $('#confirm-discard').removeClass (function (index, className) {
+      return (className.match (/leadsID_.*/gi) || []).join(' ');
+    });
+  }
+}
 
-  Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({state}), {priority: "event"});
+const collectReasons = function(){
+  let select = $('#discard-select').val(),
+      other = $('#discard-other').val(),
+      reasons = Object.assign({},
+        select.length == 0 ? null : {select},
+        other === '' ? null : {other}
+      );
+  reasons = jQuery.isEmptyObject(reasons) ? null : reasons;
+  return reasons;
 }

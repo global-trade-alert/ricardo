@@ -53,7 +53,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   assessment.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT assessment_name, assessment_id FROM b221_assessment_list;"))
   product.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT product_group_name, product_group_id FROM b221_product_group_list;"))
   type.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT intervention_type_name, intervention_type_id FROM b221_intervention_type_list;"))
-  discard_reasons.list <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_id, discard_reason_name FROM bt_discard_reason_list;"))
+  discard_reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_id, discard_reason_name FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
+  discard_reasons.list  <<- setNames(as.character(discard_reasons$discard.reason.id), discard_reasons$discard.reason.name)
   
   # UPDATE DATE OF CREATION OF APP.R WHEN CLOSING, PREVENTS CACHING OF CSS AND JS
   onStop(function() {
@@ -183,10 +184,10 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   # Discard UI ----------------------------------------------------------------------------
   
   observe({
-    discard_select  = selectizeInput(inputId='some',
+    discard_select  = selectizeInput(inputId='discard-select',
                                      selected = NULL, 
                                      label = 'Discard reason',
-                                     choices = discard_reasons.list$discard.reason.name,
+                                     choices = discard_reasons.list,
                                      multiple = TRUE,
                                      options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
     discard_other = textInput(inputId='discard-other', 'Other', value = "", width = 300,
@@ -334,7 +335,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     leads.output <<- leads.output
   })
   
-  
   # OBSERVE SHINY JS CHECK LEADS EVENT FOR ITEMS PASSING SCREEN TOP
   observeEvent(input$checkLeads, {
     id <- as.numeric(gsub("leadsID_","", input$checkLeads))
@@ -349,7 +349,6 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_leads_checked VALUES (?leadsID, ?userID);", leadsID = id, userID = user$id))
     }
   })
-  
   
   # OBSERVE CLICKS ON LEADS-ITEM AND CHANGE DATABSE ENTRY ACCORDINGLY
   observeEvent(input$checkLeadsClick, {
@@ -876,7 +875,26 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
 
 # Collection UI: Discard Collection ---------------------------------------
   
-  # DISCARD EXISTING COLLECTION
+  # DISCARD SINGLE EXISTING COLLECTION
+  observeEvent(input$discardSingleCollection, {
+    data <- jsonlite::fromJSON(input$discardSingleCollection)
+    print(data)
+    if (is.null(data$reasons)){
+      showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
+      runjs(paste0("$('#confirm-discard').addClass('show');"))
+    } else {
+      other <- if(is.null(data$reasons$other)) '' else data$reasons$other
+      print (data)
+      for (reason in data$reasons$select){
+        gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
+                                            hint_id = data$id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
+      }
+      #bt_delete_collection(collection.id=collectionId)
+      runjs(paste0("$('#confirm-discard').removeClass('show');"))
+    }
+  })
+  
+  # DISCARD MULTIPLE EXISTING COLLECTION
   observeEvent(input$discardExistingCollection, {
     colData <- jsonlite::fromJSON(input$discardExistingCollection)
     print(colData)
@@ -884,18 +902,26 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     if (colData$state == "newCollection") {
       showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
     } else {
-      
-      runjs(paste0("$('#confirm-discard').addClass('show');"))
-      
-      collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
-      print(paste0("THIS COLLECTION IS: ", collectionId))
-      # 
-      # bt_delete_collection(collection.id=collectionId)
-      # 
-      # runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
-      # runjs(paste0("$('#b221-close-button').removeClass('open');"))
-      # runjs(paste0("$('.backdrop-nav').removeClass('open');"))
-      # removeUI(selector = ".removeslideinui",immediate = T)
+      if (is.null(colData$reasons)){
+        showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
+      } else {
+        
+        #runjs(paste0("$('#confirm-discard').addClass('show');"))
+        
+        # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hintID, ?classificationID, ?reasonID, ?reasonComment);",
+        #                                     hintID = id, classificationID = user$id, reasonID = select))
+        
+        collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
+        print(paste0("THIS COLLECTION IS: ", collectionId))
+        
+        bt_delete_collection(collection.id=collectionId)
+        
+        runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+        runjs(paste0("$('#b221-close-button').removeClass('open');"))
+        runjs(paste0("$('.backdrop-nav').removeClass('open');"))
+        removeUI(selector = ".removeslideinui",immediate = T)
+        runjs(paste0("$('#confirm-discard').removeClass('show');"))
+      }
     }
     
   })
