@@ -968,10 +968,6 @@ td.addPadding {
 	width:100%;
 }
 
-label {
-  pointer-events: none;
-}
-
 .inputs {
   width: 100%;
 }
