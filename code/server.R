@@ -185,6 +185,7 @@ server <- function(input, output, session) {
     eval(parse(text=paste0("condUI <- ",getUI,"ui(id='",getUI,"')")))
     print(paste0("INSERT UI: ", getUI))
     eval(parse(text=paste0("callModule(",getUI,"server, '",getUI,"',user=active.user, app=active.app(), prm = appPara)")))
+    print(parse(text=paste0("callModule(",getUI,"server, '",getUI,"',user=active.user, app=active.app(), prm = appPara)")))
     insertUI(selector = "#placeholderUI", ui = condUI)
     shinyjs::runjs(paste0("bindAll();"))
   }
