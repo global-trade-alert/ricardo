@@ -45,6 +45,7 @@ function checkLeadsManual() {
           
           // Shiny.setInputValue("b221-checkLeadsClick", [elementType, elementID], {priority: "event"});
           //collectData(`#${elementID}`,'dismiss');
+          $('#confirm-discard > div > div.form-group').css({'display': ''})
           $('#confirm-discard').addClass(`show ${elementID}`);
           $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
           $('#discard-other').val(''); //clear discard-other
@@ -175,9 +176,15 @@ function slideInBasicUI() {
 function slideInDiscardButton() {
 
   $('#b221-slideInRight').on('click','#discardCollection-popup', function () {
+    $('#confirm-discard > div > div.form-group').css({'display': ''})
     $('#confirm-discard').addClass('show');
     $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
     $('#discard-other').val(''); //clear discard-other
+  });
+  
+    $('#b221-slideInRight').on('click','#deleteCollection-popup', function () {
+    $('#confirm-discard > div > div.form-group').css({'display': 'none'})
+    $('#confirm-discard').addClass('show');
   })
 }
 
@@ -310,7 +317,7 @@ function checkNull(el) {
 
 //  Collect data for a general submit of hints
 function collectData(type='', state=''){
-  // console.log("Collector running");
+  //console.log("Collector running");
   let selector = `${type}`;
   let output = [];
   // console.log(state);
@@ -391,11 +398,12 @@ function discardExistingCollection() {
     Shiny.setInputValue("b221-discardSingleCollection", JSON.stringify({ reasons, id: id }), {priority: "event"});
     console.log('single')
   } else {
-    Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons }), {priority: "event"});
+    let del_dis = $('#confirm-discard > div > div.form-group').css('display') == 'none' ? 'delete' : 'discard';
+    Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons, del_or_dis: del_dis}), {priority: "event"});
     console.log('multiple')
   }
   if (reasons != null) {
-    $('#confirm-discard').removeClass('show');
+    //$('#confirm-discard').removeClass('show');
     $('#confirm-discard').removeClass (function (index, className) {
       return (className.match (/leadsID_.*/gi) || []).join(' ');
     });

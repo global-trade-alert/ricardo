@@ -1148,7 +1148,7 @@ table.dataTable thead .sorting_desc {
 	justify-content: flex-end;
 }
 
-#discardCollection-popup {
+#discardCollection-popup, #deleteCollection-popup {
 	background-color: #2485e6;
   color: #FFFFFF;
   height: 40px;
@@ -1156,19 +1156,19 @@ table.dataTable thead .sorting_desc {
   border: none;
   border-radius: 5px;
 	cursor:pointer;
+  margin-right: 10px;
 }
 
-#discardCollection-popup:hover {
+#discardCollection-popup:hover, #deleteCollection-popup:hover {
 	background-color:#175da2;
 	transition:background-color 0.2s ease-out;
 }
-
+  
 #confirm-discard {
   position: fixed !important;
 	opacity:0;
 	visibility: hidden;
 	transition: all 0.5s ease-out;
-	position: fixed;
   top: 0px;
   left: 0px;
   width: 100%;

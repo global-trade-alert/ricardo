@@ -52,7 +52,7 @@ b221ui <- function(id) {
   ),
   tags$div(id="confirm-discard",
            tags$div(class="confirm-discard-inner",
-                    tags$p("You are deleting a collection"),
+                    tags$p("You are discarding a collection"),
                     tags$div(class="button-wrap",
                              tags$button(class="cancel btn",
                                          "Cancel"),

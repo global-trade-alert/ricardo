@@ -184,18 +184,19 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   # Discard UI ----------------------------------------------------------------------------
   
   observe({
-    discard_select  = selectizeInput(inputId='discard-select',
-                                     selected = NULL, 
-                                     label = 'Discard reason',
-                                     choices = discard_reasons.list,
-                                     multiple = TRUE,
-                                     options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
-    discard_other = textInput(inputId='discard-other', 'Other', value = "", width = 300,
-                              placeholder = 'Type other reason...')
+      discard_select  <- selectizeInput(inputId='discard-select',
+                                        selected = NULL, 
+                                        label = 'Discard reason',
+                                        choices = discard_reasons.list,
+                                        multiple = TRUE,
+                                        options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
+      discard_other <- textInput(inputId='discard-other', 'Other', value = "", width = 300,
+                                 placeholder = 'Type other reason...')
+      
+      insertUI(immediate = F, selector = ".confirm-discard-inner",ui = tagList(
+        discard_select, discard_other)
+      )
     
-    insertUI(immediate = F, selector = ".confirm-discard-inner",ui = tagList(
-      discard_select, discard_other)
-    )
   })
 
 # Main Table --------------------------------------------------------------
@@ -592,6 +593,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                tags$div(class="options-bar",
                         tags$button(id="discardCollection-popup",
                                     tags$i(class="fa fa-times"),
+                                    "Discard Collection"),
+                        tags$button(id="deleteCollection-popup",
+                                    tags$i(class="fa fa-times"),
                                     "Delete Collection")
                         ))
     )
@@ -881,15 +885,16 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(data)
     if (is.null(data$reasons)){
       showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
-      runjs(paste0("$('#confirm-discard').addClass('show');"))
+      #runjs(paste0("$('#confirm-discard').addClass('show');"))
     } else {
-      other <- if(is.null(data$reasons$other)) '' else data$reasons$other
+      other <- if(is.null(data$reasons$other)) NA else data$reasons$other
       print (data)
       for (reason in data$reasons$select){
-        gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
-                                            hint_id = data$id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
+                gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
+                                     hint_id = data$id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
       }
-      #bt_delete_collection(collection.id=collectionId)
+      #bt_delete_collection(collection.id=data$id)
+      runjs(paste0("collectData(`#leadsID_${", data$id, "}`, 'dismiss');"))
       runjs(paste0("$('#confirm-discard').removeClass('show');"))
     }
   })
@@ -898,19 +903,32 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   observeEvent(input$discardExistingCollection, {
     colData <- jsonlite::fromJSON(input$discardExistingCollection)
     print(colData)
+    print(hint.container$hint.ids)
     
     if (colData$state == "newCollection") {
       showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
     } else {
-      if (is.null(colData$reasons)){
-        showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
+      if (colData$del_or_dis == 'discard'){
+        if (is.null(colData$reasons)){
+          showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
+        } else {
+          other <- if(is.null(colData$reasons$other)) NA else data$reasons$other
+          for (id in hint.container$hint.ids){
+            for (reason in colData$reasons$select){
+              gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
+                                                  hint_id = id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
+            }
+          }
+          collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
+          print(paste0("THIS COLLECTION IS: ", collectionId))
+          
+          runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+          runjs(paste0("$('#b221-close-button').removeClass('open');"))
+          runjs(paste0("$('.backdrop-nav').removeClass('open');"))
+          removeUI(selector = ".removeslideinui",immediate = T)
+          runjs(paste0("$('#confirm-discard').removeClass('show');"))
+        }
       } else {
-        
-        #runjs(paste0("$('#confirm-discard').addClass('show');"))
-        
-        # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hintID, ?classificationID, ?reasonID, ?reasonComment);",
-        #                                     hintID = id, classificationID = user$id, reasonID = select))
-        
         collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
         print(paste0("THIS COLLECTION IS: ", collectionId))
         
