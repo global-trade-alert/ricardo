@@ -13,22 +13,6 @@ const showLesscontent = function(type, id){
 }
 
 $( document ).ready(function() {
-    // add the overlay initially
-  let overlay = $('<div />').addClass('overlay');
-    $('body').hide().append(overlay).fadeIn(300);
-
-    // add edit mode
-  let div_edit = $('<div />').addClass('editMode');
-  let headerWrap = $('<div />').addClass('editMode-header');
-  let header = $('<h1 />').html('Edit Mode');
-  let canvas = $('<div />').addClass('canvas');
-  headerWrap.append(header);
-  div_edit.append(headerWrap, canvas);
-    $('body').append(div_edit);
-// Append button to editMode
-  $('.editMode .editMode-header').append(
-    $('<button type="button" id="save-edit"><img src="www/deliver/save.svg" style="margin-right:10px;"/>Save data</button>')
-    );
 
     // add html for discard prompt
       div_prompt = $('<div />')

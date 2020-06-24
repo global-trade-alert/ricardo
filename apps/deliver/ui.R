@@ -19,7 +19,17 @@ deliverui <- function(id) {
                       ),
                       tags$div(class="control-bar")
 
-             )
+             ),
+             tags$div(class="overlay"),
+             tags$div(class="editMode",
+                      tags$div(class="editMode-header",
+                               tags$h1('Edit Mode'),
+                               tags$button(type="button",
+                                           id="save-edit",
+                                           tags$img(src="www/deliver/save.svg",
+                                                    style="margin-right:10px;"),
+                                           "Save data")),
+                      tags$div(class="canvas"))
   )
   )
   )
