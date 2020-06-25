@@ -908,7 +908,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     if (colData$state == "newCollection") {
       showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
     } else {
-      if (colData$del_or_dis == 'discard'){
+      if (colData$del_or_dis == 'Discard'){
         if (is.null(colData$reasons)){
           showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
         } else {

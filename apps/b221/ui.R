@@ -23,6 +23,7 @@ b221ui <- function(id) {
                                                  style="visibility:hidden; pointer-events: none;")) # Initialize selectize),
                       ),
                       tags$div(class="control-bar",
+                               style="visibility:hidden;",
                                tags$div(id="loadMoreButton",
                                         actionButton(ns("loadMoreLeads"),
                                                      "Refresh",
@@ -32,6 +33,7 @@ b221ui <- function(id) {
                                tags$span(class="material-icons",
                                          "close")),
                       tags$div(id=ns("slideInRight"),
+                               style="visibility:hidden;",
                                tags$div(class="outer-wrap",
                                         tags$div(id=paste0("hintSlideIn"),
                                                  class="inner-wrap",
@@ -51,6 +53,7 @@ b221ui <- function(id) {
              )
   ),
   tags$div(id="confirm-discard",
+           style="visibility:hidden;",
            tags$div(class="confirm-discard-inner",
                     tags$p("You are discarding a collection"),
                     tags$div(class="button-wrap",
