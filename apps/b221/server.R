@@ -512,7 +512,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       initSingleHint$hint.title <- paste(initSingleHint$hint.id, initSingleHint$hint.title, sep=" - ")
       
       
-      initSingleHint$url <- ifelse(is.na(initSingleHint$official), initSingleHint$news, initSingleHint$official)
+      initSingleHint$url <- ifelse(is.na(initSingleHint$official), as.character(initSingleHint$news), as.character(initSingleHint$official))
       initSingleHint$tpcontent <- tpcontent
       
       initialHints <- generate_initial_hints(initSingleHint, initSingle = T)
@@ -1314,7 +1314,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     initSingleHint$hint.title <- paste(initSingleHint$hint.id, initSingleHint$hint.title, sep=" - ")
     
-    initSingleHint$url <- ifelse(is.na(initSingleHint$official), initSingleHint$news, initSingleHint$official)
+    initSingleHint$url <- ifelse(is.na(initSingleHint$official), as.character(initSingleHint$news), as.character(initSingleHint$official))
     initSingleHint$tpcontent <- tpcontent
     
     initialHints <- generate_initial_hints(initSingleHint)
