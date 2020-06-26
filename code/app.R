@@ -1,6 +1,7 @@
 # APP
 rm(list=ls())
 gtasql::gta_sql_kill_connections()
+library(gtalibrary)
 
 # SET PATHS
 setwd("/home/rstudio/Dropbox/GTA cloud/")
@@ -45,7 +46,7 @@ shinyApp(ui = ui,
              gta_sql_pool_close()
            })
          },
-         options = list(launch.browser=T)
+         options = list(launch.browser=F)
 )
 
 

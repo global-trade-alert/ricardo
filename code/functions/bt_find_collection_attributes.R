@@ -88,7 +88,6 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
     } else {
       collectionChanged = T # Collection must have changed in this scenario, otherwise it could not be saved
     }
-  
   } else {
     collectionChanged = T
   }
