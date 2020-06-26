@@ -56,12 +56,13 @@ b221ui <- function(id) {
            style="visibility:hidden;",
            tags$div(class="confirm-discard-inner",
                     tags$p("You are discarding a collection"),
+                    tags$div(class="discard-select-fields"),
                     tags$div(class="button-wrap",
                              tags$button(class="cancel btn",
                                          "Cancel"),
                              actionButton(ns("discardCollection"),
                                           label="Delete",
-                                          icon = icon("times")))))
+                                          icon = icon("trash")))))
   )
   )
   

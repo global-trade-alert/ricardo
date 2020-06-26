@@ -186,14 +186,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   observe({
       discard_select  <- selectizeInput(inputId='discard-select',
                                         selected = NULL, 
-                                        label = 'Discard reason',
+                                        label = '',
                                         choices = discard_reasons.list,
                                         multiple = TRUE,
                                         options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
-      discard_other <- textInput(inputId='discard-other', 'Other', value = "", width = 300,
+      discard_other <- textInput(inputId='discard-other', '', value = "", width = 300,
                                  placeholder = 'Type other reason...')
       
-      insertUI(immediate = F, selector = ".confirm-discard-inner",ui = tagList(
+      insertUI(immediate = F, selector = ".discard-select-fields",ui = tagList(
         discard_select, discard_other)
       )
     
@@ -593,9 +593,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                tags$div(class="options-bar",
                         tags$button(id="discardCollection-popup",
                                     tags$i(class="fa fa-times"),
-                                    "Discard Collection"),
+                                    "Mark irrelevant"),
                         tags$button(id="deleteCollection-popup",
-                                    tags$i(class="fa fa-times"),
+                                    tags$i(class="fa fa-trash"),
                                     "Delete Collection")
                         ))
     )
@@ -890,8 +890,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       other <- if(is.null(data$reasons$other)) NA else data$reasons$other
       print (data)
       for (reason in data$reasons$select){
-                gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
-                                     hint_id = data$id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
+                # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
+                                     # hint_id = data$id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
       }
       #bt_delete_collection(collection.id=data$id)
       runjs(paste0("collectData(`#leadsID_${", data$id, "}`, 'dismiss');"))
