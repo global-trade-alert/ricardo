@@ -180,8 +180,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       }); hintsBasicUI(); submitSingleHint();",if(prm$autosubmit==1){"callLeadsDismiss(); checkLeads();"} else {"checkLeadsManual();"}))
   })
   
-  
-  # Main Table --------------------------------------------------------------
+
+# Main Table --------------------------------------------------------------
   
   # TABLE OUTPUT FOR PREDEFINED LIST OF WORDS
   names <- eventReactive(input$loadMoreLeads, {
@@ -348,8 +348,8 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
   })
   
-  
-  # Collection UI: Collection Button ----------------------------------------
+
+# Collection UI: Collection Button ----------------------------------------
   
   # OBSERVE CLICKS ON COLLECTION BUTTON AND OPEN SLIDEIN
   observeEvent(input$collectionAdd, {
@@ -577,16 +577,16 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                tags$div(class="options-bar",
                         tags$button(id="discardCollection-popup",
                                     tags$i(class="fa fa-times"),
-                                    "Discard"),
-                        tags$div(id="confirm-discard",
-                                 tags$div(class="confirm-discard-inner",
-                                          tags$p("You are discarding a collection"),
-                                          tags$div(class="button-wrap",
-                                                   tags$button(class="cancel btn",
-                                                               "Cancel"),
-                                                   actionButton(ns("discardCollection"),
-                                                                label="Discard",
-                                                                icon = icon("times")))))))
+                                    "Delete Collection"),
+               tags$div(id="confirm-discard",
+                        tags$div(class="confirm-discard-inner",
+                                tags$p("You are deleting a collection"),
+                                tags$div(class="button-wrap",
+                                tags$button(class="cancel btn",
+                                            "Cancel"),
+                                actionButton(ns("discardCollection"),
+                                             label="Delete",
+                                             icon = icon("times")))))))
     )
     )
     
@@ -634,7 +634,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   })
   
   
-  # Collection UI: Save Collection ------------------------------------------
+# Collection UI: Save Collection ------------------------------------------
   
   observeEvent(input$saveNewCollection, {
     colData <- jsonlite::fromJSON(input$saveNewCollection)
@@ -865,8 +865,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   })
   
   
-  
-  # Collection UI: Discard Collection ---------------------------------------
+
+# Collection UI: Discard Collection ---------------------------------------
   
   # DISCARD EXISTING COLLECTION
   observeEvent(input$discardExistingCollection, {
@@ -874,7 +874,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(colData)
     
     if (colData$state == "newCollection") {
-      showNotification("This collection cannot be discarded, as it does not exist", duration = 3)
+      showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
     } else {
       collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
       print(paste0("THIS COLLECTION IS: ", collectionId))
@@ -1022,7 +1022,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
     initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
     
-    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
+    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT date FROM bt_hint_date WHERE hint_id = ",as.numeric(input$loadCollections),";"))))
     
     # weight.jur=100
     # weight.int.type=1
@@ -1188,21 +1188,22 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     initialJurisdictions <- unlist(strsplit(na.omit(as.character(initialJurisdictions)), " ; "))
     initialType <- unlist(strsplit(na.omit(as.character(initialType)), " ; "))
     initialProduct <- unlist(strsplit(na.omit(as.character(initialProduct)), " ; "))
-    initialAssessment <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
+    initialProduct <- unlist(strsplit(na.omit(as.character(initialAssessment)), " ; "))
     
     initialJurisdictions <- ifelse(is.null(initialJurisdictions),character(0),initialJurisdictions)
     initialType <- ifelse(is.null(initialType),character(0),initialType)
     initialProduct <- ifelse(is.null(initialProduct),character(0),initialProduct)
     initialAssessment <- ifelse(is.null(initialAssessment),character(0),initialAssessment)
     
-    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT hint_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
+    initialDate <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT registration_date FROM bt_hint_log WHERE hint_id = ",ht_val,";"))))
     
-    # weight.jur=100
-    # weight.int.type=1
-    # weight.assessment=1
-    # weight.date=.1
-    # weight.product=1
-    # 
+    ## sorting hints
+    weight.jur=10000
+    weight.int.type=1
+    weight.assessment=1
+    weight.date=.1
+    weight.product=1
+    
     # singleHintOutput$order = as.vector(do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$intervention.type), split = ' ; ')), function(x) sum(x %in% initialType))) * weight.int.type+
     #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
     #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
@@ -1210,9 +1211,41 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
     # 
     # singleHintOutput$order[singleHintOutput$order<0]=0
-    # 
-    # singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+
+    singleHintOutput$order=0
+    if(is.na(initialJurisdictions)==F) { singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)] = weight.jur + singleHintOutput$order[grepl(initialJurisdictions, singleHintOutput$jurisdiction.name, ignore.case = T)]}
+    if(is.na(initialType)==F) { singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)] =          weight.int.type + singleHintOutput$order[grepl(initialType, singleHintOutput$intervention.type, ignore.case = T)]}
+    if(is.na(initialProduct)==F) { singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)] =      weight.product + singleHintOutput$order[grepl(initialProduct, singleHintOutput$product.group.name, ignore.case = T)]}
+    if(is.na(initialAssessment)==F) { singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T) ]=      weight.assessment + singleHintOutput$order[grepl(initialAssessment, singleHintOutput$assessment.name, ignore.case = T)]}
     
+    if(any(!is.na(initialDate))){
+      initialDate=initialDate[!is.na(initialDate)]
+      
+      singleHintOutput$date.numeric=log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(singleHintOutput$hint.date)))+1))
+      singleHintOutput$order=singleHintOutput$order+weight.date * singleHintOutput$date.numeric
+    }
+    
+
+    singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
+    
+    if(length(initialJurisdictions)>0){
+      
+      top.rows=max(nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T))),
+                   min(500,
+                       200 + nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T)))))
+      
+    } else {
+      top.rows=500
+    }
+    
+    singleHintOutput=singleHintOutput[1:top.rows,]
+    
+    singleHintOutput$order=NULL
+    singleHintOutput$date.numeric=NULL
+    
+    
+    # if(length(initialJurisdictions)>0){singleHintOutput=subset(singleHintOutput, tolower(jurisdiction.name) %in% tolower(initialJurisdictions))}
+
     
     ## generate HTML
     
@@ -1450,7 +1483,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                       '</div></div>')
       
       initialHints$url <- ifelse(is.na(initialHints$official), initialHints$news, initialHints$official)
-      
+    
       if (any(initialHints$is.intervention == 1)) {
         gtaHint <- TRUE
       }
@@ -1500,7 +1533,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       lockHint <- lockHint(FALSE)
       runjs(paste0("$('.initialValues').removeClass('locked')"))
     }
-    
+  
     
     runjs("$('#hintContainer .added').fadeOut(300, function(){$(this).remove();});")
     runjs(paste0("$('#b221-slideInRight .collectionHeader')[0].id = 'existingCollection_",collectionId,"';console.log('changed id');"))

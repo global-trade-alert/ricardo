@@ -35,7 +35,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
                           LEFT JOIN b221_hint_product_group prod_grp ON prod_grp.hint_id = attributed_hints.hint_id AND (prod_grp.product_group_assessment = 1 OR prod_grp.product_group_assessment IS NULL) LEFT JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp.product_group_id
                           LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = attributed_hints.hint_id AND (ht_int.intervention_accepted = 1 OR ht_int.intervention_accepted IS NULL) LEFT JOIN b221_intervention_type_list int_type_list ON ht_int.apparent_intervention_id = int_type_list.intervention_type_id
                           LEFT JOIN b221_hint_comment_log ht_cmt_log ON ht_cmt_log.hint_id = attributed_hints.hint_id
-                          LEFT JOIN bt_hint_date ON attributed_hints.hint_id = bt_hint_date.hint_id LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id
+                          LEFT JOIN bt_hint_date ON attributed_hints.hint_id = bt_hint_date.hint_id AND (bt_hint_date.date_accepted = 1 OR bt_hint_date.date_accepted IS NULL) LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id
                           GROUP BY attributed_hints.hint_id;")
   } else {
     #attach only those urls which are non-dormant, i.e. those hints @b221 editor desk & search_id non null & was_accepted null (pending decision) or 1
@@ -71,7 +71,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
                           LEFT JOIN b221_hint_product_group prod_grp ON prod_grp.hint_id = attributed_hints.hint_id AND (prod_grp.product_group_assessment = 1 OR prod_grp.product_group_assessment IS NULL) AND prod_grp.classification_id  LEFT JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = prod_grp.product_group_id
                           LEFT JOIN b221_hint_intervention ht_int ON ht_int.hint_id = attributed_hints.hint_id AND (ht_int.intervention_accepted = 1 OR ht_int.intervention_accepted IS NULL) AND ht_int.classification_id IS NOT NULL LEFT JOIN b221_intervention_type_list int_type_list ON ht_int.apparent_intervention_id = int_type_list.intervention_type_id
                           LEFT JOIN b221_hint_comment_log ht_cmt_log ON ht_cmt_log.hint_id = attributed_hints.hint_id
-                          LEFT JOIN bt_hint_date ON attributed_hints.hint_id = bt_hint_date.hint_id LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id
+                          LEFT JOIN bt_hint_date ON attributed_hints.hint_id = bt_hint_date.hint_id AND (bt_hint_date.date_accepted = 1 OR bt_hint_date.date_accepted IS NULL) LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id
                           GROUP BY attributed_hints.hint_id;")  
   }
   

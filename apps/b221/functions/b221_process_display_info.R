@@ -27,7 +27,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   gta_sql_create_table(write.df=temp.changes.name,
                        append.existing = F,
                        table.prefix = '')
-  #  ALTER TABLE b221_temp_changes_data_40 MODIFY comment TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  
   if(is.freelancer==T){
     push.updates = paste0("/* FREELANCER UPLOAD */
                           SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
@@ -285,5 +285,3 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   #gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
   
 }
-
-# last statement of editor where states are updated needs to update to correct state if hint in collection, this is not yet done

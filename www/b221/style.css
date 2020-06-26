@@ -6,6 +6,11 @@
 
 /* GENERAL SETTINGS */
 
+.content .b221 {
+	padding:calc(30px + 1vw);
+	padding-top:calc(80px + 1vw);
+}
+
 .submitButton {
 	color:#FFFFFF;
 	width:100%;
@@ -26,11 +31,6 @@
 }
 
 /* LEADS LIST */
-
-.leadsTable {
-	padding: calc(20px + 1vw);
-	padding-top:calc(80px + 2vw);
-}
 
 #b221-leadsTable {
 	max-width:800px;
