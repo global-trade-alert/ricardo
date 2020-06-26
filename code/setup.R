@@ -18,10 +18,8 @@ library(stringi)
 
 # DEFINE GLOBAL STARTUP VALUES
 
-# IMPORT all functions
-for(fct in list.files(paste0(path,"code/functions"), pattern = ".R", full.names=T)){
-  source(fct)
-}
+# IMPORT DEFINITIONS
+source(paste0(path,"code/functions/functions.R"), local = F)
 
 # IMPORT MODULES
 # source(paste0(path,"code/modules/pop_up.R"))
@@ -39,3 +37,6 @@ source(paste0(path, "apps/b221/setup.R"))
 source(paste0(path, "apps/osc/ui.R"))
 source(paste0(path, "apps/osc/server.R"))
 source(paste0(path, "apps/osc/setup.R"))
+source(paste0(path, "apps/deliver/ui.R"))
+source(paste0(path, "apps/deliver/server.R"))
+source(paste0(path, "apps/deliver/setup.R"))
