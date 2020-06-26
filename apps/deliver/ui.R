@@ -29,7 +29,17 @@ deliverui <- function(id) {
                                            tags$img(src="www/deliver/save.svg",
                                                     style="margin-right:10px;"),
                                            "Save data")),
-                      tags$div(class="canvas"))
+                      tags$div(class="canvas")),
+             tags$div(class="saveMode",
+                      style = 'visibility: hidden;',
+                      tags$div(class="saveMode-header",
+                               tags$h1('Save Mode'),
+                               tags$div(id='save-cols'),
+                               tags$button(type="button",
+                                           id="save-xlsx",
+                                           tags$img(src="www/deliver/save.svg",
+                                                    style="margin-right:10px;"),
+                                           "Save data")))
   )
   )
   )

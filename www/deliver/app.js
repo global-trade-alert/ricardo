@@ -51,6 +51,21 @@ $( document ).ready(function() {
     });
   })();
   
+    (async() => {
+      while(!document.querySelector('#save-cols')) // wait till #save-cols is loaded
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      let colnames = buttonsClicks.getAllColumnsNames();
+      colnames.forEach(function(d, i) {
+        let input = $('<input />')
+                              .attr('type', 'checkbox')
+                              .attr('checked', 'checked')
+                              .attr('id', `column-${d.index}`)
+                              .addClass('col-export');
+        let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
+        $('#save-cols').append(label, input);
+      })
+    })();
+  
 });
 
 const buttonsClicks = {
@@ -330,6 +345,13 @@ const buttonsClicks = {
     });
     return output;
   },
+  getAllColumnsNames : function(){
+    let output = [];
+    $('#DataTables_Table_0').DataTable().columns().every( function (i) {
+        output.push({ index: i, name: this.header().innerHTML})
+    });
+    return output;
+  },
   rowAttachEvents: function(status, id){
     $(`tr#${id}`).find('.buttons-column').each(function(){
       let that = $(this);
@@ -411,6 +433,11 @@ const buttonsClicks = {
       $("#prompt-form").dialog("open");
       //$("#prompt-form").parent().draggable( "disable" );
     });
+  },
+  save_xlxs: function(){
+    const that = this;
+    $('.saveMode').addClass('show');
+    console.log(that.getColumnsNames())
   }
 };
 

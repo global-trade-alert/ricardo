@@ -316,7 +316,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           let export_div = document.createElement('div');
                           Object.assign(export_div, {
                             className: 'search-pane-export-xlsx',
-                            title: 'export as .xlsx'
+                            title: 'export as .xlsx',
+                            onclick: function(){ buttonsClicks['save_xlxs']();  }
                           });
                           let img = document.createElement('img');
                           Object.assign(img, {
