@@ -37,7 +37,7 @@ shinyApp(ui = ui,
                              db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
                              db.name = 'ricardomainclone',
                              db.user = 'gtaricardodev',
-                             db.password = 'nC6okGiDKEcFV36rKsykeE9HXbfphgAH6',
+                             db.password = '4rbjDVRote7YLsTqfmWXfbwdf7jVt8VjwXUhgy',
                              table.prefix = "ric_")
 
            onStop(function() {
