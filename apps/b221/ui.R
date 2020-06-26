@@ -52,6 +52,7 @@ b221ui <- function(id) {
              )
              )
   ),
+  tags$style("#confirm-discard {opacity:0;visibility:hidden;}"),
   tags$div(id="confirm-discard",
            style="visibility:hidden;",
            tags$div(class="confirm-discard-inner",
