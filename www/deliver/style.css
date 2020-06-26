@@ -990,3 +990,11 @@ td.addPadding {
   background: #fddfdf;
   color: #5f3f3f;
 }
+
+.search-pane-export-xlsx{
+    width: 30px;
+    height: 100%;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
