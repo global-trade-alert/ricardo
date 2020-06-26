@@ -125,9 +125,9 @@ bt_export_main_db=function(to.db = 'ricardodev'){
   gta.sa.hs$hs6=as.numeric(gta.sa.hs$hs6)
   
   
-  base.export = merge(gta.data, intervention.groups, by = 'intervention.type', all.x = T)
+  base.export <<- merge(gta.data, intervention.groups, by = 'intervention.type', all.x = T)
   base.export$hint.id = NA
-  product.export = na.omit(unique(merge(gta.sa.hs, hs.groups, by.x = 'hs6', by.y = 'hs.code', all.x = T)[,c('state.act.id','intervention.id','hs.group')]))
+  product.export <<- na.omit(unique(merge(gta.sa.hs, hs.groups, by.x = 'hs6', by.y = 'hs.code', all.x = T)[,c('state.act.id','intervention.id','hs.group')]))
   
   
   # I want to add a pool name with the var to.db but the sql_create_table fails if i do so, so instead i just close the main pool
