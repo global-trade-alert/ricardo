@@ -55,7 +55,7 @@ $( document ).ready(function() {
       while(!document.querySelector('.save-cols')) // wait till .save-cols is loaded
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('save-cols is loaded')
-      let colnames = buttonsClicks.getAllColumnsNames();
+      let colnames = await buttonsClicks.getAllColumnsNames();
       colnames.forEach(function(d, i) {
         let input = $('<input />')
                               .attr('type', 'checkbox')
@@ -360,8 +360,10 @@ const buttonsClicks = {
     });
     return output;
   },
-  getAllColumnsNames : function(){
+  getAllColumnsNames : async function(){
     let output = [];
+    while(!document.querySelector('#DataTables_Table_0')) // wait till #DataTables_Table_0 is loaded
+      await new Promise(resolve => setTimeout(resolve, 1000));
     $('#DataTables_Table_0').DataTable().columns().every( function (i) {
         output.push({ index: i, name: this.header().innerHTML})
     });
