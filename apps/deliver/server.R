@@ -312,7 +312,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           referenceNode.appendChild(newNode);
                           
                           // Add export .xlsx to bottom of search panes
-                          console.log(referenceNode)
                           let export_div = document.createElement('div');
                           Object.assign(export_div, {
                             className: 'search-pane-export-xlsx',

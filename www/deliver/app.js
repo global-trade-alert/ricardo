@@ -52,8 +52,9 @@ $( document ).ready(function() {
   })();
   
     (async() => {
-      while(!document.querySelector('#save-cols')) // wait till #save-cols is loaded
+      while(!document.querySelector('.save-cols')) // wait till .save-cols is loaded
       await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('save-cols is loaded')
       let colnames = buttonsClicks.getAllColumnsNames();
       colnames.forEach(function(d, i) {
         let input = $('<input />')
@@ -62,7 +63,10 @@ $( document ).ready(function() {
                               .attr('id', `column-${d.index}`)
                               .addClass('col-export');
         let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
-        $('#save-cols').append(label, input);
+        $('.save-cols').append(
+          $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
+              .append(label, input)
+        );
       })
     })();
   
@@ -234,16 +238,27 @@ const buttonsClicks = {
       $('.overlay').click();
     })
     
-    $('.overlay').addClass('show');
+    /*$('.overlay').addClass('show');
     $('.overlay').on('click', function(){
       $(this).removeClass('show');
       $( ".editMode" ).removeClass('show');
       $('.canvas').empty();
       $(this).unbind('click', arguments.callee);
-    });
+    });*/
+    that.addOverlay('editMode');
     
     $( ".editMode" ).addClass('show');
     
+  },
+  addOverlay: function(caller){
+      $('.overlay').addClass('show');
+      
+      $('.overlay').on('click', function(){
+        $(this).removeClass('show');
+        $( `.${caller}` ).removeClass('show');
+        $('.canvas').empty();
+        $(this).unbind('click', arguments.callee);
+    });
   },
   duplicate: function(status, id) {
     const that = this;
@@ -437,6 +452,7 @@ const buttonsClicks = {
   save_xlxs: function(){
     const that = this;
     $('.saveMode').addClass('show');
+    that.addOverlay('saveMode');
     console.log(that.getColumnsNames())
   }
 };
