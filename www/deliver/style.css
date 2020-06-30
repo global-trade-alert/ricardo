@@ -513,7 +513,7 @@ tr.deleted .status-column {
 	flex:1;
 }
 
-.editMode .editMode-header #save-edit, .saveMode .saveMode-header #save-xlsx {
+.editMode .editMode-header #save-edit {
 	display:flex;
 	flex:1;
 	flex-grow: 0;
@@ -567,7 +567,7 @@ tr.deleted .status-column {
   grid-gap: 0px;
   margin-top: 1px;
   text-align: center;
-  font-size: 0.8em;
+  font-size: 0.7em;
 }
 
 .canvas .form-grid > div {
@@ -1022,10 +1022,24 @@ td.addPadding {
   z-index: 99999;
   max-width: 600px;
   border-radius: 10px;
-	/*transition:left 0.5s ease-out;*/
+  opacity: 0;
+  transition:opacity 0.3s linear;
 }
 
 .saveMode.show {
   visibility: visible !important;
 	box-shadow:3px 0px 25px rgba(0,0,0,0.2);
+  opacity: 1;
+}
+
+.saveMode .saveMode-header #save-xlsx {
+	display:flex;
+	flex:1;
+	flex-grow: 0;
+	background-color:rgba(0,0,0,0.2);
+	padding:10px;
+	border-radius:5px;
+	border:none;
+	color:#FFFFFF;
+	white-space: nowrap;
 }
