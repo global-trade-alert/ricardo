@@ -57,9 +57,10 @@ $( document ).ready(function() {
       console.log('save-cols is loaded')
       let colnames = await buttonsClicks.getAllColumnsNames();
       colnames.forEach(function(d, i) {
+        let checked = /confirmation|users|description/gi.test(d.name) ? false : true; //untick some cols initially
         let input = $('<input />')
                               .attr('type', 'checkbox')
-                              .attr('checked', 'checked')
+                              .attr('checked', checked)
                               .attr('id', `column-${d.index}`)
                               .addClass('col-export');
         let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
@@ -67,6 +68,9 @@ $( document ).ready(function() {
           $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
               .append(label, input)
         );
+      })
+      $('#save-xlsx').on('click', function() {
+        buttonsClicks.saveXlsx();
       })
     })();
   
@@ -451,11 +455,32 @@ const buttonsClicks = {
       //$("#prompt-form").parent().draggable( "disable" );
     });
   },
-  save_xlxs: function(){
+  initializeSaveMode: function(){
     const that = this;
     $('.saveMode').addClass('show');
     that.addOverlay('saveMode');
     console.log(that.getColumnsNames())
+  },
+  saveXlsx: function(){
+    let output = [],
+        columns = [],
+        data = $('#DataTables_Table_0').DataTable().rows({ filter: 'applied'}).data().toArray();
+    $('.col-export').each(function(){ 
+        if ($(this).is(':checked'))
+          columns.push({ index: $(this).attr('id').match(/\d+/gi)[0], name: $(this).siblings('label').html() })
+    });
+    data.forEach(function(d,i){
+      let row = {};
+      d.map(function(d1,i1){
+        columns.map(function(d2){
+          if (i1 == d2.index) 
+              row[d2.name] = d1;
+        })
+      })
+      output.push(row)
+    })
+    console.log(output)
+    Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(output), {priority: "event"});
   }
 };
 

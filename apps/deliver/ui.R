@@ -39,7 +39,10 @@ deliverui <- function(id) {
                                            tags$img(src="www/deliver/save.svg",
                                                     style="margin-right:10px;"),
                                            "Save .xslx")),
-                      tags$div(class='save-cols'))
+                      tags$div(class='save-cols')),
+             tags$div(style='visibility:hidden;',
+                      downloadButton(ns("downloadXlsx"), "Download"))
+             
   )
   )
   )

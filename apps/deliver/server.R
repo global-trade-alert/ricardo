@@ -69,7 +69,7 @@ new_env$covid.data <-
 
 
 deliverserver <- function(input, output, session, user, app, prm, ...) {
-  
+
   observe({
     products_unique <-
       gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
@@ -316,7 +316,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           Object.assign(export_div, {
                             className: 'search-pane-export-xlsx',
                             title: 'export as .xlsx',
-                            onclick: function(){ buttonsClicks['save_xlxs']();  }
+                            onclick: function(){ buttonsClicks['initializeSaveMode']();  }
                           });
                           let img = document.createElement('img');
                           Object.assign(img, {
@@ -468,6 +468,37 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     selection = "none"
   ),
   server = F)
+  
+  observeEvent(input$saveXlsx, {
+    export <- jsonlite::fromJSON(input$saveXlsx)
 
+    print(export)
+    export <- export %>%
+      mutate('Product: medical consumables' = if('Products' %in% names(.)) str_detect(Products, 'medical consumables') else NULL,
+             'Product: Medical equipment' = if('Products' %in% names(.)) str_detect(Products, 'medical equipment.') else NULL,
+             'Product: Medicines or drugs' = if('Products' %in% names(.)) str_detect(Products, 'medicines or drugs') else NULL,
+             'Product: Food' = if('Products' %in% names(.)) str_detect(Products, 'food') else NULL,
+             'Product: Any medical product' = if('Products' %in% names(.)) str_detect(Products, 'uncertain') else NULL,
+             'Product: other' = if('Product' %in% names(.)) str_detect(Products, 'other') else NULL,
+             'Is export barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export barrier') else NULL,
+             'Is import barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'import barrier') else NULL,
+             'Domestic subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'domestic subsidy') else NULL,
+             'Export subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export subsidy') else NULL) %>%
+      select(!any_of(c('Products', 'Instruments')))
+    
+    data_export <<- list("WB data" = export, "Notes" = c('Data as available on CURRENTTIME.'))
+    
+    runjs("$('#deliver-downloadXlsx')[0].click();
+           $('.overlay').click();")
+  })
+  
+  output$downloadXlsx <- downloadHandler(
+    filename = function() {
+      paste0("test", ".xlsx")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(data_export, file = file)
+    }
+  )
   
 }

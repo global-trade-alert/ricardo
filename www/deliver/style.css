@@ -1027,6 +1027,5 @@ td.addPadding {
 
 .saveMode.show {
   visibility: visible !important;
-	/*left:0;*/
 	box-shadow:3px 0px 25px rgba(0,0,0,0.2);
 }
