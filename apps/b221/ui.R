@@ -9,9 +9,6 @@ b221ui <- function(id) {
     fluidPage(
     theme = "www/b221/style.css",
     tags$head(
-      tags$script(src="www/b221/app.js"),
-      tags$script(src="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.3.0/js/bootstrap-datepicker.js"),
-      tags$link(rel="stylesheet", type="text/css", href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css")
     ),
     tags$div(class="removeui",
              tags$div(class="wrap b221",

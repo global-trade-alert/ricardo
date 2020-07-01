@@ -235,8 +235,7 @@ label {
 
 #deliver-deliverTable table .documentation-status,
 #deliver-deliverTable table .jurisdiction,
-#deliver-deliverTable table .type,
-#deliver-deliverTable table .source {
+#deliver-deliverTable table .type {
 	flex-grow:1;
 	flex-shrink:0;
 	flex-basis: 80px;
@@ -245,7 +244,8 @@ label {
 
 
 #deliver-deliverTable table .products,
-#deliver-deliverTable table .instruments {
+#deliver-deliverTable table .instruments,
+#deliver-deliverTable table .source {
 	flex-grow:1;
 	flex-shrink:0;
 	flex-basis: 120px;
@@ -346,7 +346,7 @@ table .instr-label {
 
 .description-more {
   height: auto;
-  max-height: 2000px;
+  max-height: 2000px !important;
   overflow: hidden;
   /*max-width: 500px;
   width: 370px !important;*/
@@ -366,7 +366,7 @@ table .instr-label {
 
 .source-more {
   height: auto;
-  max-height: 2000px;
+  max-height: 2000px !important;
   overflow: hidden;
   /*max-width: 250px !important;
   width: 250px !important;*/
@@ -966,10 +966,6 @@ td.addPadding {
 .deliver #deliver-deliverTable .dataTables_filter label {
 	padding:0;
 	width:100%;
-}
-
-label {
-  pointer-events: none;
 }
 
 .inputs {

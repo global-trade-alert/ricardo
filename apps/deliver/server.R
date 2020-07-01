@@ -403,11 +403,23 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             .then(() => {
                                 $('#hide').css({'display': ''});
                                   api.$('.description-less').each(function(){ // all un-opened descriptions
+                                  $(this)[0].setAttribute('style', `max-height:${$(this)[0].parentNode.scrollHeight}px;`);
                                   let id = api.row( $(this).closest('tr') ).id();
-                                
                                     if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
                                         $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
                                                                           class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
+                                                                          <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
+                                    }
+                                })
+                              api.$('.source-less').each(function(){ // all un-opened descriptions
+                                  console.log($(this));
+                                  console.log($(this)[0].scrollHeight);
+                                  console.log($(this)[0].parentNode.scrollHeight);
+                                  $(this)[0].setAttribute('style', `max-height:${$(this)[0].parentNode.scrollHeight}px;`);
+                                  let id = api.row( $(this).closest('tr') ).id();
+                                  if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
+                                        $(this).parent('td').append(`<button id =\"toggle-source_${id}\"
+                                                                          class=\"more-less\" onclick=\'showMorecontent(\"source\",${id})\'>
                                                                           <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
                                     }
                                 })
