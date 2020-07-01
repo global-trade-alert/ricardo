@@ -300,14 +300,12 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
                           
                            // Add toggle button to bottom of search panes
-                          console.log('TESTING ADD BUTTON FUNCTION');
                           let newNode = document.createElement('div');
                           newNode.setAttribute('id', 'search-pane-toggle-button');
                           let innerNode = document.createElement('span');
                           innerNode.setAttribute('class','material-icons');
                           innerNode.innerHTML = 'expand_less';
                           newNode.appendChild(innerNode);
-                          console.log($('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow'));
                           let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow')[0];
                           referenceNode.appendChild(newNode);
                           
