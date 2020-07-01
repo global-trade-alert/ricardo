@@ -1,5 +1,6 @@
 # APP
 rm(list=ls())
+library(gtalibrary)
 gtasql::gta_sql_kill_connections()
 
 # SET PATHS
