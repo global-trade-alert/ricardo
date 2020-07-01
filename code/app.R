@@ -3,14 +3,14 @@ rm(list=ls())
 gtasql::gta_sql_kill_connections()
 
 # SET PATHS
-setwd("/home/rstudio/Dropbox/GTA cloud/")
+# setwd("/home/rstudio/Dropbox/GTA cloud/")
 # setwd("C:/Users/jfrit/Desktop/Dropbox/GTA cloud")
 # setwd("C:/Users/Piotr Lukaszuk/Dropbox/GTA cloud")
 
 gta_setwd()
 # setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
 # path <<- "17 Shiny/8 ricardo app/"
-path <<- "0 dev/ricardo-lg/"
+path <<- "0 dev/ricardo-deliver-ui/"
 # setwd( "~/Dropbox/")
 # path <<- "ricardo-lg/"
 
@@ -34,10 +34,10 @@ shinyApp(ui = ui,
          onStart = function() {
            gta_sql_kill_connections()
            gta_sql_pool_open(db.title="ricardomainclone",
-                             db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
+                             db.host = gta_pwd("ricardodev")[['host']],
                              db.name = 'ricardomainclone',
-                             db.user = 'gtaricardodev',
-                             db.password = 'nC6okGiDKEcFV36rKsykeE9HXbfphgAH6',
+                             db.user = gta_pwd("ricardodev")[['user']],
+                             db.password = gta_pwd("ricardodev")[['password']],
                              table.prefix = "ric_")
 
            onStop(function() {
@@ -45,7 +45,7 @@ shinyApp(ui = ui,
              gta_sql_pool_close()
            })
          },
-         options = list(launch.browser=T)
+         options = list(launch.browser=F)
 )
 
 
