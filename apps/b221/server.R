@@ -528,11 +528,11 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       initSingleHint$hint.title <- paste(initSingleHint$hint.id, initSingleHint$hint.title, sep=" - ")
       
       
-      initSingleHint$url <- ifelse(is.na(initSingleHint$official), initSingleHint$news, initSingleHint$official)
+      initSingleHint$url <- ifelse(is.na(initSingleHint$official), as.character(initSingleHint$news), as.character(initSingleHint$official))
       initSingleHint$tpcontent <- tpcontent
       
       initialHints <- generate_initial_hints(initSingleHint, initSingle = T)
-
+      
       slideInState = "newCollection"
       
       locked = ""
@@ -576,17 +576,17 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     selected = initialAssessment,
                                     multiple = F),
                         dateInput(ns("initAnnouncement"),
-                                    label="Announcement Date",
-                                    value = initialAnnouncement, startview = Sys.Date(),
-                                    format = "yyyy-mm-dd"),
+                                  label="Announcement Date",
+                                  value = initialAnnouncement, startview = Sys.Date(),
+                                  format = "yyyy-mm-dd"),
                         dateInput(ns("initImplementation"),
-                                    label="Implementation Date",
-                                    value = initialImplementation, startview = Sys.Date(),
-                                    format = "yyyy-mm-dd"),
+                                  label="Implementation Date",
+                                  value = initialImplementation, startview = Sys.Date(),
+                                  format = "yyyy-mm-dd"),
                         dateInput(ns("initRemoval"),
-                                    label="Removal Date",
-                                    value = initialRemoval, startview = Sys.Date(),
-                                    format = "yyyy-mm-dd")),
+                                  label="Removal Date",
+                                  value = initialRemoval, startview = Sys.Date(),
+                                  format = "yyyy-mm-dd")),
                tags$h4("Hints included"),
                tags$div(id="hintContainer",
                         HTML(initialHints)),
@@ -600,7 +600,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                         ))
     )
     )
-
+    
     runjs("$('#b221-slideInRight').addClass('open');")
     runjs("$('#b221-slideInRight').trigger('loadCollectionSlideIn');console.log('2 loading collection slide in');")
     runjs("$('.tooltip-create-top').tooltipster({
@@ -619,7 +619,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                 }
                               })")
     runjs(paste0(" slideInBasicUI();"))
-
+    
     
     if (initial.slide.in()) {
       runjs(paste0("markHints(); removeHint(); slideInDiscardButton(); "))
@@ -644,7 +644,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     runjs('discardExistingCollection();')
   })
   
-
+  
 # Collection UI: Save Collection ------------------------------------------
   
   observeEvent(input$saveNewCollection, {
@@ -1020,9 +1020,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   
   
   
-
-# Collection UI: Collection Table -----------------------------------------
-
+  
+  # Collection UI: Collection Table -----------------------------------------
+  
   # LOAD COLLECTIONS FOR COLLECTIONS SLIDE IN
   collections <- eventReactive(input$loadCollections, {
     
@@ -1200,9 +1200,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   ),
   server = F)
   
-
-# Collection UI: Single Hints Table ---------------------------------------
-
+  
+  # Collection UI: Single Hints Table ---------------------------------------
+  
   # LOAD SINGLE HINTS FOR COLLECTIONS SLIDE IN
   singleHints <- eventReactive(input$loadSingleHints, {
     print("SingleHintRefresh refresh")
@@ -1326,9 +1326,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     singleHintOutput <<- singleHintOutput
   })
   
-
-# Collection UI: Select Single Hints  -------------------------------------
-
+  
+  # Collection UI: Select Single Hints  -------------------------------------
+  
   # SELECT ROWS MECHANISM HITNS TABLE
   observeEvent(input$singleHintsTable_rows_selected, { 
     moveHint <- singleHintOutput[input$singleHintsTable_rows_selected,]
@@ -1369,13 +1369,13 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
     initSingleHint$hint.title <- paste(initSingleHint$hint.id, initSingleHint$hint.title, sep=" - ")
     
-    initSingleHint$url <- ifelse(is.na(initSingleHint$official), initSingleHint$news, initSingleHint$official)
+    initSingleHint$url <- ifelse(is.na(initSingleHint$official), as.character(initSingleHint$news), as.character(initSingleHint$official))
     initSingleHint$tpcontent <- tpcontent
     
     initialHints <- generate_initial_hints(initSingleHint)
     
     initialHints <- gsub("[\r\n]", "", initialHints)
-      
+    
     reassign <- paste0("$('",initialHints,"').hide().appendTo('#hintContainer').fadeIn(300);")
     
     # If hint state == 2 or 8 and it is not an intervention -> add to collection
@@ -1491,21 +1491,21 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   
   
   
-
-# Collection UI: Rename Collections ---------------------------------------
-
+  
+  # Collection UI: Rename Collections ---------------------------------------
+  
   observeEvent(input$renameCollection, {
     print('SUCCESS SAVE')
     print(input$renameCollection)
     stats <- jsonlite::fromJSON(input$renameCollection)
-
+    
     collectionId <- as.numeric(stats$id)
     collectionName <- stats$name
     gta_sql_multiple_queries(paste0("UPDATE b221_collection_log SET collection_name = '",collectionName,"' WHERE collection_id = ",collectionId,";"), output.queries = 1)
   })
   
-
-# Collection UI: Select Collection ----------------------------------------
+  
+  # Collection UI: Select Collection ----------------------------------------
   
   # SELECT ROWS MECHANISM COLLECTION TABLE
   observeEvent(input$collectionClick, { 
@@ -1544,7 +1544,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       }
       
       initialHints = gsub("'","\"",generate_initial_hints(initialHints))
-        
+      
     } else {
       initialHints <- c()
     }
