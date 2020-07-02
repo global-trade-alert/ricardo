@@ -2,7 +2,6 @@
 rm(list=ls())
 library(gtalibrary)
 gtasql::gta_sql_kill_connections()
-library(gtalibrary)
 
 # SET PATHS
 setwd("/home/rstudio/Dropbox/GTA cloud/")
@@ -12,8 +11,8 @@ setwd("/home/rstudio/Dropbox/GTA cloud/")
 gta_setwd()
 # setwd("/Users/patrickbuess/GTA data team Dropbox/GTA cloud")
 
-path <<- "17 Shiny/8 ricardo app/"
-# path <<- "0 dev/ricardo-pb/"
+# path <<- "17 Shiny/8 ricardo app/"
+path <<- "0 dev/ricardo-discard/"
 
 
 # APP SETUP
@@ -27,19 +26,19 @@ source(paste0(path,"code/server.R"), local = F)
 source(paste0(path,"code/functions/bt_attribute_hint_processing.R"))
 
 # COOKIE SETTINGS
-sessionid <<- as.character(floor(runif(1)*1e20))
-# sessionid <<- as.character("123456754321")
+# sessionid <<- as.character(floor(runif(1)*1e20))
+sessionid <<- as.character("123456754321")
 
 # runApp(paste0(path,"code"))
 shinyApp(ui = ui,
          server = server,
          onStart = function() {
            gta_sql_kill_connections()
-           gta_sql_pool_open(db.title="ricardomain",
-                             db.host = gta_pwd("ricardomain")[['host']],
-                             db.name = gta_pwd("ricardomain")[['name']],
-                             db.user = gta_pwd("ricardomain")[['user']],
-                             db.password = gta_pwd("ricardomain")[['password']],
+           gta_sql_pool_open(db.title="ricardomainclone",
+                             db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
+                             db.name = 'ricardomainclone',
+                             db.user = 'gtaricardodev',
+                             db.password = '4rbjDVRote7YLsTqfmWXfbwdf7jVt8VjwXUhgy',
                              table.prefix = "ric_")
 
            onStop(function() {

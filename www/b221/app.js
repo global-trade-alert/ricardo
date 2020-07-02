@@ -1,10 +1,15 @@
 // FUNCTIONS
-$( document ).ready(function() {
-    console.log( "ready!" );
-    $('.control-bar').css({'visibility': ''})
-    $('#b221-slideInRight').css({'visibility': ''})
-    $('#confirm-discard').css({'visibility': ''})
-});
+
+// wait till content is added to HTML
+  (async() => {
+    while(document.querySelectorAll('.control-bar,#b221-slideInRight,#confirm-discard').length == 0) 
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('content is loaded')
+    $('.control-bar').css({'visibility': ''});
+    $('#b221-slideInRight').css({'visibility': ''});
+    $('#confirm-discard').css({'visibility': ''});
+    discardButton();
+  })();
 
 // REACTIVATING LEADS ITEM
 function checkLeads() {
@@ -215,17 +220,6 @@ function discardButton() {
 
 }
 
-//WAIT TILL #discard-confirm IS LOADED AND ADD discardButton() to it;
- new Promise((resolve, reject) => {
-      if ($('#confirm-discard') != null);
-      resolve();
-  })
-  .then(() => {
-    console.log('#confirm-discard is added')
-    discardButton();
-  })
-
-
 
 function markHints() {
 
@@ -345,7 +339,7 @@ function collectData(type='', state=''){
             assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate:
 removaldate})
     });
-    // console.log(output)
+     console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];
 
     if (state == 'reactivate') {
@@ -414,7 +408,7 @@ function discardExistingCollection() {
   }
 }
 
-const collectReasons = function(){
+var collectReasons = function(){
   let select = $('#discard-select').val(),
       other = $('#discard-other').val(),
       reasons = Object.assign({},
@@ -425,7 +419,7 @@ const collectReasons = function(){
   return reasons;
 }
 
-const del_or_dis = function(type = 'Discard', hintCollection = 'Hint', buttonName = 'Mark irrelevant') {
+var del_or_dis = function(type = 'Discard', hintCollection = 'Hint', buttonName = 'Mark irrelevant') {
     if (type == 'Delete'){
       $('.confirm-discard-inner > p').text(`You are deleting this ${hintCollection}`)
       $('#b221-discardCollection i')[0].className = '';

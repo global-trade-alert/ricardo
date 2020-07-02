@@ -4,6 +4,7 @@
 # SERVER
 b221server <- function(input, output, session, user, app, prm, ...) {
   
+  
   # Set encoding for all tables, to make filtering in DT work
   gta_sql_get_value('SET NAMES utf8;')
   
@@ -333,7 +334,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     leads.output$order <- seq(1,nrow(leads.output),1)
     
     leads.output <- leads.output
-    leads.output <<- leads.output
+    leads.output <<- leads.output %>% select(-discard.reason)
   })
   
   # OBSERVE SHINY JS CHECK LEADS EVENT FOR ITEMS PASSING SCREEN TOP
@@ -596,7 +597,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     "Mark irrelevant"),
                         tags$button(id="deleteCollection-popup",
                                     tags$i(class="fa fa-trash"),
-                                    "Delete Collection")
+                                    "Delete Collection"),
+                        
                         ))
     )
     )
@@ -915,8 +917,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
           other <- if(is.null(colData$reasons$other)) NA else data$reasons$other
           for (id in hint.container$hint.ids){
             for (reason in colData$reasons$select){
-              gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
-                                                  hint_id = id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
+              # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
+              #                                     hint_id = id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
             }
           }
           collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
@@ -1636,7 +1638,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     changes$intervention = ifelse(is.na(changes$intervention), list(NA_character_), strsplit(as.character(changes$intervention), split=' ; '))
     
     print(changes)
-    
+    test <<- changes
     print(paste0("Is freelancer: ",ifelse(prm$freelancer == 1,1,0)))
     
     b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed

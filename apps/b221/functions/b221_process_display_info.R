@@ -9,14 +9,11 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   
   # if someone knows how to pass the column names as string into the ... of tidyr::unnest with multiple.values.permitted[1], be my guest
   # instead i manually pasted the names
-  unnest1 = tidyr::unnest(processed.rows[,c('hint.id','implementer.name')], implementer.name) 
-  unnest2 = tidyr::unnest(processed.rows[,c('hint.id','product.group.name')], product.group.name)
-  unnest3 = tidyr::unnest(processed.rows[,c('hint.id','intervention.type.name')], intervention.type.name)
+  multiple.values.permitted = subset(multiple.values.permitted, multiple.values.permitted %in% colnames(processed.rows))
+  multiple.values.permitted %>% 
+        map(function(x) processed.rows <<- processed.rows %>% unnest(x) )
+  print(processed.rows)
   
-  processed.rows = as.data.frame(merge(merge(merge(processed.rows[,input.col.names[!input.col.names %in% multiple.values.permitted]], 
-                                                   unnest1, by='hint.id', all.x = T),
-                                             unnest2, by='hint.id', all.x = T),
-                                       unnest3, by='hint.id', all.x = T))
   processed.rows$was.modified = 1
   processed.rows$in.collection = NA
   
