@@ -1,17 +1,16 @@
 b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, processed.rows = NULL, is.in.collection = NULL){
   
-  setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate'),
-           c('hint.id','relevance','implementer.name','product.group.name','intervention.type.name','assessment.name','url','is.official','comment','implementation.date','announcement.date','removal.date'))
+  setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate', 'discard_reasons', 'discard_comment'),
+           c('hint.id','relevance','implementer.name','product.group.name','intervention.type.name','assessment.name','url','is.official','comment','implementation.date','announcement.date','removal.date', 'discard.reason', 'discard.reason.comment'))
   
   input.col.names = c('hint.id','implementer.name','url','is.official','assessment.name',
-                      'product.group.name','intervention.type.name','comment','relevance','implementation.date','announcement.date','removal.date')
-  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name')
+                      'product.group.name','intervention.type.name','comment','relevance','implementation.date',
+                      'announcement.date','removal.date',  'discard.reason', 'discard.reason.comment')
+  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name', 'discard.reason')
   
-  # if someone knows how to pass the column names as string into the ... of tidyr::unnest with multiple.values.permitted[1], be my guest
-  # instead i manually pasted the names
   multiple.values.permitted = subset(multiple.values.permitted, multiple.values.permitted %in% colnames(processed.rows))
   multiple.values.permitted %>% 
-        map(function(x) processed.rows <<- processed.rows %>% unnest(x) )
+        map(function(x) processed.rows <<- processed.rows %>% unnest(x, keep_empty = TRUE) )
   print(processed.rows)
   
   processed.rows$was.modified = 1
@@ -27,7 +26,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   
   if(is.freelancer==T){
     push.updates = paste0("/* FREELANCER UPLOAD */
-                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
                           
                           UPDATE b221_temp_changes_data_",user.id," changes
                           LEFT JOIN b221_hint_collection ON b221_hint_collection.hint_id = changes.hint_id 
@@ -81,12 +80,6 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_name = changes.implementer_name
                           WHERE changes.in_collection = 0;
                           
-                          INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
-                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, jur_list.jurisdiction_id, NULL as jurisdiction_accepted, NULL as validation_user
-                          FROM b221_temp_changes_data_",user.id," changes
-                          JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_name = changes.implementer_name
-                          WHERE changes.in_collection = 0;
-                          
                           INSERT INTO bt_hint_date(hint_id, classification_id, date_type_id, `date`, date_accepted, validation_user)
                           SELECT DISTINCT * FROM
                           (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_user
@@ -119,6 +112,14 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, changes.relevance, NULL as relevance_probability, NULL as relevance_accepted, NULL as validation_user 
                           FROM b221_temp_changes_data_",user.id," changes
                           WHERE changes.in_collection = 0;
+                          
+                          INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_user )
+                        	SELECT DISTINCT changes.hint_id, @classification_id as classification_id,
+                        	bdr.discard_reason_id, changes.discard_reason_comment, 
+                        	NULL AS reason_accepted, NULL AS validation_user
+                        	FROM b221_temp_changes_data_",user.id," AS changes
+                        	JOIN bt_discard_reason_list bdr ON changes.discard_reason = bdr.discard_reason_name
+                        	WHERE changes.in_collection = 0;
                           
                           UPDATE bt_hint_log
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id

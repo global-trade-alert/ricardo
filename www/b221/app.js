@@ -59,7 +59,6 @@ function checkLeadsManual() {
           $('#confirm-discard > div > div.form-group').css({'display': ''})
           del_or_dis();
           $('#confirm-discard').addClass(`show ${elementID}`);
-          $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
           $('#discard-other').val(''); //clear discard-other
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
@@ -203,6 +202,7 @@ function discardButton() {
 // CANCEL BUTTON
   $('#confirm-discard .cancel').on('click', function () {
     $('#confirm-discard').removeClass('show');
+    $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
   let id = $('#confirm-discard').attr('class').match(/leadsID_.*/gi); //checks if pop-up was initiated from .evaluate button
   if (id != null){
     $(`#${id[0]}`).removeClass('dismiss');
@@ -335,9 +335,12 @@ function collectData(type='', state=''){
           let announcementdate = $(`#announcementdate_${id} input`).val().length != 0 ? $(`#announcementdate_${id} input`).val() : null;
           let implementationdate = $(`#implementationdate_${id} input`).val().length != 0 ? $(`#implementationdate_${id} input`).val() : null;
           let removaldate = $(`#removaldate_${id} input`).val().length != 0 ? $(`#removaldate_${id} input`).val() : null;
+          let discard_reasons_select = $('#discard-select').val().length == 0 ? [null] : $('#discard-select').val().join(' ; ');
+          let discard_comment = $('#discard-other').val() == "" ? null : $('#discard-other').val();
           output.push({id: id, clicked: clicked, country: country, product: product, intervention: intervention,
-            assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate:
-removaldate})
+                      assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate,                             implementationdate: implementationdate, removaldate: removaldate, discard_reasons: discard_reasons_select,
+                      discard_comment: discard_comment
+          })
     });
      console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];

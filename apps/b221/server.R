@@ -54,8 +54,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   assessment.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT assessment_name, assessment_id FROM b221_assessment_list;"))
   product.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT product_group_name, product_group_id FROM b221_product_group_list;"))
   type.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT intervention_type_name, intervention_type_id FROM b221_intervention_type_list;"))
-  discard_reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_id, discard_reason_name FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
-  discard_reasons.list  <<- setNames(as.character(discard_reasons$discard.reason.id), discard_reasons$discard.reason.name)
+  discard_reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_name FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
   
   # UPDATE DATE OF CREATION OF APP.R WHEN CLOSING, PREVENTS CACHING OF CSS AND JS
   onStop(function() {
@@ -188,7 +187,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       discard_select  <- selectizeInput(inputId='discard-select',
                                         selected = NULL, 
                                         label = '',
-                                        choices = discard_reasons.list,
+                                        choices = discard_reasons,
                                         multiple = TRUE,
                                         options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
       discard_other <- textInput(inputId='discard-other', '', value = "", width = 300,
@@ -1631,11 +1630,13 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   observeEvent(input$collectedData, {
     print("COLLECTDATA")
     changes <- jsonlite::fromJSON(input$collectedData)
-    
+
     changes$comment = ifelse(is.na(changes$comment), NA_character_, changes$comment)
     changes$country = ifelse(is.na(changes$country), list(NA_character_), strsplit(as.character(changes$country), split=' ; '))
     changes$product = ifelse(is.na(changes$product), list(NA_character_), strsplit(as.character(changes$product), split=' ; '))
     changes$intervention = ifelse(is.na(changes$intervention), list(NA_character_), strsplit(as.character(changes$intervention), split=' ; '))
+    changes$discard_reasons = ifelse(is.na(changes$discard_reasons), list(NA_character_), strsplit(as.character(changes$discard_reasons), split=' ; '))
+
     
     print(changes)
     test <<- changes
