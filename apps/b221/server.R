@@ -333,7 +333,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     leads.output$order <- seq(1,nrow(leads.output),1)
     
     leads.output <- leads.output
+    test <<-leads.output
     leads.output <<- leads.output %>% select(-discard.reason)
+
   })
   
   # OBSERVE SHINY JS CHECK LEADS EVENT FOR ITEMS PASSING SCREEN TOP
