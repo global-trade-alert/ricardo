@@ -1650,7 +1650,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     test <<- changes
     print(paste0("Is freelancer: ",ifelse(prm$freelancer == 1,1,0)))
     
-    b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
+    #b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
+    b221_process_display_info(is.freelancer = 0 ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
     
     # SQL INSERT HERE: ONLY MARKED AS RELEVANT VALUES ARE INSERTED HERE
     # THIS DATA NEEDS TO BE CHECKED AGAINST EXISTING CLASSIFICATIONS AND ONLY UPDATED IF THE VALUES HAVE CHANGED:

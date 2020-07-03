@@ -133,7 +133,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   } else {
     processed.rows$was.modified = 1
     push.updates = paste0("/* give editor a classification_id only if they actually modified something that they put forward to process */
-                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                           SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                           
@@ -262,6 +262,24 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           		WHERE changes.`date` IS NOT NULL) new_dates ON ht_date.hint_id = new_dates.hint_id AND ht_date.`date` = new_dates.`date` AND ht_date.date_type_id = new_dates.date_type_id
                           SET ht_date.validation_user = ",user.id,", 
                           	ht_date.date_accepted = (CASE WHEN new_dates.hint_id IS NOT NULL THEN 1 ELSE 0 END);	
+                          	
+                      	  /* case where discard from editor */
+                          INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_user )
+                        	SELECT DISTINCT changes.hint_id, @classification_id as classification_id,
+                        	bdr.discard_reason_id, changes.discard_reason_comment, 
+                        	1 AS reason_accepted, ",user.id," AS validation_user
+                        	FROM b221_temp_changes_data_",user.id," AS changes
+                        	JOIN bt_discard_reason_list bdr ON changes.discard_reason = bdr.discard_reason_name
+                        	WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason bt_hd WHERE bt_hd.hint_id = changes.hint_id AND bt_hd.discard_reason_id = bdr.discard_reason_id);
+                        
+                         /* validate / refuse discard from freelancer */
+                          UPDATE bt_hint_discard_reason bt_hd
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON bt_hd.hint_id = changed_hints.hint_id
+                          JOIN bt_discard_reason_list dis_list ON bt_hd.discard_reason_id = dis_list.discard_reason_id 
+                          LEFT JOIN (SELECT DISTINCT hint_id, discard_reason FROM b221_temp_changes_data_",user.id,") changes ON bt_hd.hint_id = changes.hint_id AND 
+                          changes.discard_reason = dis_list.discard_reason_name 
+                          SET bt_hd.validation_user = ",user.id,",
+                          bt_hd.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
                           UPDATE bt_hint_log
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, is_official, relevance FROM b221_temp_changes_data_",user.id,") changes ON changes.hint_id = bt_hint_log.hint_id
