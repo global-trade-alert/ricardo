@@ -301,6 +301,8 @@ const buttonsClicks = {
     updateRowData: function(currentStatus, data, id){
       console.log(currentStatus)
       $(`tr#${id}`).removeClass(currentStatus);
+      $(`tr#${id}`).addClass('edited');
+      $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
       data.map(function(d){
           $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
       })

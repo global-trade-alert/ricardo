@@ -172,6 +172,24 @@ label {
 	display:flex;
 	border: 1px solid #dadada;
 	margin-bottom: 5px;
+	position: relative;
+}
+
+#deliver-deliverTable table tr.edited {
+	box-shadow: inset 0px 0px 40px rgba(255, 225, 13, 0.5);
+	border-bottom: 5px solid rgb(255, 226, 16);
+}
+
+#deliver-deliverTable table tr .edited-icon {
+	position: absolute;
+  bottom: 10px;
+  padding: 3px 15px;
+  background-color: #ffe210;
+  border-radius: 20px;
+  color: #a57e0b;
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 #deliver-deliverTable table thead {
