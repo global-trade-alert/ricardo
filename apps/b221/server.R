@@ -889,16 +889,22 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     if (is.null(data$reasons)){
       showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
       #runjs(paste0("$('#confirm-discard').addClass('show');"))
+    } else if (
+      str_detect(paste0(data$reasons$select, collapse = " ; "), 'other \\(see comment\\)') == TRUE & is.null(data$reasons$other)
+      ){
+      showNotification("Please, add a comment", duration = 3)
     } else {
       other <- if(is.null(data$reasons$other)) NA else data$reasons$other
       print (data)
-      for (reason in data$reasons$select){
-                # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
-                                     # hint_id = data$id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
-      }
+
       #bt_delete_collection(collection.id=data$id)
       runjs(paste0("collectData(`#leadsID_${", data$id, "}`, 'dismiss');"))
       runjs(paste0("$('#confirm-discard').removeClass('show');"))
+      
+      # remove id from confirm-discard
+      runjs("$('#confirm-discard').removeClass (function (index, className) {
+          return (className.match (/leadsID_.*/gi) || []).join(' ');
+      });")
     }
   })
   

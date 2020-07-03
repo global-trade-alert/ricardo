@@ -114,7 +114,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           WHERE changes.in_collection = 0;
                           
                           DELETE bt_hint_discard_reason
-                          FROM (SELECT * FROM b221_temp_changes_data_82 WHERE in_collection = 0) changes
+                          FROM (SELECT * FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes
                           LEFT JOIN bt_hint_discard_reason ON changes.hint_id = bt_hint_discard_reason.hint_id
                           WHERE 1 = 1;
                           

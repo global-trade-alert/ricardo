@@ -59,7 +59,7 @@ function checkLeadsManual() {
           $('#confirm-discard > div > div.form-group').css({'display': ''})
           del_or_dis();
           $('#confirm-discard').addClass(`show ${elementID}`);
-          $('#discard-other').val(''); //clear discard-other
+          
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
           // console.log(`#${elementID}`);
@@ -203,6 +203,7 @@ function discardButton() {
   $('#confirm-discard .cancel').on('click', function () {
     $('#confirm-discard').removeClass('show');
     $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
+    $('#discard-other').val(''); //clear discard-other
   let id = $('#confirm-discard').attr('class').match(/leadsID_.*/gi); //checks if pop-up was initiated from .evaluate button
   if (id != null){
     $(`#${id[0]}`).removeClass('dismiss');
@@ -316,7 +317,7 @@ function checkNull(el) {
 
 //  Collect data for a general submit of hints
 function collectData(type='', state=''){
-  //console.log("Collector running");
+  console.log("Collector running");
   let selector = `${type}`;
   let output = [];
   // console.log(state);
@@ -404,11 +405,7 @@ function discardExistingCollection() {
     del_or_dis(del_dis);
     Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons, del_or_dis: del_dis}),             {priority: "event"});
   }
-  if (reasons != null) {
-    $('#confirm-discard').removeClass (function (index, className) {
-      return (className.match (/leadsID_.*/gi) || []).join(' ');
-    });
-  }
+
 }
 
 var collectReasons = function(){
