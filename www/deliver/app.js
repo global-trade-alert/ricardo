@@ -210,7 +210,10 @@ const buttonsClicks = {
         let output= [];
           $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-              let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              let value = "";
+              if ($(this).val() != null) {
+                value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              }
               output.push({ data: value, index: parseInt(index) });
           });
 
