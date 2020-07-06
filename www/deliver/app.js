@@ -85,8 +85,10 @@ const buttonsClicks = {
             },
     edit: function(currentStatus, id) {
         const that = this;
-
+        $('div.editMode > div.editMode-header').append('<button type="button" id="save-edit"><img src="www/deliver/save.svg" style="margin-right:10px" />Save data</button>');
+        $('div.editMode > div.editMode-header').append('<button type="button" id="close-editMode"><span class="material-icons">close</span></button>');
         let rowData = this.getRowData(id);
+        console.log('ROWDATA');
         console.log(rowData);
         rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode
             if (a.name == 'Description' | a.name== 'Source') {
@@ -217,16 +219,29 @@ const buttonsClicks = {
               let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
               output.push({ data: value, index: parseInt(index) });
           });
-          console.log(output)
-          that.updateRowData(currentStatus, output, id);
+          // console.log(output)
+          console.log("BEFORE UPDATE ROW DATA");
+          that.updateRowData(currentStatus, output, id, rowData);
           $('.overlay').click();
+          $('#save-edit').remove();
+          $('#close-editMode').remove();
       })
 
       $('.overlay').addClass('show');
       $('.overlay').on('click', function(){
           $(this).removeClass('show');
           $( ".editMode" ).removeClass('show');
+          $('#save-edit').remove();
+          $('#close-editMode').remove();
           $('.canvas').empty();
+          $(this).unbind('click', arguments.callee);
+      });
+      $('#close-editMode').on('click', function(){
+          $( ".editMode" ).removeClass('show');
+          $('#save-edit').remove();
+          $('.canvas').empty();
+          $('.overlay').removeClass('show');
+          $('#close-editMode').remove();
           $(this).unbind('click', arguments.callee);
       });
 
@@ -298,8 +313,28 @@ const buttonsClicks = {
       $('#DataTables_Table_0').DataTable().settings()[0]._searchPanes.s.panes
                                             .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
     },
-    updateRowData: function(currentStatus, data, id){
-      console.log(currentStatus)
+    updateRowData: function(currentStatus, data, id, rowData){
+      // console.log('UPDATE ROW DATA');
+      // console.log(rowData)
+      // console.log(currentStatus)
+      // console.log(data)
+      // console.log(merged);
+      console.log("DATA TABLE ROW OUTPUT");
+      console.log($('#DataTables_Table_0').DataTable().cell($(`tr#${id} .description`)));
+      $(`tr#${id} .description`).addClass('TEST');
+      rowData.forEach((row) => {
+        let index = row.index;
+        // console.log(index);
+        console.log("ROW");
+        console.log(row);
+        console.log(data.find(x => x.index === index));
+        if (row.data != data.find(x => x.index === index).data) {
+          console.log("CHANGED");
+          // Add class "edited-cell"
+          console.log(data.find(x => x.index === index).data);
+        }
+      });
+
       $(`tr#${id}`).removeClass(currentStatus);
       $(`tr#${id}`).addClass('edited');
       $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');

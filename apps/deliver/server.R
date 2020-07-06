@@ -412,9 +412,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                     }
                                 })
                               api.$('.source-less').each(function(){ // all un-opened descriptions
-                                  console.log($(this));
-                                  console.log($(this)[0].scrollHeight);
-                                  console.log($(this)[0].parentNode.scrollHeight);
+                                  // console.log($(this));
+                                  // console.log($(this)[0].scrollHeight);
+                                  // console.log($(this)[0].parentNode.scrollHeight);
                                   $(this)[0].setAttribute('style', `max-height:${$(this)[0].parentNode.scrollHeight}px;`);
                                   let id = api.row( $(this).closest('tr') ).id();
                                   if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
