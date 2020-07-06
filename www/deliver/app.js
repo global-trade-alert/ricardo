@@ -333,8 +333,7 @@ const buttonsClicks = {
         console.log(data.find(x => x.index === index));
         if (row.data != data.find(x => x.index === index).data) {
           console.log("CHANGED");
-          // Add class "edited-cell"
-          console.log(data.find(x => x.index === index).data);
+          $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
         }
       });
 

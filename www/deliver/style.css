@@ -176,9 +176,14 @@ label {
 }
 
 #deliver-deliverTable table tr.edited {
-	box-shadow: inset 0px 0px 40px rgba(255, 225, 13, 0.5);
 	border-bottom: 5px solid rgb(255, 226, 16);
 }
+
+#deliver-deliverTable table td.edited {
+	border-top: 5px solid rgb(255, 226, 16);
+	box-shadow: inset 0px 0px 40px rgba(255, 225, 13, 0.5);
+}
+
 
 #deliver-deliverTable table tr .edited-icon {
 	position: absolute;
