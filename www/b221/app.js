@@ -187,8 +187,8 @@ function slideInDiscardButton() {
     del_or_dis('Discard','collection','Mark irrelevant');
     $('#confirm-discard > div > div.form-group').css({'display': ''})
     $('#confirm-discard').addClass('show');
-    $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
-    $('#discard-other').val(''); //clear discard-other
+    $('#b221-discardSelect').selectize()[0].selectize.clear(); //clear discard-select
+    $('#b221-discardOther').val(''); //clear discard-other
   });
     $('#b221-slideInRight').on('click','#deleteCollection-popup', function () {
     $('#confirm-discard > div > div.discard-select-fields').css({'display': 'none'})
@@ -202,8 +202,8 @@ function discardButton() {
 // CANCEL BUTTON
   $('#confirm-discard .cancel').on('click', function () {
     $('#confirm-discard').removeClass('show');
-    $('#discard-select').selectize()[0].selectize.clear(); //clear discard-select
-    $('#discard-other').val(''); //clear discard-other
+    $('#b221-discardSelect').selectize()[0].selectize.clear(); //clear discard-select
+    $('#b221-discardOther').val(''); //clear discard-other
   let id = $('#confirm-discard').attr('class').match(/leadsID_.*/gi); //checks if pop-up was initiated from .evaluate button
   if (id != null){
     $(`#${id[0]}`).removeClass('dismiss');
@@ -336,8 +336,8 @@ function collectData(type='', state=''){
           let announcementdate = $(`#announcementdate_${id} input`).val().length != 0 ? $(`#announcementdate_${id} input`).val() : null;
           let implementationdate = $(`#implementationdate_${id} input`).val().length != 0 ? $(`#implementationdate_${id} input`).val() : null;
           let removaldate = $(`#removaldate_${id} input`).val().length != 0 ? $(`#removaldate_${id} input`).val() : null;
-          let discard_reasons_select = $('#discard-select').val().length == 0 ? [null] : $('#discard-select').val().join(' ; ');
-          let discard_comment = $('#discard-other').val() == "" ? null : $('#discard-other').val();
+          let discard_reasons_select = $('#b221-discardSelect').val().length == 0 ? [null] : $('#b221-discardSelect').val().join(' ; ');
+          let discard_comment = $('#b221-discardOther').val() == "" ? null : $('#b221-discardOther').val();
           output.push({id: id, clicked: clicked, country: country, product: product, intervention: intervention,
                       assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate,                             implementationdate: implementationdate, removaldate: removaldate, discard_reasons: discard_reasons_select,
                       discard_comment: discard_comment
@@ -369,13 +369,12 @@ function collectData(type='', state=''){
 }
 
 function saveNewCollection() {
-  var state = $('#b221-slideInRight .collectionHeader')[0].id;
-  var hintId = $('#b221-slideInRight .removeslideinui')[0].id;
-  // console.log("COLLETION HINT ID: "+hintId);
-  var starredHint = null;
-  var officialHint = [];
-
-  var childIds = [];
+  let state = $('#b221-slideInRight .collectionHeader')[0].id,
+  hintId = $('#b221-slideInRight .removeslideinui')[0].id,
+  starredHint = null,
+  officialHint = [],
+  childIds = [],
+  discard_reasons = collectReasons();
 
     $("#hintContainer > div.hint-item").each((index, elem) => {
       if ($(elem).hasClass('starred')) {
@@ -387,7 +386,7 @@ function saveNewCollection() {
     childIds.push(parseInt(elem.id.replace("hintId_","")));
   });
 
-  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint}), {priority: "event"});
+  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint, discard_reasons}),    {priority: "event"});
 }
 
 
@@ -404,13 +403,14 @@ function discardExistingCollection() {
     let del_dis = $('#confirm-discard > div > div.discard-select-fields').css('display') == 'none' ? 'Delete' : 'Discard';
     del_or_dis(del_dis);
     Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons, del_or_dis: del_dis}),             {priority: "event"});
+    //del_or_dis == 'Delete' ? : saveNewCollection(discard_reasons = reasons);
   }
 
 }
 
 var collectReasons = function(){
-  let select = $('#discard-select').val(),
-      other = $('#discard-other').val(),
+  let select = $('#b221-discardSelect').val(),
+      other = $('#b221-discardOther').val(),
       reasons = Object.assign({},
         select.length == 0 ? null : {select},
         other === '' ? null : {other}
@@ -430,4 +430,14 @@ var del_or_dis = function(type = 'Discard', hintCollection = 'Hint', buttonName 
       $('#b221-discardCollection i').addClass('fa fa-times');
     }
     $('#b221-discardCollection').html(function(){ return $(this).html().replace(/Delete|Discard/gi, buttonName) })
+}
+
+var clear_discard = function(){
+      $('#confirm-discard').removeClass('show');
+      
+      $('#confirm-discard').removeClass (function (index, className) {
+                return (className.match (/leadsID_.*/gi) || []).join(' ');
+              });
+              $('#b221-discardSelect').selectize()[0].selectize.clear();
+              $('#b221-discardOther').val('');
 }

@@ -54,7 +54,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   assessment.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT assessment_name, assessment_id FROM b221_assessment_list;"))
   product.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT product_group_name, product_group_id FROM b221_product_group_list;"))
   type.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT intervention_type_name, intervention_type_id FROM b221_intervention_type_list;"))
-  discard_reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_name FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
+  discard_reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_name, discard_reason_id FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
   
   # UPDATE DATE OF CREATION OF APP.R WHEN CLOSING, PREVENTS CACHING OF CSS AND JS
   onStop(function() {
@@ -184,13 +184,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   # Discard UI ----------------------------------------------------------------------------
   
   observe({
-      discard_select  <- selectizeInput(inputId='discard-select',
+      discard_select  <- selectizeInput(inputId='b221-discardSelect',
                                         selected = NULL, 
                                         label = '',
-                                        choices = discard_reasons,
+                                        choices = discard_reasons$discard.reason.name,
                                         multiple = TRUE,
                                         options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
-      discard_other <- textInput(inputId='discard-other', '', value = "", width = 300,
+      discard_other <- textInput(inputId='b221-discardOther', '', value = "", width = 300,
                                  placeholder = 'Type other reason...')
       
       insertUI(immediate = F, selector = ".discard-select-fields",ui = tagList(
@@ -676,6 +676,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     hintOfficial <- as.numeric(colData$officialHint)
     colState <- colData$state
     hintId <- as.numeric(gsub("collectionContainer_","",colData$hintId))
+    colDiscardReasons <- input$discardSelect
+    colDiscardComm <- input$discardOther
     
     colName <<- input$newCollection
     colImplementer <<- input$initImplementer
@@ -690,6 +692,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     hintOfficial <<- hintOfficial
     colState <<- colData$state
     hintId <<- as.numeric(gsub("collectionContainer_","",colData$hintId))
+    colDiscardReasons <<- colDiscardReasons
+    colDiscardComm <<- colDiscardComm
     
     print(colName)
     print(colImplementer)
@@ -703,6 +707,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(hintStarred)
     print(colState)
     print(hintId)
+    print(colDiscardReasons)
+    print(colDiscardComm)
     
     
     if (any(nchar(colName)==0,
@@ -729,6 +735,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       colTypeId = as.numeric(mapvalues(colType, type.list$intervention.type.name, type.list$intervention.type.id, warn_missing = F))
       colProductId = as.numeric(mapvalues(colProduct, product.list$product.group.name, product.list$product.group.id, warn_missing = F))
       colAssessmentId = as.numeric(mapvalues(colAssessment, assessment.list$assessment.name, assessment.list$assessment.id, warn_missing = F))
+      colDiscardReasonsId = as.numeric(mapvalues(colAssessment, assessment.list$assessment.name, assessment.list$assessment.id, warn_missing = F))
       
       
       # construct url DF
@@ -758,23 +765,31 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       
       if (colState == "newCollection") {
         
-        attributes = bt_find_collection_attributes(new.collection.name = colName, hints.id = colHints, starred.hint.id = hintStarred, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, announcement.date = colAnnouncement, implementation.date = colImplementation, removal.date = colRemoval)
+        attributes = bt_find_collection_attributes(new.collection.name = colName, 
+                                                   hints.id = colHints, starred.hint.id = hintStarred, 
+                                                   country = colImplementerId, product = colProductId, 
+                                                   intervention = colTypeId, assessment = colAssessmentId, 
+                                                   relevance = 1, discard = colDiscardReasonsId, announcement.date = colAnnouncement, 
+                                                   implementation.date = colImplementation, removal.date = colRemoval)
+        print(attributes)
         
-        collection.save =  b221_process_collections_hints(is.freelancer = ifelse(prm$freelancer == 1, T, F), 
-                                                          user.id = user$id, 
-                                                          new.collection.name = colName, 
-                                                          hints.id = colHints, 
-                                                          starred.hint.id = attributes$starred.hint.id, 
-                                                          country = attributes$country, 
-                                                          product = attributes$product, 
-                                                          intervention = attributes$intervention, 
-                                                          assessment = attributes$assessment, 
-                                                          announcement.date = attributes$announcement.date, 
-                                                          implementation.date = attributes$implementation.date, 
-                                                          removal.date = attributes$removal.date, 
-                                                          relevance = 1, 
-                                                          collection.unchanged = F, 
-                                                          empty.attributes = F)
+        collection.save =  b221_process_collections_hints(
+                                                    is.freelancer = ifelse(prm$freelancer == 1, T, F),
+                                                    user.id = user$id,
+                                                    new.collection.name = colName,
+                                                    hints.id = colHints,
+                                                    starred.hint.id = attributes$starred.hint.id,
+                                                    country = attributes$country,
+                                                    product = attributes$product,
+                                                    intervention = attributes$intervention,
+                                                    assessment = attributes$assessment,
+                                                    discard.reasons = attributes$discard,
+                                                    announcement.date = attributes$announcement.date,
+                                                    implementation.date = attributes$implementation.date,
+                                                    removal.date = attributes$removal.date,
+                                                    relevance = 1,
+                                                    collection.unchanged = F,
+                                                    empty.attributes = F)
         
         b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
         
@@ -783,7 +798,17 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         
         collectionId <- as.numeric(gsub("existingCollection_","", colState))
         
-        attributes = bt_find_collection_attributes(collection.id = collectionId, hints.id = colHints, starred.hint.id = hintStarred, country = colImplementerId, product = colProductId, intervention = colTypeId, assessment = colAssessmentId, relevance = 1, announcement.date = colAnnouncement, implementation.date = colImplementation, removal.date = colRemoval)
+        attributes = bt_find_collection_attributes(collection.id = collectionId, 
+                                                   hints.id = colHints, 
+                                                   starred.hint.id = hintStarred, 
+                                                   country = colImplementerId, 
+                                                   product = colProductId, 
+                                                   intervention = colTypeId, 
+                                                   assessment = colAssessmentId, 
+                                                   relevance = 1, 
+                                                   announcement.date = colAnnouncement, 
+                                                   implementation.date = colImplementation, 
+                                                   removal.date = colRemoval)
         
         cat(paste0("collection unchanged val: ",attributes$collection.unchanged,
                    "\ncollection impl val: ",paste0(attributes$country,collapse=','),
@@ -792,23 +817,23 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                    "\ncollection product val: ",paste0(attributes$product,collapse=',')))
         
         # is this hardcoded on purpose?
-        b221_process_collections_hints(is.freelancer = F, 
-                                       user.id = user$id, 
-                                       collection.id = collectionId, 
-                                       hints.id = colHints, 
-                                       starred.hint.id = attributes$starred.hint.id, 
-                                       country = attributes$country, 
-                                       product = attributes$product, 
-                                       intervention = attributes$intervention, 
-                                       assessment = attributes$assessment, 
-                                       announcement.date = attributes$announcement.date, 
-                                       implementation.date = attributes$implementation.date, 
-                                       removal.date = attributes$removal.date,
-                                       relevance = 1, 
-                                       collection.unchanged = attributes$collection.unchanged, 
-                                       empty.attributes = F)
-        
-        b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
+        # b221_process_collections_hints(is.freelancer = F, 
+        #                                user.id = user$id, 
+        #                                collection.id = collectionId, 
+        #                                hints.id = colHints, 
+        #                                starred.hint.id = attributes$starred.hint.id, 
+        #                                country = attributes$country, 
+        #                                product = attributes$product, 
+        #                                intervention = attributes$intervention, 
+        #                                assessment = attributes$assessment, 
+        #                                announcement.date = attributes$announcement.date, 
+        #                                implementation.date = attributes$implementation.date, 
+        #                                removal.date = attributes$removal.date,
+        #                                relevance = 1, 
+        #                                collection.unchanged = attributes$collection.unchanged, 
+        #                                empty.attributes = F)
+        # 
+        # b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
         
         
       }
@@ -874,6 +899,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         
       } 
       
+      # clear the discard box
+      runjs("clear_discard();")
+      
     }
     
   })
@@ -902,9 +930,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       runjs(paste0("$('#confirm-discard').removeClass('show');"))
       
       # remove id from confirm-discard
-      runjs("$('#confirm-discard').removeClass (function (index, className) {
-          return (className.match (/leadsID_.*/gi) || []).join(' ');
-      });")
+      runjs("clear_discard();")
     }
   })
   
@@ -913,41 +939,38 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     colData <- jsonlite::fromJSON(input$discardExistingCollection)
     print(colData)
     print(hint.container$hint.ids)
-    
-    if (colData$state == "newCollection") {
-      showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
-    } else {
+  
       if (colData$del_or_dis == 'Discard'){
         if (is.null(colData$reasons)){
           showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
+        } else if (
+          str_detect(paste0(colData$reasons$select, collapse = " ; "), 'other \\(see comment\\)') == TRUE & is.null(colData$reasons$other)
+        ){
+          showNotification("Please, add a comment", duration = 3)
         } else {
-          other <- if(is.null(colData$reasons$other)) NA else data$reasons$other
-          for (id in hint.container$hint.ids){
-            for (reason in colData$reasons$select){
-              # gta_sql_update_table(sqlInterpolate(pool, "INSERT INTO bt_hint_discard_reason VALUES (?hint_id, ?classification_id, ?discard_reason_id, ?discard_reason_comment);",
-              #                                     hint_id = id, classification_id = user$id, discard_reason_id = reason, discard_reason_comment = other))
-            }
-          }
+          runjs("saveNewCollection();")
+          # collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
+          # print(paste0("THIS COLLECTION IS: ", collectionId))
+          
+          # runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
+          # runjs(paste0("$('#b221-close-button').removeClass('open');"))
+          # runjs(paste0("$('.backdrop-nav').removeClass('open');"))
+          # removeUI(selector = ".removeslideinui",immediate = T)
+        }
+      } else {
+        if (colData$state == "newCollection") {
+          showNotification("This collection cannot be deleted, as it does not exist", duration = 3)
+        } else {
           collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
           print(paste0("THIS COLLECTION IS: ", collectionId))
+          
+          bt_delete_collection(collection.id=collectionId)
           
           runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
           runjs(paste0("$('#b221-close-button').removeClass('open');"))
           runjs(paste0("$('.backdrop-nav').removeClass('open');"))
           removeUI(selector = ".removeslideinui",immediate = T)
           runjs(paste0("$('#confirm-discard').removeClass('show');"))
-        }
-      } else {
-        collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
-        print(paste0("THIS COLLECTION IS: ", collectionId))
-        
-        bt_delete_collection(collection.id=collectionId)
-        
-        runjs(paste0("$('#b221-slideInRight').removeClass('open');"))
-        runjs(paste0("$('#b221-close-button').removeClass('open');"))
-        runjs(paste0("$('.backdrop-nav').removeClass('open');"))
-        removeUI(selector = ".removeslideinui",immediate = T)
-        runjs(paste0("$('#confirm-discard').removeClass('show');"))
       }
     }
     
@@ -1651,7 +1674,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(paste0("Is freelancer: ",ifelse(prm$freelancer == 1,1,0)))
     
     #b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
-    b221_process_display_info(is.freelancer = 0 ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
+    b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
     
     # SQL INSERT HERE: ONLY MARKED AS RELEVANT VALUES ARE INSERTED HERE
     # THIS DATA NEEDS TO BE CHECKED AGAINST EXISTING CLASSIFICATIONS AND ONLY UPDATED IF THE VALUES HAVE CHANGED:

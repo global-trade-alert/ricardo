@@ -24,6 +24,7 @@ source(paste0(path,"code/server.R"), local = F)
 
 # LOAD FUNCTIONS
 source(paste0(path,"code/functions/bt_attribute_hint_processing.R"))
+source(paste0(path,"code/functions/bt_find_collection_attributes.R"))
 
 # COOKIE SETTINGS
 # sessionid <<- as.character(floor(runif(1)*1e20))
