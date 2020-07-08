@@ -329,9 +329,9 @@ const buttonsClicks = {
         let index = row.index;
         // console.log(index);
         console.log("ROW");
-        console.log(row);
-        console.log(data.find(x => x.index === index));
-        if (row.data != data.find(x => x.index === index).data) {
+        console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
+        console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
+        if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
           console.log("CHANGED");
           $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
         }
