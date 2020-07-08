@@ -176,20 +176,25 @@ label {
 }
 
 #deliver-deliverTable table tr.edited {
-	box-shadow: inset 0px 0px 40px rgba(255, 225, 13, 0.5);
 	border-bottom: 5px solid rgb(255, 226, 16);
 }
 
+#deliver-deliverTable table td.edited {
+	/* border-top: 5px solid rgb(255, 226, 16); */
+	box-shadow: inset 0px 0px 40px rgba(255, 225, 13, 0.5);
+}
+
+
 #deliver-deliverTable table tr .edited-icon {
 	position: absolute;
-  bottom: 10px;
+  bottom: 5px;
   padding: 3px 15px;
   background-color: #ffe210;
   border-radius: 20px;
   color: #a57e0b;
   box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 5px;
+  font-size: 0.8em;
 }
 
 #deliver-deliverTable table thead {
@@ -813,6 +818,7 @@ input#cancel-dupl{
 	flex: 1;
 	flex-grow: 0;
 	flex-basis: 50px;
+	order:4;
 }
 
 #search-pane-toggle-button span {
@@ -900,6 +906,9 @@ input#cancel-dupl{
 	float: left;
 	display: flex;
 	flex:1;
+	order:1;
+	flex-grow:0;
+	white-space: nowrap;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow .dtsp-clearAll {
@@ -915,6 +924,42 @@ input#cancel-dupl{
   justify-content: center;
 	height:30px;
 	align-items: center;
+	order:3;
+}
+
+.deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow #DataTables_Table_0_paginate{
+	display:flex;
+	justify-content: center;
+	order:2;
+	flex:1;
+}
+
+
+.deliver #deliver-deliverTable .dataTables_paginate,
+.deliver #deliver-deliverTable .dataTables_paginate {
+	width:100%;
+	display:flex;
+	justify-content: center;
+}
+
+.deliver #deliver-deliverTable .dataTables_paginate img,
+.deliver #deliver-deliverTable .dataTables_paginate img {
+	width:30px;
+}
+
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button,
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button {
+	padding:10px;
+	border-radius:5px;
+	padding: 5px;
+  border: none;
+  color: #ffffff !important;
+  font-weight: 700;
 }
 
 

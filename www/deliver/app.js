@@ -210,7 +210,10 @@ const buttonsClicks = {
         let output= [];
           $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-              let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              let value = "";
+              if ($(this).val() != null) {
+                value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              }
               output.push({ data: value, index: parseInt(index) });
           });
 
@@ -326,12 +329,11 @@ const buttonsClicks = {
         let index = row.index;
         // console.log(index);
         console.log("ROW");
-        console.log(row);
-        console.log(data.find(x => x.index === index));
-        if (row.data != data.find(x => x.index === index).data) {
+        console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
+        console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
+        if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
           console.log("CHANGED");
-          // Add class "edited-cell"
-          console.log(data.find(x => x.index === index).data);
+          $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
         }
       });
 
