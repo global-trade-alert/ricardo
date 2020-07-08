@@ -310,6 +310,12 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           referenceNode.appendChild(newNode);
                           
                           searchPaneUI();
+                          
+                                                                                    
+                          let pagination = $('#DataTables_Table_0_paginate');
+                          console.log('PAGINATION');
+                          console.log(pagination);
+                          pagination.appendTo('.dtsp-panesContainer .dtsp-titleRow');
                          
                    }"),
                    drawCallback = JS("function(settings){
@@ -373,7 +379,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
                             settings._searchPanes.regenerating = true // allow recalculation of searchPanes
-                            
 
       }"),
       

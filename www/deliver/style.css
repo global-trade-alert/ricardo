@@ -818,6 +818,7 @@ input#cancel-dupl{
 	flex: 1;
 	flex-grow: 0;
 	flex-basis: 50px;
+	order:4;
 }
 
 #search-pane-toggle-button span {
@@ -905,6 +906,9 @@ input#cancel-dupl{
 	float: left;
 	display: flex;
 	flex:1;
+	order:1;
+	flex-grow:0;
+	white-space: nowrap;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow .dtsp-clearAll {
@@ -920,9 +924,42 @@ input#cancel-dupl{
   justify-content: center;
 	height:30px;
 	align-items: center;
+	order:3;
 }
 
-.deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow .dtsp-clearAll {
+.deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow #DataTables_Table_0_paginate{
+	display:flex;
+	justify-content: center;
+	order:2;
+	flex:1;
+}
+
+
+.deliver #deliver-deliverTable .dataTables_paginate,
+.deliver #deliver-deliverTable .dataTables_paginate {
+	width:100%;
+	display:flex;
+	justify-content: center;
+}
+
+.deliver #deliver-deliverTable .dataTables_paginate img,
+.deliver #deliver-deliverTable .dataTables_paginate img {
+	width:30px;
+}
+
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button,
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button {
+	padding:10px;
+	border-radius:5px;
+	padding: 5px;
+  border: none;
+  color: #ffffff !important;
+  font-weight: 700;
 }
 
 
