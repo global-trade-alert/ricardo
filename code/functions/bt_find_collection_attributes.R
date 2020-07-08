@@ -16,7 +16,6 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
                                                       LEFT JOIN bt_hint_discard_reason ON bt_hint_discard_reason.hint_id = gta_ids.hint_id AND bt_hint_discard_reason.reason_accepted = 1
                                                       LEFT JOIN bt_hint_date ON bt_hint_date.hint_id = gta_ids.hint_id AND bt_hint_date.date_accepted = 1;"),ifelse(paste0(hints.id, collapse = ',')=='',"NULL",paste0(hints.id, collapse = ',')))
   pull.intervention.attributes = gta_sql_get_value(pull.intervention.attributes)
-  pull_attr <<- pull.intervention.attributes
   
   # if there are interventions in the collection, these supercede the provided attributes
   if(nrow(pull.intervention.attributes)>0){

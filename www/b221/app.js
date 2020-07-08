@@ -183,7 +183,7 @@ function slideInBasicUI() {
 }
 
 function slideInDiscardButton() {
-  $('#b221-slideInRight').on('click','#discardCollection-popup', function () {
+  $('#b221-slideInRight').on('click','#discardHintCollection-popup', function () {
     del_or_dis('Discard','collection','Mark irrelevant');
     $('#confirm-discard > div > div.form-group').css({'display': ''})
     $('#confirm-discard').addClass('show');
@@ -215,7 +215,7 @@ function discardButton() {
 })
 
 // DELETE COLLECTION BUTTON
-  $('#confirm-discard #b221-discardCollection').on('click', function () {
+  $('#confirm-discard #b221-discardHintCollection').on('click', function () {
 
   })
 
@@ -391,15 +391,17 @@ function saveNewCollection() {
 
 
 function discardExistingCollection() {
-  var state = $('#b221-slideInRight .collectionHeader').length > 0 ? $('#b221-slideInRight .collectionHeader')[0].id : null;
-  let reasons = collectReasons();
+  let event_source = $('#b221-slideInRight').css('right') == '0px' ? 'slideIn' : 'MainScreen', // find out if discard single Hint or a collection
+      state = $('#b221-slideInRight .collectionHeader').length > 0 ? $('#b221-slideInRight .collectionHeader')[0].id : null,
+      reasons = collectReasons();
   console.log(reasons)
   console.log(state)
-  if (state == null) {
+  
+  if (event_source == 'MainScreen') { //if single hint is discarded
     let id = $('#confirm-discard').attr('class').match(/(?<=leadsID_).*/gi)[0];
     del_or_dis('Discard','hint','Mark irrelevant');
-    Shiny.setInputValue("b221-discardSingleCollection", JSON.stringify({ reasons, id: id }), {priority: "event"});
-  } else {
+    Shiny.setInputValue("b221-discardSingleHint", JSON.stringify({ reasons, id: id }), {priority: "event"});
+  } else { //if collection is discarded
     let del_dis = $('#confirm-discard > div > div.discard-select-fields').css('display') == 'none' ? 'Delete' : 'Discard';
     del_or_dis(del_dis);
     Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons, del_or_dis: del_dis}),             {priority: "event"});
@@ -422,14 +424,14 @@ var collectReasons = function(){
 var del_or_dis = function(type = 'Discard', hintCollection = 'Hint', buttonName = 'Mark irrelevant') {
     if (type == 'Delete'){
       $('.confirm-discard-inner > p').text(`You are deleting this ${hintCollection}`)
-      $('#b221-discardCollection i')[0].className = '';
-      $('#b221-discardCollection i').addClass('fa fa-trash');
+      $('#b221-discardHintCollection i')[0].className = '';
+      $('#b221-discardHintCollection i').addClass('fa fa-trash');
     } else {
       $('.confirm-discard-inner > p').text(`You are marking this ${hintCollection} as irrelevant`)
-      $('#b221-discardCollection i')[0].className = '';
-      $('#b221-discardCollection i').addClass('fa fa-times');
+      $('#b221-discardHintCollection i')[0].className = '';
+      $('#b221-discardHintCollection i').addClass('fa fa-times');
     }
-    $('#b221-discardCollection').html(function(){ return $(this).html().replace(/Delete|Discard/gi, buttonName) })
+    $('#b221-discardHintCollection').html(function(){ return $(this).html().replace(/Delete|Discard/gi, buttonName) })
 }
 
 var clear_discard = function(){

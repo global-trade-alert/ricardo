@@ -1148,7 +1148,7 @@ table.dataTable thead .sorting_desc {
 	justify-content: flex-end;
 }
 
-#discardCollection-popup, #deleteCollection-popup {
+#discardHintCollection-popup, #deleteCollection-popup {
 	background-color: #2485e6;
   color: #FFFFFF;
   height: 40px;
@@ -1159,7 +1159,7 @@ table.dataTable thead .sorting_desc {
   margin-right: 10px;
 }
 
-#discardCollection-popup:hover, #deleteCollection-popup:hover {
+#discardHintCollection-popup:hover, #deleteCollection-popup:hover {
 	background-color:#175da2;
 	transition:background-color 0.2s ease-out;
 }
@@ -1223,7 +1223,7 @@ table.dataTable thead .sorting_desc {
 	transition:all 0.2s ease-out;
 }
 
-#b221-discardCollection {
+#b221-discardHintCollection {
 	background-color:#ee3e3e;
 	color:#FFFFFF;
 	transition:background-color 0.2s ease-out;
@@ -1231,13 +1231,13 @@ table.dataTable thead .sorting_desc {
 	height:40px;
 }
 
-#b221-discardCollection:hover {
+#b221-discardHintCollection:hover {
 	background-color:#c63131;
 	color:#FFFFFF;
 	transition:background-color 0.2s ease-out;
 }
 
-#b221-discardCollection i {
+#b221-discardHintCollection i {
 	margin-right:5px;
 }
 

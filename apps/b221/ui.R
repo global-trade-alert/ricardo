@@ -61,7 +61,7 @@ b221ui <- function(id) {
                         tags$div(class="button-wrap",
                                  tags$button(class="cancel btn",
                                              "Cancel"),
-                                 actionButton(ns("discardCollection"),
+                                 actionButton(ns("discardHintCollection"),
                                               label="Delete",
                                               icon = icon("trash")))))
     )

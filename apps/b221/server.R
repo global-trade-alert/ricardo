@@ -54,7 +54,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   assessment.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT assessment_name, assessment_id FROM b221_assessment_list;"))
   product.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT product_group_name, product_group_id FROM b221_product_group_list;"))
   type.list <- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT intervention_type_name, intervention_type_id FROM b221_intervention_type_list;"))
-  discard_reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_name, discard_reason_id FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
+  discard.reasons <<- gta_sql_get_value(sqlInterpolate(pool, "SELECT DISTINCT discard_reason_name, discard_reason_id FROM bt_discard_reason_list ORDER BY discard_reason_id;"))
   
   # UPDATE DATE OF CREATION OF APP.R WHEN CLOSING, PREVENTS CACHING OF CSS AND JS
   onStop(function() {
@@ -187,7 +187,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       discard_select  <- selectizeInput(inputId='b221-discardSelect',
                                         selected = NULL, 
                                         label = '',
-                                        choices = discard_reasons$discard.reason.name,
+                                        choices = discard.reasons$discard.reason.name,
                                         multiple = TRUE,
                                         options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
       discard_other <- textInput(inputId='b221-discardOther', '', value = "", width = 300,
@@ -593,7 +593,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                tags$div(id="hintContainer",
                         HTML(initialHints)),
                tags$div(class="options-bar",
-                        tags$button(id="discardCollection-popup",
+                        tags$button(id="discardHintCollection-popup",
                                     tags$i(class="fa fa-times"),
                                     "Mark irrelevant"),
                         tags$button(id="deleteCollection-popup",
@@ -643,7 +643,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     runjs('saveNewCollection();')
   })
   
-  observeEvent(input$discardCollection, {
+  observeEvent(input$discardHintCollection, {
     runjs('discardExistingCollection();')
   })
   
@@ -735,7 +735,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       colTypeId = as.numeric(mapvalues(colType, type.list$intervention.type.name, type.list$intervention.type.id, warn_missing = F))
       colProductId = as.numeric(mapvalues(colProduct, product.list$product.group.name, product.list$product.group.id, warn_missing = F))
       colAssessmentId = as.numeric(mapvalues(colAssessment, assessment.list$assessment.name, assessment.list$assessment.id, warn_missing = F))
-      colDiscardReasonsId = as.numeric(mapvalues(colAssessment, assessment.list$assessment.name, assessment.list$assessment.id, warn_missing = F))
+      colDiscardReasonsId = as.numeric(mapvalues(colDiscardReasons, discard.reasons$discard.reason.name, discard.reasons$discard.reason.id, warn_missing = F))
       
       
       # construct url DF
@@ -772,6 +772,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                    relevance = 1, discard = colDiscardReasonsId, announcement.date = colAnnouncement, 
                                                    implementation.date = colImplementation, removal.date = colRemoval)
         print(attributes)
+        test_attributes <<- attributes
         
         collection.save =  b221_process_collections_hints(
                                                     is.freelancer = ifelse(prm$freelancer == 1, T, F),
@@ -783,7 +784,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                     product = attributes$product,
                                                     intervention = attributes$intervention,
                                                     assessment = attributes$assessment,
-                                                    discard.reasons = attributes$discard,
+                                                    discard = attributes$discard,
                                                     announcement.date = attributes$announcement.date,
                                                     implementation.date = attributes$implementation.date,
                                                     removal.date = attributes$removal.date,
@@ -806,6 +807,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                    intervention = colTypeId, 
                                                    assessment = colAssessmentId, 
                                                    relevance = 1, 
+                                                   discard = colDiscardReasonsId,
                                                    announcement.date = colAnnouncement, 
                                                    implementation.date = colImplementation, 
                                                    removal.date = colRemoval)
@@ -814,26 +816,28 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                    "\ncollection impl val: ",paste0(attributes$country,collapse=','),
                    "\ncollection inttype val: ",paste0(attributes$intervention,collapse=','),
                    "\ncollection assessment val: ",paste0(attributes$assessment,collapse=','),
-                   "\ncollection product val: ",paste0(attributes$product,collapse=',')))
+                   "\ncollection product val: ",paste0(attributes$product,collapse=','),
+                   "\ncollection discard val: ",paste0(attributes$discard,collapse=',')))
         
         # is this hardcoded on purpose?
-        # b221_process_collections_hints(is.freelancer = F, 
-        #                                user.id = user$id, 
-        #                                collection.id = collectionId, 
-        #                                hints.id = colHints, 
-        #                                starred.hint.id = attributes$starred.hint.id, 
-        #                                country = attributes$country, 
-        #                                product = attributes$product, 
-        #                                intervention = attributes$intervention, 
-        #                                assessment = attributes$assessment, 
-        #                                announcement.date = attributes$announcement.date, 
-        #                                implementation.date = attributes$implementation.date, 
-        #                                removal.date = attributes$removal.date,
-        #                                relevance = 1, 
-        #                                collection.unchanged = attributes$collection.unchanged, 
-        #                                empty.attributes = F)
-        # 
-        # b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
+        b221_process_collections_hints(is.freelancer = F,
+                                       user.id = user$id,
+                                       collection.id = collectionId,
+                                       hints.id = colHints,
+                                       starred.hint.id = attributes$starred.hint.id,
+                                       country = attributes$country,
+                                       product = attributes$product,
+                                       intervention = attributes$intervention,
+                                       assessment = attributes$assessment,
+                                       discard = attributes$discard,
+                                       announcement.date = attributes$announcement.date,
+                                       implementation.date = attributes$implementation.date,
+                                       removal.date = attributes$removal.date,
+                                       relevance = 1,
+                                       collection.unchanged = attributes$collection.unchanged,
+                                       empty.attributes = F)
+
+        b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
         
         
       }
@@ -911,8 +915,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
 # Collection UI: Discard Collection ---------------------------------------
   
   # DISCARD SINGLE EXISTING COLLECTION
-  observeEvent(input$discardSingleCollection, {
-    data <- jsonlite::fromJSON(input$discardSingleCollection)
+  observeEvent(input$discardSingleHint, {
+    data <- jsonlite::fromJSON(input$discardSingleHint)
     print(data)
     if (is.null(data$reasons)){
       showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
@@ -1670,10 +1674,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
 
     
     print(changes)
-    test <<- changes
     print(paste0("Is freelancer: ",ifelse(prm$freelancer == 1,1,0)))
     
-    #b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
     b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
     
     # SQL INSERT HERE: ONLY MARKED AS RELEVANT VALUES ARE INSERTED HERE
