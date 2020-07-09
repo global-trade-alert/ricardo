@@ -133,7 +133,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             var buttons = '<div class=\\'bottom-row no-touch\\'>'+urlimage+collection+'</div>';
                             var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+dateAnnouncement+dateRegistration+dateRemoval+'</div><div class=\\'comment\\'>'+comment+data[23]+'</div>';
                             var middle = '<div class=\\'middle-col'+readMore+'\\'>'+descr+'</div>';
-                            var right = '<div class=\\'right-col\\'><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
+                            var right = '<div class=\\'right-col\\'><div id=\\'discardReason1\\' class=\\'evaluate discard-reason\\'><span>Reason One</span></div><div id=\\'discardReason2\\' class=\\'evaluate discard-reason\\'><span>Reason Two</span></div><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
                            $(row)
                            .append('<div id=\\'leadsID_'+data[7]+'\\' class=\\'leads-item'+locked+'\\'><div class=\\'left\\'>'+title+middle+options+buttons+submit+'</div><div class=\\'right\\'>'+right+'</div>')
                            .append('</div>');
@@ -677,7 +677,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     colState <- colData$state
     hintId <- as.numeric(gsub("collectionContainer_","",colData$hintId))
     colDiscardReasons <- input$discardSelect
-    colDiscardComm <- input$discardOther
+    colDiscardComm <- if(is.null(input$discardOther)) NA else input$discardOther
     
     colName <<- input$newCollection
     colImplementer <<- input$initImplementer
@@ -769,7 +769,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                    hints.id = colHints, starred.hint.id = hintStarred, 
                                                    country = colImplementerId, product = colProductId, 
                                                    intervention = colTypeId, assessment = colAssessmentId, 
-                                                   relevance = 1, discard = colDiscardReasonsId, announcement.date = colAnnouncement, 
+                                                   relevance = 1, discard = colDiscardReasonsId, discard.comment = colDiscardComm,
+                                                   announcement.date = colAnnouncement, 
                                                    implementation.date = colImplementation, removal.date = colRemoval)
         print(attributes)
         test_attributes <<- attributes
@@ -785,6 +786,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                     intervention = attributes$intervention,
                                                     assessment = attributes$assessment,
                                                     discard = attributes$discard,
+                                                    discard.comment = attributes$discard.comment,
                                                     announcement.date = attributes$announcement.date,
                                                     implementation.date = attributes$implementation.date,
                                                     removal.date = attributes$removal.date,
@@ -808,9 +810,12 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                    assessment = colAssessmentId, 
                                                    relevance = 1, 
                                                    discard = colDiscardReasonsId,
+                                                   discard.comment = colDiscardComm,
                                                    announcement.date = colAnnouncement, 
                                                    implementation.date = colImplementation, 
                                                    removal.date = colRemoval)
+        
+        test_attributes <<- attributes
         
         cat(paste0("collection unchanged val: ",attributes$collection.unchanged,
                    "\ncollection impl val: ",paste0(attributes$country,collapse=','),
@@ -830,6 +835,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                        intervention = attributes$intervention,
                                        assessment = attributes$assessment,
                                        discard = attributes$discard,
+                                       discard.comment = attributes$discard.comment,
                                        announcement.date = attributes$announcement.date,
                                        implementation.date = attributes$implementation.date,
                                        removal.date = attributes$removal.date,

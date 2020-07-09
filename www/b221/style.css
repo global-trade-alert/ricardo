@@ -138,10 +138,16 @@ table.dataTable thead .sorting_desc {
 	flex:1;
 	align-items:center;
 	justify-content: center;
+	border-bottom:1px solid #dadada;
 }
 
-#b221-leadsTable .leads-item .right-col #discard {
-	border-bottom:1px solid #dadada;
+#b221-leadsTable .leads-item .right-col .discard-reason span {
+	transform:rotate(-90deg);
+	color:#CCCCCC;
+	white-space: nowrap;
+	font-size: 0.9em;
+	font-weight: 600;
+	overflow: hidden;
 }
 
 #b221-leadsTable .leads-item.dismiss .right-col #discard {
@@ -152,6 +158,10 @@ table.dataTable thead .sorting_desc {
 #b221-leadsTable .leads-item .right-col #discard span {
 	color:#cccccc;
 	transition:all 0.2s ease-out;
+}
+
+#b221-leadsTable .leads-item .right-col #relevant {
+	border-bottom:none;
 }
 
 #b221-leadsTable .leads-item.reactivate .right-col #relevant {
