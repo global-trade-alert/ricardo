@@ -83,7 +83,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                          INSERT INTO b221_collection_relevance VALUES ",val.cltn.rel,";
                                          INSERT INTO b221_collection_jurisdiction VALUES ",val.cltn.cty,";
                                          INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";
-                                         INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")
+                                         ",if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
+                                        )
         if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";")
         
       }
