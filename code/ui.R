@@ -31,9 +31,12 @@ ui <- fluidPage(
                 '),
   theme = "www/main/style.css",
   tags$head(tags$link(rel="stylesheet",href="https://fonts.googleapis.com/icon?family=Material+Icons"),
+            tags$link(rel="stylesheet", type="text/css", href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css"),
+            tags$link(rel="stylesheet", type="text/css", href="www/main/tooltipster.bundle.min.css"),
+            tags$script(src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"),
             tags$script(src="www/main/js.cookie.js"),
             tags$script(src="www/main/tooltipster.bundle.min.js"),
-            tags$link(rel="stylesheet", type="text/css", href="www/main/tooltipster.bundle.min.css")),
+            tags$script(src="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.3.0/js/bootstrap-datepicker.js")),
   tags$div(class="wrap",
            tags$div(class="main-menu-wrap",
                      tags$div(id="nav", class="main-menu",
@@ -91,6 +94,8 @@ ui <- fluidPage(
   # ADD JS
   tags$head(
     tags$script(src="www/main/app.js"),
+    tags$script(src="www/b221/app.js"),
+    tags$script(src="www/deliver/app.js"),
     tags$script(src="www/main/js.cookie.js")
   )
   # tags$script(src="www/b221/app.js")
