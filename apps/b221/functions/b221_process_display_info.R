@@ -12,8 +12,9 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   multiple.values.permitted %>% 
         map(function(x) processed.rows <<- processed.rows %>% unnest(x, keep_empty = TRUE) )
   print(processed.rows)
+  test_processed.rows <<- processed.rows
   
-  processed.rows$discard.reason[!is.na(processed.rows$discard.reason.comment)|processed.rows$discard.reason.comment!=''] = 'other (see comment)'
+  # processed.rows$discard.reason[!is.na(processed.rows$discard.reason.comment)|processed.rows$discard.reason.comment!=''] = 'other, see comment'
   processed.rows$was.modified = 1
   processed.rows$in.collection = NA
   
@@ -277,7 +278,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           UPDATE bt_hint_discard_reason bt_hd
                           JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON bt_hd.hint_id = changed_hints.hint_id
                           JOIN bt_discard_reason_list dis_list ON bt_hd.discard_reason_id = dis_list.discard_reason_id 
-                          LEFT JOIN (SELECT DISTINCT hint_id, discard_reason FROM b221_temp_changes_data_",user.id,") changes ON bt_hd.hint_id = changes.hint_id AND 
+                          LEFT JOIN (SELECT DISTINCT hint_id, discard_reason, discard_reason_comment FROM b221_temp_changes_data_",user.id,") changes ON bt_hd.hint_id = changes.hint_id AND 
                           changes.discard_reason = dis_list.discard_reason_name AND bt_hd.discard_reason_comment <=> changes.discard_reason_comment
                           SET bt_hd.validation_user = ",user.id,",
                           bt_hd.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);

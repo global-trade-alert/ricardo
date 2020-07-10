@@ -14,7 +14,6 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
     if(collection.unchanged==F){
       if(is.null(new.collection.name)){
         
-        discard.comment<- if(is.null(discard.comment)) NA else discard.comment
         
         val.cltn.int = paste0("(",collection.id,",",intervention,")", collapse = ',')
         val.cltn.prod = paste0("(",collection.id,",",product,")", collapse = ',')
@@ -24,7 +23,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         if(discard.comment == '' | is.null(discard.comment)){
           val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
         } else {
-          val.cltn.dis = paste0("(",collection.id,",",10,",","'",discard.comment,"')", collapse = ',')
+          val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
         }
         val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
         val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
@@ -52,7 +51,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           INSERT INTO b221_collection_relevance VALUES ",val.cltn.rel,";
                                           INSERT INTO b221_collection_jurisdiction VALUES ",val.cltn.cty,";
                                           INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";
-                                          INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")
+                                          ",if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
+                                        )
         if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";")
         
       } else {
@@ -71,7 +71,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         if(discard.comment=='' | is.null(discard.comment)){
           val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
         } else {
-          val.cltn.dis = paste0("(",collection.id,",",10,",","'",discard.comment,"')", collapse = ',')
+          val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
         }
         val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
         val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
@@ -399,7 +399,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                             UPDATE bt_hint_discard_reason ht_dis
                                             JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_dis.hint_id = changed_hints.hint_id
                                             JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id FROM b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
+                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id, b221_collection_discard_reasons.discard_reason_comment FROM 
+                                                        b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
                                             ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment
                                             SET ht_dis.validation_user = ",user.id,", 
                                             	ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
@@ -529,7 +530,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                             UPDATE bt_hint_discard_reason ht_dis
                                             JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_dis.hint_id = changed_hints.hint_id
                                             JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id FROM b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
+                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id, b221_collection_discard_reasons.discard_reason_comment FROM 
+                                                        b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
                                             ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment
                                             SET ht_dis.validation_user = ",user.id,", 
                                             	ht_dis.reason_accepted  = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
