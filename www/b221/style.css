@@ -141,7 +141,14 @@ table.dataTable thead .sorting_desc {
 	border-bottom:1px solid #dadada;
 }
 
-#b221-leadsTable .leads-item .right-col #no-policy-mentioned span {
+body.freelancer #b221-leadsTable .leads-item .right-col #update-to-existing,
+body.freelancer #b221-leadsTable .leads-item .right-col #duplicate-of-existing {
+	display:none;
+}
+
+#b221-leadsTable .leads-item .right-col #no-policy-mentioned span,
+#b221-leadsTable .leads-item .right-col #update-to-existing span,
+#b221-leadsTable .leads-item .right-col #duplicate-of-existing span {
 	transform:rotate(-90deg);
 	color:#CCCCCC;
 	text-align: center;
@@ -152,13 +159,17 @@ table.dataTable thead .sorting_desc {
 	transition:all 0.2s ease-out;
 }
 
-#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned span {
+#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned span,
+#b221-leadsTable .leads-item.update-to-existing .right-col #update-to-existing span,
+#b221-leadsTable .leads-item.duplicate-of-existing .right-col #duplicate-of-existing span {
 	color:#FFFFFF;
 	transition:all 0.2s ease-out;
 }
 
 #b221-leadsTable .leads-item.dismiss .right-col #discard,
-#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned {
+#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned,
+#b221-leadsTable .leads-item.update-to-existing .right-col #update-to-existing,
+#b221-leadsTable .leads-item.duplicate-of-existing .right-col #duplicate-of-existing {
 	background-color:#ee3e3e;
 	transition:all 0.2s ease-out;
 }

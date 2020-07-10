@@ -51,10 +51,8 @@ function checkLeadsManual() {
 
     if(!$(e.target).is('#b221-leadsTable .no-touch')) {
       if (elementType == "discard" && ! $(this).hasClass('dismiss')) {
-          $(changeEl).removeClass('reactivate');
-          $(changeEl).removeClass('no-policy-mentioned');
+          removeValClasses(changeEl);
           $(changeEl).addClass('dismiss');
-
           // Shiny.setInputValue("b221-checkLeadsClick", [elementType, elementID], {priority: "event"});
           //collectData(`#${elementID}`,'dismiss');
           $('#confirm-discard > div > div.form-group').css({'display': ''})
@@ -62,19 +60,35 @@ function checkLeadsManual() {
           $('#confirm-discard').addClass(`show ${elementID}`);
 
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
-          $(changeEl).removeClass('dismiss');
-          $(changeEl).removeClass('no-policy-mentioned');
+          removeValClasses(changeEl);
           // console.log(`#${elementID}`);
           collectData(`#${elementID}`,'reactivate');
       } else if (elementType == "no-policy-mentioned" && ! $(this).hasClass('no-policy-mentioned')) {
-        $(changeEl).removeClass('reactivate');
-        $(changeEl).removeClass('dismiss');
+        removeValClasses(changeEl);
         $(changeEl).addClass('no-policy-mentioned');
         collectData(`#${elementID}`,'no-policy-mentioned');
+      }
+      else if (elementType == "update-to-existing" && ! $(this).hasClass('no-policy-mentioned')) {
+        removeValClasses(changeEl);
+        $(changeEl).addClass('update-to-existing');
+        collectData(`#${elementID}`,'update-to-existing');
+      }
+      else if (elementType == "duplicate-of-existing" && ! $(this).hasClass('no-policy-mentioned')) {
+        removeValClasses(changeEl);
+        $(changeEl).addClass('duplicate-of-existing');
+        collectData(`#${elementID}`,'duplicate-of-existing');
       }
   }
 
   });
+}
+
+function removeValClasses(el) {
+  $(el).removeClass('reactivate');
+  $(el).removeClass('dismiss');
+  $(el).removeClass('no-policy-mentioned');
+  $(el).removeClass('update-to-existing');
+  $(el).removeClass('duplicate-of-existing');
 }
 
 function hintsBasicUI() {
@@ -372,8 +386,20 @@ function collectData(type='', state=''){
       Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
       $(`${type}`).addClass('no-policy-mentioned');
       $(`${type}`).removeClass('show-submission');
-  }
-  }
+    } else if (state == 'update-to-existing') {
+      output[0].discard_reasons = "update to existing intervention";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('update-to-existing');
+      $(`${type}`).removeClass('show-submission');
+    } else if (state == 'duplicate-of-existing') {
+      output[0].discard_reasons = "duplicate of other hint or GTA entry";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('duplicate-of-existing');
+      $(`${type}`).removeClass('show-submission');
+    }
+      }
 
     catch(error) {
       console.log(error);
