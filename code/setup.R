@@ -18,7 +18,6 @@ library(stringi)
 
 # DEFINE GLOBAL STARTUP VALUES
 
-# IMPORT FUNCTIONS
 # source(paste0(path,"code/functions/functions.R"), local = F)
 for(fct in list.files(paste0(path,"code/functions/"), pattern = ".R", full.names=T)){
   source(fct)
