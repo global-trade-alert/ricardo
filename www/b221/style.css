@@ -141,16 +141,24 @@ table.dataTable thead .sorting_desc {
 	border-bottom:1px solid #dadada;
 }
 
-#b221-leadsTable .leads-item .right-col .discard-reason span {
+#b221-leadsTable .leads-item .right-col #no-policy-mentioned span {
 	transform:rotate(-90deg);
 	color:#CCCCCC;
+	text-align: center;
 	white-space: nowrap;
 	font-size: 0.9em;
 	font-weight: 600;
 	overflow: hidden;
+	transition:all 0.2s ease-out;
 }
 
-#b221-leadsTable .leads-item.dismiss .right-col #discard {
+#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned span {
+	color:#FFFFFF;
+	transition:all 0.2s ease-out;
+}
+
+#b221-leadsTable .leads-item.dismiss .right-col #discard,
+#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned {
 	background-color:#ee3e3e;
 	transition:all 0.2s ease-out;
 }

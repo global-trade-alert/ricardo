@@ -133,7 +133,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             var buttons = '<div class=\\'bottom-row no-touch\\'>'+urlimage+collection+'</div>';
                             var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+dateAnnouncement+dateRegistration+dateRemoval+'</div><div class=\\'comment\\'>'+comment+data[23]+'</div>';
                             var middle = '<div class=\\'middle-col'+readMore+'\\'>'+descr+'</div>';
-                            var right = '<div class=\\'right-col\\'><div id=\\'discardReason1\\' class=\\'evaluate discard-reason\\'><span>Reason One</span></div><div id=\\'discardReason2\\' class=\\'evaluate discard-reason\\'><span>Reason Two</span></div><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
+                            var right = '<div class=\\'right-col\\'><div id=\\'no-policy-mentioned\\' class=\\'evaluate discard-reason\\'><span>No policy<br/>mentioned</span></div><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
                            $(row)
                            .append('<div id=\\'leadsID_'+data[7]+'\\' class=\\'leads-item'+locked+'\\'><div class=\\'left\\'>'+title+middle+options+buttons+submit+'</div><div class=\\'right\\'>'+right+'</div>')
                            .append('</div>');
@@ -184,14 +184,14 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   # Discard UI ----------------------------------------------------------------------------
   
   observe({
-      discard_select  <- selectizeInput(inputId='b221-discardSelect',
-                                        selected = NULL, 
-                                        label = '',
-                                        choices = discard.reasons$discard.reason.name,
-                                        multiple = TRUE,
-                                        options = list(maxItems = 5, placeholder = 'Choose discard reason...'))
-      discard_other <- textInput(inputId='b221-discardOther', '', value = "", width = 300,
-                                 placeholder = 'Type other reason...')
+    discard_select  <- selectizeInput(inputId='b221-discardSelect',
+                                      selected = character(0), 
+                                      label = '',
+                                      choices = discard.reasons$discard.reason.name,
+                                      multiple = FALSE,
+                                      options = list(placeholder = "Choose reason..."))
+    discard_other <- textInput(inputId='b221-discardOther', '', value = "", width = 300,
+                               placeholder = 'Type other reason...')
       
       insertUI(immediate = F, selector = ".discard-select-fields",ui = tagList(
         discard_select, discard_other)
@@ -640,7 +640,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   })
   
   observeEvent(input$saveCollection, {
-    runjs('saveNewCollection();')
+    runjs('saveNewCollection(relevance=1);')
   })
   
   observeEvent(input$discardHintCollection, {
@@ -652,6 +652,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   
   observeEvent(input$saveNewCollection, {
     colData <- jsonlite::fromJSON(input$saveNewCollection)
+    
+    print(colData)
     
     # input <- list("newCollection"= 1,
     #                 "initImplementer"= c("United States of America","China"),
@@ -678,6 +680,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     hintId <- as.numeric(gsub("collectionContainer_","",colData$hintId))
     colDiscardReasons <- input$discardSelect
     colDiscardComm <- if(is.null(input$discardOther)) NA else input$discardOther
+    colRelevance <- colData$relevance
     
     colName <<- input$newCollection
     colImplementer <<- input$initImplementer
@@ -694,6 +697,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     hintId <<- as.numeric(gsub("collectionContainer_","",colData$hintId))
     colDiscardReasons <<- colDiscardReasons
     colDiscardComm <<- colDiscardComm
+    colRelevance <<- colData$relevance
     
     print(colName)
     print(colImplementer)
@@ -709,6 +713,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(hintId)
     print(colDiscardReasons)
     print(colDiscardComm)
+    print(colRelevance)
     
     
     if (any(nchar(colName)==0,
@@ -755,8 +760,6 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       hintUrls$news <- NULL
       
       
-      
-      
       # SQL INSERT HERE: UPDATE OR CREATE COLLECTION, 
       # IF NEW COLLECTION: colID == "newCollection"
       # IF UPDATING COLLECTION: colID == "collectionID_XXXX"
@@ -769,7 +772,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                    hints.id = colHints, starred.hint.id = hintStarred, 
                                                    country = colImplementerId, product = colProductId, 
                                                    intervention = colTypeId, assessment = colAssessmentId, 
-                                                   relevance = 1, discard = colDiscardReasonsId, discard.comment = colDiscardComm,
+                                                   relevance = colRelevance, discard = colDiscardReasonsId, discard.comment = colDiscardComm,
                                                    announcement.date = colAnnouncement, 
                                                    implementation.date = colImplementation, removal.date = colRemoval)
         print(attributes)
@@ -790,7 +793,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                     announcement.date = attributes$announcement.date,
                                                     implementation.date = attributes$implementation.date,
                                                     removal.date = attributes$removal.date,
-                                                    relevance = 1,
+                                                    relevance = colRelevance,
                                                     collection.unchanged = F,
                                                     empty.attributes = F)
         
@@ -808,7 +811,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                                    product = colProductId, 
                                                    intervention = colTypeId, 
                                                    assessment = colAssessmentId, 
-                                                   relevance = 1, 
+                                                   relevance = colRelevance, 
                                                    discard = colDiscardReasonsId,
                                                    discard.comment = colDiscardComm,
                                                    announcement.date = colAnnouncement, 
@@ -839,13 +842,12 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                        announcement.date = attributes$announcement.date,
                                        implementation.date = attributes$implementation.date,
                                        removal.date = attributes$removal.date,
-                                       relevance = 1,
+                                       relevance = colRelevance,
                                        collection.unchanged = attributes$collection.unchanged,
                                        empty.attributes = F)
 
         b221_hint_url(is.freelancer = ifelse(prm$freelancer == 1, T, F), user.id = user$id, hint.url.dataframe = hintUrls)
-        
-        
+ 
       }
       
       print(paste0("THIS IS THE COUNTRY HINT ID country_",hintId))
@@ -889,7 +891,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
           runjs(paste0("$('#official_",hintId,"')[0].checked = ",ifelse(hintId %in% hintOfficial, "true", "false"),";"))
           
           runjs(paste0("$('#leadsID_",hintId,"').addClass('locked');"))
-          runjs(paste0("$('#leadsID_",hintId,"').addClass('reactivate');"))
+          
+          if (colRelevance == 1) { runjs(paste0("$('#leadsID_",hintId,"').addClass('reactivate'); $('#leadsID_",hintId,"').removeClass('dismiss');")) } else { runjs(paste0("$('#leadsID_",hintId,"').addClass('dismiss'); $('#leadsID_",hintId,"').removeClass('reactivate');")) }
           runjs(paste0("$('#leadsID_",hintId," .collection-add').removeClass('noPartOfCollection');"))
           runjs(paste0("$('#leadsID_",hintId," .collection-add').addClass('partOfCollection');"))
           runjs(paste0("$('#leadsID_",hintId," .collection-add')[0].id = 'collection_",collectionId,"';"))
@@ -924,11 +927,12 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   observeEvent(input$discardSingleHint, {
     data <- jsonlite::fromJSON(input$discardSingleHint)
     print(data)
-    if (is.null(data$reasons)){
+    discard_test <<- data
+    if (is.null(data$reasons) | is.null(data$reasons$select)){
       showNotification("Please, indicate reasons for discarding the collection(s)", duration = 3)
       #runjs(paste0("$('#confirm-discard').addClass('show');"))
     } else if (
-      str_detect(paste0(data$reasons$select, collapse = " ; "), 'other \\(see comment\\)') == TRUE & is.null(data$reasons$other)
+      str_detect(paste0(data$reasons$select, collapse = " ; "), 'other\\, see comment') == TRUE & is.null(data$reasons$other)
       ){
       showNotification("Please, add a comment", duration = 3)
     } else {
@@ -958,7 +962,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         ){
           showNotification("Please, add a comment", duration = 3)
         } else {
-          runjs("saveNewCollection();")
+          runjs("saveNewCollection(relevance=0);")
+          
+          
+          
           # collectionId <- as.numeric(gsub("existingCollection_","", colData$state))
           # print(paste0("THIS COLLECTION IS: ", collectionId))
           
@@ -1068,7 +1075,6 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   # LOAD COLLECTIONS FOR COLLECTIONS SLIDE IN
   collections <- eventReactive(input$loadCollections, {
     
-    runjs('console.log("test");')
     print("Collections refresh")
     # collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT collection_id, collection_name FROM b221_collection_log;"))
     collectionsOutput <- gta_sql_get_value(sqlInterpolate(pool, "SELECT cltn.collection_id, cltn.collection_name, ass_list.assessment_name, MIN(bt_hint_log.hint_date) AS hint_date,

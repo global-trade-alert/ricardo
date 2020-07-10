@@ -2,7 +2,7 @@
 
 // wait till content is added to HTML
   (async() => {
-    while(document.querySelectorAll('.control-bar,#b221-slideInRight,#confirm-discard').length == 0) 
+    while(document.querySelectorAll('.control-bar,#b221-slideInRight,#confirm-discard').length == 0)
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('content is loaded')
     $('.control-bar').css({'visibility': ''});
@@ -52,6 +52,7 @@ function checkLeadsManual() {
     if(!$(e.target).is('#b221-leadsTable .no-touch')) {
       if (elementType == "discard" && ! $(this).hasClass('dismiss')) {
           $(changeEl).removeClass('reactivate');
+          $(changeEl).removeClass('no-policy-mentioned');
           $(changeEl).addClass('dismiss');
 
           // Shiny.setInputValue("b221-checkLeadsClick", [elementType, elementID], {priority: "event"});
@@ -59,11 +60,17 @@ function checkLeadsManual() {
           $('#confirm-discard > div > div.form-group').css({'display': ''})
           del_or_dis();
           $('#confirm-discard').addClass(`show ${elementID}`);
-          
+
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
           $(changeEl).removeClass('dismiss');
+          $(changeEl).removeClass('no-policy-mentioned');
           // console.log(`#${elementID}`);
           collectData(`#${elementID}`,'reactivate');
+      } else if (elementType == "no-policy-mentioned" && ! $(this).hasClass('no-policy-mentioned')) {
+        $(changeEl).removeClass('reactivate');
+        $(changeEl).removeClass('dismiss');
+        $(changeEl).addClass('no-policy-mentioned');
+        collectData(`#${elementID}`,'no-policy-mentioned');
       }
   }
 
@@ -336,39 +343,46 @@ function collectData(type='', state=''){
           let announcementdate = $(`#announcementdate_${id} input`).val().length != 0 ? $(`#announcementdate_${id} input`).val() : null;
           let implementationdate = $(`#implementationdate_${id} input`).val().length != 0 ? $(`#implementationdate_${id} input`).val() : null;
           let removaldate = $(`#removaldate_${id} input`).val().length != 0 ? $(`#removaldate_${id} input`).val() : null;
-          let discard_reasons_select = $('#b221-discardSelect').val().length == 0 ? [null] : $('#b221-discardSelect').val().join(' ; ');
+          let discard_reasons_select = $('#b221-discardSelect').val().length == 0 ? [null] : $('#b221-discardSelect').val();
           let discard_comment = $('#b221-discardOther').val() == "" ? null : $('#b221-discardOther').val();
           output.push({id: id, clicked: clicked, country: country, product: product, intervention: intervention,
-                      assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate,                             implementationdate: implementationdate, removaldate: removaldate, discard_reasons: discard_reasons_select,
+                      assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate: removaldate, discard_reasons: discard_reasons_select,
                       discard_comment: discard_comment
           })
     });
      console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];
-
+    console.log(validate);
     if (state == 'reactivate') {
         if (validate.some(checkNull)) {
           Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});
         } else {
           Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
           $(`${type}`).addClass('reactivate');
-          $(`${type}`).removeClass('show-submission')
+          $(`${type}`).removeClass('show-submission');
         }
-      } else {
+      } else if (state == 'dismiss') {
         Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
         $(`${type}`).addClass('dismiss');
-        $(`${type}`).removeClass('show-submission')
-    }
+        $(`${type}`).removeClass('show-submission');
+
+    } else if (state == 'no-policy-mentioned') {
+      output[0].discard_reasons = "no policy mentioned";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('no-policy-mentioned');
+      $(`${type}`).removeClass('show-submission');
+  }
   }
 
     catch(error) {
-      // console.log(error);
+      console.log(error);
       Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});
     }
 
 }
 
-function saveNewCollection() {
+function saveNewCollection(relevance) {
   let state = $('#b221-slideInRight .collectionHeader')[0].id,
   hintId = $('#b221-slideInRight .removeslideinui')[0].id,
   starredHint = null,
@@ -386,7 +400,7 @@ function saveNewCollection() {
     childIds.push(parseInt(elem.id.replace("hintId_","")));
   });
 
-  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint, discard_reasons}),    {priority: "event"});
+  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint, discard_reasons, relevance}),    {priority: "event"});
 }
 
 
@@ -396,7 +410,7 @@ function discardExistingCollection() {
       reasons = collectReasons();
   console.log(reasons)
   console.log(state)
-  
+
   if (event_source == 'MainScreen') { //if single hint is discarded
     let id = $('#confirm-discard').attr('class').match(/(?<=leadsID_).*/gi)[0];
     del_or_dis('Discard','hint','Mark irrelevant');
@@ -436,7 +450,7 @@ var del_or_dis = function(type = 'Discard', hintCollection = 'Hint', buttonName 
 
 var clear_discard = function(){
       $('#confirm-discard').removeClass('show');
-      
+
       $('#confirm-discard').removeClass (function (index, className) {
                 return (className.match (/leadsID_.*/gi) || []).join(' ');
               });
