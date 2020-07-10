@@ -45,7 +45,13 @@ b221server <- function(input, output, session, user, app, prm, ...) {
   
   ns <- NS("b221")
   
+  # Add freelancer class to body if app is opened in freelancer mode
   observe({
+    if (prm$freelancer == 1) {
+      runjs(paste0("$('body').addClass('freelancer');"))
+    } else {
+      runjs(paste0("$('body').removeClass('freelancer');"))
+    }
     # print(prm)
   })
   
@@ -133,7 +139,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
                             var buttons = '<div class=\\'bottom-row no-touch\\'>'+urlimage+collection+'</div>';
                             var options = '<div class=\\'top-row\\'>'+country+product+actingAgency+intervention+assessment+official+dateAnnouncement+dateRegistration+dateRemoval+'</div><div class=\\'comment\\'>'+comment+data[23]+'</div>';
                             var middle = '<div class=\\'middle-col'+readMore+'\\'>'+descr+'</div>';
-                            var right = '<div class=\\'right-col\\'><div id=\\'no-policy-mentioned\\' class=\\'evaluate discard-reason\\'><span>No policy<br/>mentioned</span></div><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
+                            var right = '<div class=\\'right-col\\'><div id=\\'no-policy-mentioned\\' class=\\'evaluate discard-reason\\'><span>No policy<br/>mentioned</span></div><div id=\\'update-to-existing\\' class=\\'evaluate discard-reason\\'><span>Update to<br/>existing</span></div><div id=\\'duplicate-of-existing\\' class=\\'evaluate discard-reason\\'><span>Duplicate of<br/>existing</span></div><div id=\\'discard\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>cancel</span></div><div id=\\'relevant\\' class=\\'evaluate\\'><span class=\\'material-icons\\'>check_circle</span></div></div>';
                            $(row)
                            .append('<div id=\\'leadsID_'+data[7]+'\\' class=\\'leads-item'+locked+'\\'><div class=\\'left\\'>'+title+middle+options+buttons+submit+'</div><div class=\\'right\\'>'+right+'</div>')
                            .append('</div>');
