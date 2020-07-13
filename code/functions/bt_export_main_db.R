@@ -125,9 +125,8 @@ bt_export_main_db=function(to.db = 'ricardodev'){
   gta.sa.hs$hs6=as.numeric(gta.sa.hs$hs6)
   
   
-  base.export = merge(gta.data, intervention.groups, by = 'intervention.type', all.x = T)
-  base.export$hint.id = NA
-  product.export = na.omit(unique(merge(gta.sa.hs, hs.groups, by.x = 'hs6', by.y = 'hs.code', all.x = T)[,c('state.act.id','intervention.id','hs.group')]))
+  base.export <<- merge(gta.data, intervention.groups, by = 'intervention.type', all.x = T)
+  product.export <<- na.omit(unique(merge(gta.sa.hs, hs.groups, by.x = 'hs6', by.y = 'hs.code', all.x = T)[,c('state.act.id','intervention.id','hs.group')]))
   
   
   # I want to add a pool name with the var to.db but the sql_create_table fails if i do so, so instead i just close the main pool
@@ -146,6 +145,8 @@ bt_export_main_db=function(to.db = 'ricardodev'){
   gta_sql_create_table(write.df = 'product.export', append.existing = F)
   
   populate.sql.query = paste0("/* SCRIPT TO UPDATE RICARDO DB AND LOCATE CONFLICTS */
+                              ALTER TABLE bt_base_export ADD hint_id INT;
+                              
                               INSERT INTO bt_hint_log (gta_id, registration_date, acting_agency, hint_date, hint_values, user_id, hint_type_id, hint_state_id, upload_id)
                               SELECT DISTINCT(bt_base_export.intervention_id), DATE(NOW()) registration_date, 'GTA WEBSITE' AS acting_agency, NULL AS hint_date, NULL AS hint_values, 1 AS user_id, 2 AS hint_type_id, 7 AS hint_state_id, NULL AS upload_id
                               FROM bt_base_export 
