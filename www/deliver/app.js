@@ -77,138 +77,195 @@ $( document ).ready(function() {
 });
 
 const buttonsClicks = {
-  restore: function(currentStatus, id){
-    const that = this;
-    this.convertToConfirmed('deleted', id);
-    $(`tr#${id}`).find('.restore').attr('style', 'display: none');
-    $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-    this.redrawDataTable();
-    this.updateSearchPanes();
-  },
-  accept: function(currentStatus, id) {
-    this.convertToConfirmed('new updated', id);
-    $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-    this.redrawDataTable();
-    this.updateSearchPanes();
-  },
-  delete: function(currentStatus, id) {
-    const that = this;
-    if(['new', 'updated', 'confirmed'].includes(currentStatus)){
-      that.addDeletePrompt(currentStatus, id);
-      /*that.convertToDeleted(currentStatus, id);
-      $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';*/
-    } else {
-      this.removeRow(id);
-    }
-    this.redrawDataTable();
-    this.updateSearchPanes();
-  },
-  edit: function(currentStatus, id) {
-    const that = this;
-    
-    let rowData = this.getRowData(id);
-    console.log(rowData);
-    rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode
-      if (a.name == 'Description' | a.name== 'Source') {
-        return -1
-      }
-    });
-    
-    rowData.forEach(function(d,i){
-      let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
-      let input;
-      switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
-        case 'date':
-          
-          input = $('<input />')
-          .attr('type', 'text')
-          .attr('id', `column-${d.index}`)
-          .addClass('datepicker')
-          .attr('current-date', `${d.data.length == 0 ? '' : d.data}`);
-          break;
-          case 'description':
-            case 'source':
-            
-            input = $('<textarea />')
-          .attr('id', `column-${d.index}`)
-          .attr('rows', 5)
-          .attr('cols', 40)
-          .val(`${d.data}`);
-          break;
-          case 'product':
-            case 'instrument':
-            case 'jurisdiction':
-            
-            let data = d.data.split(',');
-          console.log(data)
-          input = $('<select />')
-          .attr('multiple', true)
-          .attr('id', `column-${d.index}`)
-          .addClass('products');
-          
-          window.data_gta[d.name].map(function(d1,i) {
-            let selected = data.includes(d1) ? 'selected' : '';
-            input.append(
-              `<option ${selected} value="${d1}">${d1}</option>`
-            )
-          })
-          break;
-          case 'documentation status':
-            
-            let checked = /^official source/gi.test(d.data) ? true : false;
-          input = $('<input />')
-          .attr('type', 'checkbox')
-          .attr('checked', checked)
-          .attr('id', `column-${d.index}`)
-          .addClass('doc-status');
-          
-          label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
-          break;
-          case 'assessment':
-            
-            input = $('<select />')
-          .attr('id', `column-${d.index}`)
-          .addClass('assessment');
-          
-          window.data_gta[d.name].map(function(d1,i) {
-            let selected = d1 == d.data ? 'selected' : '';
-            input.append(
-              `<option value="${d1}" ${selected}>${d1}</option>`
-            )
-          })
-          break;
-          
-      }
-      
-      
-      if (input != undefined) {
-        if (i <= 1) {
-          $('.canvas').append(
-            $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
-            .append(label, input)
-          )
-          // display the first two normally, wrap the others in a div to display as grid
-        } else {
-          if (i == 2) {
-            $('.canvas').append(
-              $('<div />').addClass(`form-grid`)
-            )
-          }
-          if (i >= 2) {
-            $('.canvas .form-grid').append(
-              $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
-              .append(label, input)
-            )
-          }
-        }
-      }
-      
-      $('select.products').selectize({
-        maxItems: 6,
-        valueField: 'text',
-        labelField: 'text',
-        searchField: 'text',
-        create: false
+    restore: function(currentStatus, id){
+              const that = this;
+              this.convertToConfirmed('deleted', id);
+              $(`tr#${id}`).find('.restore').attr('style', 'display: none');
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              this.redrawDataTable();
+              this.updateSearchPanes();
+    },
+    accept: function(currentStatus, id) {
+              this.convertToConfirmed('new updated', id);
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              this.redrawDataTable();
+              this.updateSearchPanes();
+            },
+    delete: function(currentStatus, id) {
+              const that = this;
+              if(['new', 'updated', 'confirmed'].includes(currentStatus)){
+                  that.addDeletePrompt(currentStatus, id);
+                  /*that.convertToDeleted(currentStatus, id);
+                  $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';*/
+              } else {
+                  this.removeRow(id);
+              }
+              this.redrawDataTable();
+              this.updateSearchPanes();
+            },
+    edit: function(currentStatus, id) {
+        const that = this;
+        $('div.editMode > div.editMode-header').append('<button type="button" id="save-edit"><img src="www/deliver/save.svg" style="margin-right:10px" />Save data</button>');
+        $('div.editMode > div.editMode-header').append('<button type="button" id="close-editMode"><span class="material-icons">close</span></button>');
+        let rowData = this.getRowData(id);
+        console.log('ROWDATA');
+        console.log(rowData);
+        rowData.sort((a,b) => { // custom sort to make Description and Source always be on top of .editMode
+            if (a.name == 'Description' | a.name== 'Source') {
+                return -1
+            }
+        });
+
+        rowData.forEach(function(d,i){
+            let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
+            let input;
+            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
+              case 'date':
+
+                input = $('<input />')
+                        .attr('type', 'text')
+                        .attr('id', `column-${d.index}`)
+                        .addClass('datepicker')
+                        .attr('current-date', `${d.data.length == 0 ? '' : d.data}`);
+                break;
+              case 'description':
+              case 'source':
+
+                input = $('<textarea />')
+                        .attr('id', `column-${d.index}`)
+                        .attr('rows', 5)
+                        .attr('cols', 40)
+                        .val(`${d.data}`);
+                break;
+              case 'product':
+              case 'instrument':
+              case 'jurisdiction':
+
+                let data = d.data.split(',');
+                console.log(data)
+                input = $('<select />')
+                        .attr('multiple', true)
+                        .attr('id', `column-${d.index}`)
+                        .addClass('products');
+
+                  window.data_gta[d.name].map(function(d1,i) {
+                          let selected = data.includes(d1) ? 'selected' : '';
+                          input.append(
+                            `<option ${selected} value="${d1}">${d1}</option>`
+                           )
+                          })
+                break;
+              case 'documentation status':
+
+                let checked = /^official source/gi.test(d.data) ? true : false;
+                input = $('<input />')
+                        .attr('type', 'checkbox')
+                        .attr('checked', checked)
+                        .attr('id', `column-${d.index}`)
+                        .addClass('doc-status');
+
+                label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
+                break;
+              case 'assessment':
+
+                input = $('<select />')
+                      .attr('id', `column-${d.index}`)
+                      .addClass('assessment');
+
+                window.data_gta[d.name].map(function(d1,i) {
+                      let selected = d1 == d.data ? 'selected' : '';
+                        input.append(
+                          `<option value="${d1}" ${selected}>${d1}</option>`
+                         )
+                        })
+                break;
+
+            }
+
+
+            if (input != undefined) {
+              if (i <= 1) {
+                $('.canvas').append(
+                $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
+                .append(label, input)
+              )
+              // display the first two normally, wrap the others in a div to display as grid
+            } else {
+                if (i == 2) {
+                  $('.canvas').append(
+                    $('<div />').addClass(`form-grid`)
+                  )
+                  }
+                if (i >= 2) {
+                  $('.canvas .form-grid').append(
+                    $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
+                    .append(label, input)
+                  )
+                }
+            }
+            }
+
+            $('select.products').selectize({
+              maxItems: 6,
+              valueField: 'text',
+              labelField: 'text',
+              searchField: 'text',
+              create: false
+            });
+
+            $('select.assessment').selectize({
+              maxItems: 1,
+              create: false
+            });
+
+        });
+
+      $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
+      $('.datepicker').each(function(){
+        if($(this).attr('current-date') != '')
+          $(this).bsDatepicker('setDate', $(this).attr('current-date'))
+      })
+
+      $('#save-edit').on('click', function(){
+        let output= [];
+          $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
+              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
+              let value = "";
+              if ($(this).val() != null) {
+                value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
+              }
+              output.push({ data: value, index: parseInt(index) });
+          });
+
+          $('.doc-status').each(function(){ // separate for documentation status
+              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
+              let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
+              output.push({ data: value, index: parseInt(index) });
+          });
+          // console.log(output)
+          console.log("BEFORE UPDATE ROW DATA");
+          that.updateRowData(currentStatus, output, id, rowData);
+          $('.overlay').click();
+          $('#save-edit').remove();
+          $('#close-editMode').remove();
+      })
+
+      $('.overlay').addClass('show');
+      $('.overlay').on('click', function(){
+          $(this).removeClass('show');
+          $( ".editMode" ).removeClass('show');
+          $('#save-edit').remove();
+          $('#close-editMode').remove();
+          $('.canvas').empty();
+          $(this).unbind('click', arguments.callee);
+      });
+      $('#close-editMode').on('click', function(){
+          $( ".editMode" ).removeClass('show');
+          $('#save-edit').remove();
+          $('.canvas').empty();
+          $('.overlay').removeClass('show');
+          $('#close-editMode').remove();
+          $(this).unbind('click', arguments.callee);
       });
       
       $('select.assessment').selectize({
@@ -216,30 +273,11 @@ const buttonsClicks = {
         create: false
       });
       
-    });
     
     $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
     $('.datepicker').each(function(){
       if($(this).attr('current-date') != '')
         $(this).bsDatepicker('setDate', $(this).attr('current-date'))
-    })
-    
-    $('#save-edit').on('click', function(){
-      let output= [];
-      $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
-        let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-        let value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
-        output.push({ data: value, index: parseInt(index) });
-      });
-      
-      $('.doc-status').each(function(){ // separate for documentation status
-        let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-        let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
-        output.push({ data: value, index: parseInt(index) });
-      });
-      console.log(output)
-      that.updateRowData(currentStatus, output, id);
-      $('.overlay').click();
     })
     
     /*$('.overlay').addClass('show');
@@ -329,15 +367,33 @@ const buttonsClicks = {
     $('#DataTables_Table_0').DataTable().settings()[0]._searchPanes.s.panes
     .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
   },
-  updateRowData: function(currentStatus, data, id){
-    console.log(currentStatus)
-    $(`tr#${id}`).removeClass(currentStatus);
-    data.map(function(d){
-      $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
-    })
-    this.redrawDataTable();
-    this.updateSearchPanes();
-    this.rowAttachEvents(currentStatus, id);
+  updateRowData: function(currentStatus, data, id, rowData){
+      // console.log('UPDATE ROW DATA');
+      // console.log(rowData)
+      // console.log(currentStatus)
+      // console.log(data)
+      // console.log(merged);
+      console.log("DATA TABLE ROW OUTPUT");
+      console.log($('#DataTables_Table_0').DataTable().cell($(`tr#${id} .description`)));
+      $(`tr#${id} .description`).addClass('TEST');
+      rowData.forEach((row) => {
+        let index = row.index;
+        // console.log(index);
+        console.log("ROW");
+        console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
+        console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
+        if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
+          console.log("CHANGED");
+          $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
+        }
+      });
+
+      $(`tr#${id}`).removeClass(currentStatus);
+      $(`tr#${id}`).addClass('edited');
+      $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
+      data.map(function(d){
+          $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
+      })
   },
   getRowData: function(id){
     let columns = this.getColumnsNames();
