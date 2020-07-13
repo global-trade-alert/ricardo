@@ -12,7 +12,7 @@ b221_hint_url=function(is.freelancer = NULL, user.id = NULL, hint.url.dataframe 
                        table.prefix = '')
   
   if(is.freelancer==T){
-    push.updates = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+    push.updates = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                           SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
     
