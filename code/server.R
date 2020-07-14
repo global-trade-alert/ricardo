@@ -116,6 +116,7 @@ server <- function(input, output, session) {
           # js$rmcookie()
           js$setcookie(paste(sessionid, active.user$id, sep = "-"))
           removeClass(class = "inactive", selector = "#placeholderUI")
+          
         }
       }
     }
