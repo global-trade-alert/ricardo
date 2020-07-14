@@ -431,7 +431,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                                                           <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
                                     }
                                 })
-                              api.$('.source-less').each(function(){ // all un-opened descriptions
+                              api.$('.source-less').each(function(){ // all un-opened sources
                                   // console.log($(this));
                                   // console.log($(this)[0].scrollHeight);
                                   // console.log($(this)[0].parentNode.scrollHeight);

@@ -254,7 +254,7 @@ const buttonsClicks = {
       $('.overlay').on('click', function(){
           $(this).removeClass('show');
           $( ".editMode" ).removeClass('show');
-          $('#save-edit').remove();
+           $('#save-edit').remove();
           $('#close-editMode').remove();
           $('.canvas').empty();
           $(this).unbind('click', arguments.callee);
@@ -267,26 +267,8 @@ const buttonsClicks = {
           $('#close-editMode').remove();
           $(this).unbind('click', arguments.callee);
       });
-      
-      $('select.assessment').selectize({
-        maxItems: 1,
-        create: false
-      });
-      
     
-    $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
-    $('.datepicker').each(function(){
-      if($(this).attr('current-date') != '')
-        $(this).bsDatepicker('setDate', $(this).attr('current-date'))
-    })
     
-    /*$('.overlay').addClass('show');
-    $('.overlay').on('click', function(){
-      $(this).removeClass('show');
-      $( ".editMode" ).removeClass('show');
-      $('.canvas').empty();
-      $(this).unbind('click', arguments.callee);
-    });*/
     that.addOverlay('editMode');
     
     $( ".editMode" ).addClass('show');
@@ -394,6 +376,9 @@ const buttonsClicks = {
       data.map(function(d){
           $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
       })
+      this.redrawDataTable();
+      this.updateSearchPanes();
+      this.rowAttachEvents(currentStatus, id);
   },
   getRowData: function(id){
     let columns = this.getColumnsNames();
