@@ -604,7 +604,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     "Mark irrelevant"),
                         tags$button(id="deleteCollection-popup",
                                     tags$i(class="fa fa-trash"),
-                                    "Delete Collection"),
+                                    "Delete Collection")
                         
                         ))
     )
