@@ -1,31 +1,41 @@
 b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, processed.rows = NULL, is.in.collection = NULL){
-  
   setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate', 'discard_reasons', 'discard_comment'),
            c('hint.id','relevance','implementer.name','product.group.name','intervention.type.name','assessment.name','url','is.official','comment','implementation.date','announcement.date','removal.date', 'discard.reason', 'discard.reason.comment'))
   
   input.col.names = c('hint.id','implementer.name','url','is.official','assessment.name',
                       'product.group.name','intervention.type.name','comment','relevance','implementation.date',
                       'announcement.date','removal.date',  'discard.reason', 'discard.reason.comment')
-  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name', 'discard.reason')
+  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name', 'collection.name', 'discard.reason')
   
-  multiple.values.permitted = subset(multiple.values.permitted, multiple.values.permitted %in% colnames(processed.rows))
-  multiple.values.permitted %>% 
-        map(function(x) processed.rows <<- processed.rows %>% unnest(x, keep_empty = TRUE) )
+  # multiple.values.permitted = subset(multiple.values.permitted, multiple.values.permitted %in% colnames(processed.rows))
+  # multiple.values.permitted %>%
+  #       purrr::map(function(x) processed.rows <<- processed.rows %>% tidyr::unchop(x, keep_empty = TRUE) )
+  
+  unnest1 = tidyr::unnest(processed.rows[,c('hint.id','implementer.name')], implementer.name)
+  unnest2 = tidyr::unnest(processed.rows[,c('hint.id','product.group.name')], product.group.name)
+  unnest3 = tidyr::unnest(processed.rows[,c('hint.id','intervention.type.name')], intervention.type.name)
+  unnest4 = tidyr::unnest(processed.rows[,c('hint.id','discard.reason')], discard.reason)
+
+  processed.rows = as.data.frame(merge(merge(merge(merge(processed.rows[,input.col.names[!input.col.names %in% multiple.values.permitted]],
+                                                   unnest1, by='hint.id', all.x = T),
+                                             unnest2, by='hint.id', all.x = T),
+                                       unnest3, by='hint.id', all.x = T),
+                                 unnest4, by='hint.id', all.x = T))
+  
   print(processed.rows)
-  test_processed.rows <<- processed.rows
-  
+
   # processed.rows$discard.reason[!is.na(processed.rows$discard.reason.comment)|processed.rows$discard.reason.comment!=''] = 'other, see comment'
   processed.rows$was.modified = 1
   processed.rows$in.collection = NA
-  
+  print('0')
   temp.changes.name=paste0("b221.temp.changes.data.",user.id)
   assign(temp.changes.name,processed.rows,envir=globalenv())
-  
+  print('1')
   gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
   gta_sql_create_table(write.df=temp.changes.name,
                        append.existing = F,
                        table.prefix = '')
-  
+  print('2')
   if(is.freelancer==T){
     push.updates = paste0("/* FREELANCER UPLOAD */
                           SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());

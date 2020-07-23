@@ -45,7 +45,7 @@ shinyApp(ui = ui,
              gta_sql_pool_close()
            })
          },
-         options = list(launch.browser=T)
+         options = list(launch.browser=F)
 )
 
 
