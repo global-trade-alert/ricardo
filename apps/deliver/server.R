@@ -2,74 +2,74 @@
 # Don't forget to add these variables as function parameters as well
 # SERVER
 
-  load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
-  
-  # preprocess data
-  new_env$covid.data <-
-    new_env$covid.data %>%
-    mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
-    mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
-    mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
-    mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
-    mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
-    mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
-    mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
-    mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
-    mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
-    mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
-    mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
-    mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
-    mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
-    mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-                               inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
-    select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-               inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
-               prd.med.drug, prd.other, prd.food, prd.med.any))
-  
-  new_env$covid.data$products <-
-    new_env$covid.data$products %>%
-    str_replace_all("\\,{2,}", ",") %>%
-    str_replace_all("^\\,", "") %>%
-    str_replace_all("\\,$", "")
-  
-  new_env$covid.data$products <-
-    new_env$covid.data$products %>%
-      str_replace_all("any medical product", "uncertain")
-  
-  new_env$covid.data$instruments <-
-    new_env$covid.data$instruments %>%
-    str_replace_all("\\,{2,}", ",") %>%
-    str_replace_all("^\\,", "") %>%
-    str_replace_all("\\,$", "")
-  
-  # create confirmation column with random values
-  new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
-  new_env$covid.data <- 
-    new_env$covid.data %>%
-    mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
-    mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
-    mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
-    mutate(confirmation = str_replace(confirmation, "4", "deleted"))
-  
-  # create users involved column with random users
-  new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
-  new_env$covid.data <- 
-    new_env$covid.data %>%
-    mutate(users = str_replace(users, "1", "LG,PB")) %>%
-    mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
-    mutate(users = str_replace(users, "3", "JF")) %>%
-    mutate(users = str_replace(users, "4", "DR,JF")) %>%
-    mutate(users = str_replace(users, "5", "OR")) %>%
-    mutate(users = str_replace(users, "6", "KM"))
-  
-  new_env$covid.data <- 
-    new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
-                         "gta.intervention.type","date.announced","date.implemented","date.removed",
-                         "description","source", "products","instruments")]
+load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
+
+# preprocess data
+new_env$covid.data <-
+  new_env$covid.data %>%
+  mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
+  mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
+  mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
+  mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
+  mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
+  mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
+  mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
+  mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
+  mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
+  mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
+  mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
+  mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
+  mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
+  mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
+                             inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
+  select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
+             inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
+             prd.med.drug, prd.other, prd.food, prd.med.any))
+
+new_env$covid.data$products <-
+  new_env$covid.data$products %>%
+  str_replace_all("\\,{2,}", ",") %>%
+  str_replace_all("^\\,", "") %>%
+  str_replace_all("\\,$", "")
+
+new_env$covid.data$products <-
+  new_env$covid.data$products %>%
+  str_replace_all("any medical product", "uncertain")
+
+new_env$covid.data$instruments <-
+  new_env$covid.data$instruments %>%
+  str_replace_all("\\,{2,}", ",") %>%
+  str_replace_all("^\\,", "") %>%
+  str_replace_all("\\,$", "")
+
+# create confirmation column with random values
+new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
+new_env$covid.data <- 
+  new_env$covid.data %>%
+  mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
+  mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
+  mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
+  mutate(confirmation = str_replace(confirmation, "4", "deleted"))
+
+# create users involved column with random users
+new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
+new_env$covid.data <- 
+  new_env$covid.data %>%
+  mutate(users = str_replace(users, "1", "LG,PB")) %>%
+  mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
+  mutate(users = str_replace(users, "3", "JF")) %>%
+  mutate(users = str_replace(users, "4", "DR,JF")) %>%
+  mutate(users = str_replace(users, "5", "OR")) %>%
+  mutate(users = str_replace(users, "6", "KM"))
+
+new_env$covid.data <- 
+  new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
+                       "gta.intervention.type","date.announced","date.implemented","date.removed",
+                       "description","source", "products","instruments")]
 
 
 deliverserver <- function(input, output, session, user, app, prm, ...) {
-  
+
   observe({
     products_unique <-
       gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
@@ -87,11 +87,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                'Initial assessment' = assessment_unique,
                discard_reason = discard_reason))
     
-      session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
-                                                                Instruments = instruments_unique,
-                                                                Jurisdiction = jurisdiction_unique,
-                                                                'Initial assessment' = assessment_unique,
-                                                                discard_reason = discard_reason)))
+    session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
+                                                              Instruments = instruments_unique,
+                                                              Jurisdiction = jurisdiction_unique,
+                                                              'Initial assessment' = assessment_unique,
+                                                              discard_reason = discard_reason)))
   })
   
   ns <- NS("deliver")
@@ -110,7 +110,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       }"),
       pageLength = 300,
       scrollX = FALSE,
-
+      
       deferRender = TRUE,
       scrollY = JS('window.innerHeight - 160'),
       scroller = TRUE,
@@ -144,72 +144,72 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       ),
       autoWidth = FALSE,
       columnDefs = list(
-       # set columns widths
-          list(  # Confirmation status
-            targets = 0,
-            className = "dt-head-left status"
-          ),
-          list(  # Entry ID
-            targets = 1,
-            className = "dt-head-left smallPadding entry-id"
-          ),
-          list(  # Users
-            targets = 2,
-            className = "dt-head-left smallPadding users"
-          ),
-          list( # Documentation status
-            targets = 3,
-            className = "dt-head-left smallPadding documentation-status"
-          ),
-          list( # Jurisdiction
-            targets = 4,
-            className = "dt-head-left smallPadding jurisdiction"
-          ),
-          list( # Initial assessment
-            targets = 5,
-            className = "dt-head-left smallPadding assessment"
-          ),
-          list( # GTA intervention type
-            targets = 6,
-            className = "dt-head-left smallPadding type"
-          ),
-          list( # Announcement date
-            targets = 7,
-            className = "dt-head-left smallPadding announcement-date"
-          ),
-          list(  # Implementation date
-            targets = 8,
-            className = "dt-head-left smallPadding implementation-date"
-          ),
-          list(  # Removal date
-            targets = 9,
-            className = "dt-head-left smallPadding removal-date"
-          ), # 43%
-          list(  # Description
-            targets = 10,
-            className = "dt-head-left smallPadding description"
-          ),
-          list(  # Source,
-            targets = 11,
-            className = "dt-head-left smallPadding source"
-          ),
-          list(  # Products
-            targets = 12,
-            className = "dt-head-left smallPadding products"
-          ),
-          list(  # Instruments
-            targets = 13,
-            className = "dt-head-left smallPadding instruments"
-          ),
-          list(targets = '_all',
-               createdCell = JS("function (td, cellData, rowData, row, col) {
+        # set columns widths
+        list(  # Confirmation status
+          targets = 0,
+          className = "dt-head-left status"
+        ),
+        list(  # Entry ID
+          targets = 1,
+          className = "dt-head-left smallPadding entry-id"
+        ),
+        list(  # Users
+          targets = 2,
+          className = "dt-head-left smallPadding users"
+        ),
+        list( # Documentation status
+          targets = 3,
+          className = "dt-head-left smallPadding documentation-status"
+        ),
+        list( # Jurisdiction
+          targets = 4,
+          className = "dt-head-left smallPadding jurisdiction"
+        ),
+        list( # Initial assessment
+          targets = 5,
+          className = "dt-head-left smallPadding assessment"
+        ),
+        list( # GTA intervention type
+          targets = 6,
+          className = "dt-head-left smallPadding type"
+        ),
+        list( # Announcement date
+          targets = 7,
+          className = "dt-head-left smallPadding announcement-date"
+        ),
+        list(  # Implementation date
+          targets = 8,
+          className = "dt-head-left smallPadding implementation-date"
+        ),
+        list(  # Removal date
+          targets = 9,
+          className = "dt-head-left smallPadding removal-date"
+        ), # 43%
+        list(  # Description
+          targets = 10,
+          className = "dt-head-left smallPadding description"
+        ),
+        list(  # Source,
+          targets = 11,
+          className = "dt-head-left smallPadding source"
+        ),
+        list(  # Products
+          targets = 12,
+          className = "dt-head-left smallPadding products"
+        ),
+        list(  # Instruments
+          targets = 13,
+          className = "dt-head-left smallPadding instruments"
+        ),
+        list(targets = '_all',
+             createdCell = JS("function (td, cellData, rowData, row, col) {
                                   $(td).css('padding', '0px')
                                 }
                                 ")),
-          list(targets = c(0:9),
-               className = 'dt-center'),
-          list(targets = 0,
-               render = JS("function (data, type, row){
+        list(targets = c(0:9),
+             className = 'dt-center'),
+        list(targets = 0,
+             render = JS("function (data, type, row){
 
                             if (type === 'sp') {
                               return data;
@@ -243,40 +243,40 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                    
                             return output;
                }"),
-               searchPanes = list(
-                 orthogonal = 'sp'
-               )
-               ),
-          list(targets = 2,
-               render = JS("function (data, type, row){
+             searchPanes = list(
+               orthogonal = 'sp'
+             )
+        ),
+        list(targets = 2,
+             render = JS("function (data, type, row){
                             let users = data.split(',').map(d =>`<div class=\"usr-label\">${d}</div>`).join('');
                              return `<div class=\"box-usr-label\">
                                         ${users}
                                      </div>`
                }")
-          ),
-          list(targets = 4,
-               render = JS("function (data, type, row){
+        ),
+        list(targets = 4,
+             render = JS("function (data, type, row){
                             if (type === 'sp') {
                               return data.split(',')
                             }
                             return data;
                }"),
-               searchPanes = list(
-                 orthogonal = 'sp'
-               )
-          ),
-          list(targets = 7,
-               render = JS("function(data,type,row){
+             searchPanes = list(
+               orthogonal = 'sp'
+             )
+        ),
+        list(targets = 7,
+             render = JS("function(data,type,row){
                             if (data != null){
                                 return `<div class=\"ann-date\">${data}</div>` 
                             } else {
                                 return ''
                             }
                }")
-               ),
-          list(targets = 13,
-               render = JS("function (data, type, row) {
+        ),
+        list(targets = 13,
+             render = JS("function (data, type, row) {
                             if (type === 'sp') {
                               return data.split(',')
                             }
@@ -292,10 +292,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 
                             return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
-               searchPanes = list(
-                 orthogonal = 'sp',
-                 dtOpts = list(
-                   initComplete = JS("function(){
+             searchPanes = list(
+               orthogonal = 'sp',
+               dtOpts = list(
+                 initComplete = JS("function(){
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
                           
@@ -309,6 +309,21 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow')[0];
                           referenceNode.appendChild(newNode);
                           
+                          // Add export .xlsx to bottom of search panes
+                          let export_div = document.createElement('div');
+                          Object.assign(export_div, {
+                            className: 'search-pane-export-xlsx',
+                            title: 'export as .xlsx',
+                            onclick: function(){ buttonsClicks['initializeSaveMode']();  }
+                          });
+                          let img = document.createElement('img');
+                          Object.assign(img, {
+                            src: 'www/deliver/save-xlsx.svg',
+                            id: 'export-svg'
+                          })
+                          export_div.appendChild(img);
+                          referenceNode.appendChild(export_div);
+                          
                           searchPaneUI();
                           
                                                                                     
@@ -318,21 +333,21 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           pagination.appendTo('.dtsp-panesContainer .dtsp-titleRow');
                          
                    }"),
-                   drawCallback = JS("function(settings){
+                 drawCallback = JS("function(settings){
                                      const api = this.api();
                    }"),
-                   predrawCallback = JS("function(settings){
+                 predrawCallback = JS("function(settings){
                                      const api = this.api();
 
                    }"),
-                   createdRow = JS("function(row, data, dataIndexcells){
+                 createdRow = JS("function(row, data, dataIndexcells){
 
                                    }")
-                 )
                )
-          ),
-          list(targets = 12,
-               render = JS("function (data, type, row) {
+             )
+        ),
+        list(targets = 12,
+             render = JS("function (data, type, row) {
                             if (type === 'sp') {
                                 return data.split(',')
                             } 
@@ -347,33 +362,33 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             all = `<div class = \"col-left\">${all.join('')}</div>`;
                             return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
-               searchPanes = list(
-                 orthogonal = 'sp'
-               )
-               ),
-          list(targets = 11,
-               render = JS("function(data, type, row, meta){
+             searchPanes = list(
+               orthogonal = 'sp'
+             )
+        ),
+        list(targets = 11,
+             render = JS("function(data, type, row, meta){
                           data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>');
 
                           let output = `<div class=\"source-less\">${data}</div>`;
 
                           return output
                }")),
-          list(targets = 10,
-               render = JS("function(data, type, row, meta){
+        list(targets = 10,
+             render = JS("function(data, type, row, meta){
                           let output = `<div class=\"description-less\">${data}</div>`;
 
                           return output
                }")),
-          
-          # searchPanes extension
-          list(
-            searchPanes = list(
-              show = FALSE
-              ),
-            targets = c(1:3,6:11)#,12:22
-            )
-        ),
+        
+        # searchPanes extension
+        list(
+          searchPanes = list(
+            show = FALSE
+          ),
+          targets = c(1:3,6:11)#,12:22
+        )
+      ),
       
       initComplete = JS("function(settings) {
                             const api = this.api();
@@ -416,7 +431,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                                                           <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
                                     }
                                 })
-                              api.$('.source-less').each(function(){ // all un-opened descriptions
+                              api.$('.source-less').each(function(){ // all un-opened sources
                                   // console.log($(this));
                                   // console.log($(this)[0].scrollHeight);
                                   // console.log($(this)[0].parentNode.scrollHeight);
@@ -466,7 +481,39 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     class = "row-border compact",
     extensions = c("Select", 'SearchPanes'),
     selection = "none"
-    ),
+  ),
   server = F)
+  
+  observeEvent(input$saveXlsx, {
+    export <- jsonlite::fromJSON(input$saveXlsx)
+
+    print(export)
+    export <- export %>%
+      mutate('Product: medical consumables' = if('Products' %in% names(.)) str_detect(Products, 'medical consumables') else NULL,
+             'Product: Medical equipment' = if('Products' %in% names(.)) str_detect(Products, 'medical equipment.') else NULL,
+             'Product: Medicines or drugs' = if('Products' %in% names(.)) str_detect(Products, 'medicines or drugs') else NULL,
+             'Product: Food' = if('Products' %in% names(.)) str_detect(Products, 'food') else NULL,
+             'Product: Any medical product' = if('Products' %in% names(.)) str_detect(Products, 'uncertain') else NULL,
+             'Product: other' = if('Product' %in% names(.)) str_detect(Products, 'other') else NULL,
+             'Is export barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export barrier') else NULL,
+             'Is import barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'import barrier') else NULL,
+             'Domestic subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'domestic subsidy') else NULL,
+             'Export subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export subsidy') else NULL) %>%
+      select(!any_of(c('Products', 'Instruments')))
+    
+    data_export <<- list("WB data" = export, "Notes" = c('Data as available on CURRENTTIME.'))
+    
+    runjs("$('#deliver-downloadXlsx')[0].click();
+           $('.overlay').click();")
+  })
+  
+  output$downloadXlsx <- downloadHandler(
+    filename = function() {
+      paste0("test", ".xlsx")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(data_export, file = file)
+    }
+  )
   
 }
