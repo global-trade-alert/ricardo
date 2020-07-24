@@ -1,4 +1,6 @@
 b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, processed.rows = NULL, is.in.collection = NULL){
+  library(tidyr)
+  library(magrittr)
   
   setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate', 'discard_reasons', 'discard_comment'),
            c('hint.id','relevance','implementer.name','product.group.name','intervention.type.name','assessment.name','url','is.official','comment','implementation.date','announcement.date','removal.date', 'discard.reason', 'discard.reason.comment'))
@@ -6,13 +8,29 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   input.col.names = c('hint.id','implementer.name','url','is.official','assessment.name',
                       'product.group.name','intervention.type.name','comment','relevance','implementation.date',
                       'announcement.date','removal.date',  'discard.reason', 'discard.reason.comment')
-  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name', 'discard.reason')
+  # multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name','discard.reason')
+  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','discard.reason')
   
   multiple.values.permitted = subset(multiple.values.permitted, multiple.values.permitted %in% colnames(processed.rows))
-  multiple.values.permitted %>% 
-        map(function(x) processed.rows <<- processed.rows %>% unnest(x, keep_empty = TRUE) )
+  print(colnames(processed.rows))
+  
+  # multiple.values.permitted %>% 
+  #      purrr::map(function(x) processed.rows <<- processed.rows %>% tidyr::unnest(x, keep_empty = TRUE) )
+  
+  unnest1 = tidyr::unnest(processed.rows[,c('hint.id','implementer.name')], implementer.name)
+  unnest2 = tidyr::unnest(processed.rows[,c('hint.id','product.group.name')], product.group.name)
+  unnest3 = tidyr::unnest(processed.rows[,c('hint.id','intervention.type.name')], intervention.type.name)
+  unnest4 = tidyr::unnest(processed.rows[,c('hint.id','discard.reason')], discard.reason)
+  processed.rows = as.data.frame(merge(merge(merge(merge(processed.rows[,input.col.names[!input.col.names %in% multiple.values.permitted]],
+                                                   unnest1, by='hint.id', all.x = T),
+                                             unnest2, by='hint.id', all.x = T),
+                                       unnest3, by='hint.id', all.x = T),
+                                unnest4, by='hint.id', all.x = T))
+
   print(processed.rows)
   test_processed.rows <<- processed.rows
+  
+
   
   # processed.rows$discard.reason[!is.na(processed.rows$discard.reason.comment)|processed.rows$discard.reason.comment!=''] = 'other, see comment'
   processed.rows$was.modified = 1
@@ -27,8 +45,9 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                        table.prefix = '')
   
   if(is.freelancer==T){
+    
     push.updates = paste0("/* FREELANCER UPLOAD */
-                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                           
                           UPDATE b221_temp_changes_data_",user.id," changes
                           LEFT JOIN b221_hint_collection ON b221_hint_collection.hint_id = changes.hint_id 
@@ -135,7 +154,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   } else {
     processed.rows$was.modified = 1
     push.updates = paste0("/* give editor a classification_id only if they actually modified something that they put forward to process */
-                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                           SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                           

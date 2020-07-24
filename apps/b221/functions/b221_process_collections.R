@@ -140,7 +140,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
       if(collection.unchanged==F & is.null(new.collection.name)){
         
-        update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+        update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                                             INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                             SELECT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                                              
@@ -216,7 +216,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       } else {
         
         if(!any(is.na(new.hints)) & length(new.hints) != 0){
-          update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+          update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                           SELECT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                                            
@@ -300,7 +300,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
       
       if(collection.unchanged==F & is.null(new.collection.name)){
-        update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+        update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                                             INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                             SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                                              
@@ -431,7 +431,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         
         if(!any(is.na(new.hints)) & length(new.hints) != 0){
           #editor reassigned hints
-          update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = 'ricardomainclone');
+          update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
                                             INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                             SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
                                              

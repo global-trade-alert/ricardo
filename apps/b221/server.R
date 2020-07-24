@@ -604,7 +604,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                                     "Mark irrelevant"),
                         tags$button(id="deleteCollection-popup",
                                     tags$i(class="fa fa-trash"),
-                                    "Delete Collection"),
+                                    "Delete Collection")
                         
                         ))
     )
@@ -1690,9 +1690,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     changes$intervention = ifelse(is.na(changes$intervention), list(NA_character_), strsplit(as.character(changes$intervention), split=' ; '))
     changes$discard_reasons = ifelse(is.na(changes$discard_reasons), list(NA_character_), strsplit(as.character(changes$discard_reasons), split=' ; '))
 
-    
     print(changes)
     print(paste0("Is freelancer: ",ifelse(prm$freelancer == 1,1,0)))
+    test_changes <<- changes
     
     b221_process_display_info(is.freelancer = ifelse(prm$freelancer == 1,1,0) ,user.id = user$id, processed.rows = changes) # freelancer editor is reversed
     
