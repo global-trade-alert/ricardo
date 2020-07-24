@@ -20,7 +20,9 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if(discard.comment == '' | is.null(discard.comment)){
+        if(is.null(discard.comment)){
+          val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+        } else if (discard.comment == '') {
           val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
         } else {
           val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
@@ -68,7 +70,9 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if(discard.comment=='' | is.null(discard.comment)){
+        if(is.null(discard.comment)){
+          val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+        } else if (discard.comment == '') {
           val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
         } else {
           val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
