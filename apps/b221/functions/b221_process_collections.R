@@ -20,16 +20,20 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if(is.null(discard.comment)){
-          val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
-        } else if (discard.comment == '') {
-          val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
-        } else {
-          val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
+        if (length(discard)>0) {
+          if(length(discard.comment)==0){
+              val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+            }  else {
+              if (discard.comment == '') {
+                val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+              } else {
+                val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
+              }
+            }
         }
-        val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
-        val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
-        val.ann.dates = ifelse(!is.na(announcement.date[1]),paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
+        val.rem.dates = ifelse(!is.na(removal.date[1]) & ! removal.date[1] == -Inf, paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
+        val.impl.dates = ifelse(!is.na(implementation.date[1]) & ! implementation.date[1] == -Inf, paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
+        val.ann.dates = ifelse(!is.na(announcement.date[1]) & ! announcement.date[1] == -Inf, paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
         date.vals = gsub('\\)\\(','\\),\\(',gsub(' ','',paste(val.rem.dates,val.impl.dates,val.ann.dates)))
         
         update.collection.info = paste0("DELETE b221_collection_intervention, b221_collection_product_group, b221_collection_relevance, b221_collection_jurisdiction, b221_collection_assessment, 
@@ -55,7 +59,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";
                                           ",if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
                                         )
-        if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";")
+        if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) { update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";") }
         
       } else {
         
@@ -70,16 +74,20 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if(is.null(discard.comment)){
-          val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
-        } else if (discard.comment == '') {
-          val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
-        } else {
-          val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
+        if (length(discard)>0) {
+          if(length(discard.comment)==0){
+            val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+          }  else {
+            if (discard.comment == '') {
+              val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+            } else {
+              val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
+            }
+          }
         }
-        val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
-        val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
-        val.ann.dates = ifelse(!is.na(announcement.date[1]),paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
+        val.rem.dates = ifelse(!is.na(removal.date[1]) & ! removal.date[1] == -Inf, paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
+        val.impl.dates = ifelse(!is.na(implementation.date[1]) & ! implementation.date[1] == -Inf, paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
+        val.ann.dates = ifelse(!is.na(announcement.date[1]) & ! announcement.date[1] == -Inf, paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
         date.vals = gsub('\\)\\(','\\),\\(',gsub(' ','',paste(val.rem.dates,val.impl.dates,val.ann.dates)))
         
         update.collection.info = paste0("INSERT INTO b221_collection_intervention VALUES ",val.cltn.int,";
