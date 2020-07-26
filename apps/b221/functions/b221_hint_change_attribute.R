@@ -1,8 +1,8 @@
 library(pool)
 library(gtasql)
 library(gtalibrary)
-library(tidyverse)
 library(plyr)
+library(tidyverse)
 gta_setwd()
 
 gta_sql_pool_open(db.title="ricardodev",
@@ -55,121 +55,294 @@ b221_hint_change_attribute<-function(change.id=NULL,
   col.id=gta_sql_get_value(paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id IN (",paste0(change.id, collapse=','),");")) #paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id = ",change.id,";")
   test_col.id <<- col.id
   # find attributes pre-change
-  pull.hint.attributes = sprintf(paste0("SELECT change_ids.hint_id, ht_ass.assessment_id, ht_int.apparent_intervention_id AS intervention_id, 
-                                        prod_grp.product_group_id, ht_jur.jurisdiction_id, ht_rlvnt.relevance, bt_hint_date.`date`, bt_hint_date.date_type_id FROM 
-                                        (SELECT bt_hint_log.hint_id FROM bt_hint_log WHERE bt_hint_log.hint_id IN (%s)) change_ids 
-                                        LEFT JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON ht_ass.hint_id = change_ids.hint_id AND ht_ass.assessment_accepted = 1
-                                        LEFT JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = change_ids.hint_id AND ht_int.intervention_accepted = 1
-                                        LEFT JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) prod_grp ON prod_grp.hint_id = change_ids.hint_id AND prod_grp.product_group_assessment = 1
-                                        LEFT JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = change_ids.hint_id AND ht_jur.jurisdiction_accepted = 1
-                                        LEFT JOIN (SELECT bt_hint_relevance.hint_id, bt_hint_relevance.relevance, bt_hint_relevance.relevance_accepted FROM bt_hint_relevance JOIN (SELECT bt_hint_relevance.hint_id, MAX(bt_hint_relevance.validation_classification) AS newest_classification FROM bt_hint_relevance GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_relevance.hint_id AND newest_classification.newest_classification <=> bt_hint_relevance.validation_classification) ht_rlvnt ON ht_rlvnt.hint_id = change_ids.hint_id AND ht_rlvnt.relevance_accepted = 1
-                                        LEFT JOIN (SELECT bt_hint_date.hint_id, bt_hint_date.`date`, bt_hint_date.date_type_id, bt_hint_date.date_accepted FROM bt_hint_date JOIN (SELECT bt_hint_date.hint_id, MAX(bt_hint_date.validation_classification) AS newest_classification FROM bt_hint_date GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_date.hint_id AND newest_classification.newest_classification <=> bt_hint_date.validation_classification) bt_hint_date ON bt_hint_date.hint_id = change_ids.hint_id AND bt_hint_date.date_accepted = 1;"),ifelse(paste0(change.id, collapse = ',')=='',"NULL",paste0(change.id, collapse = ',')))
+  # Kamran's query
+  # pull.hint.attributes = sprintf(paste0("SELECT change_ids.hint_id, ht_ass.assessment_id, ht_int.apparent_intervention_id AS intervention_id, 
+  #                                       prod_grp.product_group_id, ht_jur.jurisdiction_id, ht_rlvnt.relevance, bt_hint_date.`date`, bt_hint_date.date_type_id FROM 
+  #                                       (SELECT bt_hint_log.hint_id FROM bt_hint_log WHERE bt_hint_log.hint_id IN (%s)) change_ids 
+  #                                       LEFT JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON ht_ass.hint_id = change_ids.hint_id AND ht_ass.assessment_accepted = 1
+  #                                       LEFT JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = change_ids.hint_id AND ht_int.intervention_accepted = 1
+  #                                       LEFT JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) prod_grp ON prod_grp.hint_id = change_ids.hint_id AND prod_grp.product_group_assessment = 1
+  #                                       LEFT JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = change_ids.hint_id AND ht_jur.jurisdiction_accepted = 1
+  #                                       LEFT JOIN (SELECT bt_hint_relevance.hint_id, bt_hint_relevance.relevance, bt_hint_relevance.relevance_accepted FROM bt_hint_relevance JOIN (SELECT bt_hint_relevance.hint_id, MAX(bt_hint_relevance.validation_classification) AS newest_classification FROM bt_hint_relevance GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_relevance.hint_id AND newest_classification.newest_classification <=> bt_hint_relevance.validation_classification) ht_rlvnt ON ht_rlvnt.hint_id = change_ids.hint_id AND ht_rlvnt.relevance_accepted = 1
+  #                                       LEFT JOIN (SELECT bt_hint_date.hint_id, bt_hint_date.`date`, bt_hint_date.date_type_id, bt_hint_date.date_accepted FROM bt_hint_date JOIN (SELECT bt_hint_date.hint_id, MAX(bt_hint_date.validation_classification) AS newest_classification FROM bt_hint_date GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_date.hint_id AND newest_classification.newest_classification <=> bt_hint_date.validation_classification) bt_hint_date ON bt_hint_date.hint_id = change_ids.hint_id AND bt_hint_date.date_accepted = 1;"),ifelse(paste0(change.id, collapse = ',')=='',"NULL",paste0(change.id, collapse = ',')))
+  
+  pull.hint.attributes = sprintf(paste0("	SELECT DISTINCT change_ids.hint_id, ht_ass.assessment_id, ht_int.apparent_intervention_id AS intervention_id, 
+                                        	prod_grp.product_group_id, ht_jur.jurisdiction_id, ht_rlvnt.relevance, bt_hint_date.`date`, bt_hint_date.date_type_id,
+                                        	bt_hint_url.url_id, bt_hint_url.url_type_id, bt_hint_text.hint_title, bt_hint_text.hint_description ,b221_hint_comment_log.comment FROM 
+                                        	(SELECT bt_hint_log.hint_id FROM bt_hint_log WHERE bt_hint_log.hint_id IN (%s)) change_ids 
+                                        	LEFT JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON ht_ass.hint_id = change_ids.hint_id AND ht_ass.assessment_accepted = 1
+                                        	LEFT JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = change_ids.hint_id AND ht_int.intervention_accepted = 1
+                                        	LEFT JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) prod_grp ON prod_grp.hint_id = change_ids.hint_id AND prod_grp.product_group_assessment = 1
+                                        	LEFT JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = change_ids.hint_id AND ht_jur.jurisdiction_accepted = 1
+                                        	LEFT JOIN (SELECT bt_hint_relevance.hint_id, bt_hint_relevance.relevance, bt_hint_relevance.relevance_accepted FROM bt_hint_relevance JOIN (SELECT bt_hint_relevance.hint_id, MAX(bt_hint_relevance.validation_classification) AS newest_classification FROM bt_hint_relevance GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_relevance.hint_id AND newest_classification.newest_classification <=> bt_hint_relevance.validation_classification) ht_rlvnt ON ht_rlvnt.hint_id = change_ids.hint_id AND ht_rlvnt.relevance_accepted = 1
+                                        	LEFT JOIN (SELECT bt_hint_date.hint_id, bt_hint_date.`date`, bt_hint_date.date_type_id, bt_hint_date.date_accepted FROM bt_hint_date JOIN (SELECT bt_hint_date.hint_id, MAX(bt_hint_date.validation_classification) AS newest_classification FROM bt_hint_date GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_date.hint_id AND newest_classification.newest_classification <=> bt_hint_date.validation_classification) bt_hint_date ON bt_hint_date.hint_id = change_ids.hint_id AND bt_hint_date.date_accepted = 1
+                                        	LEFT JOIN (SELECT bt_hint_url.hint_id, bt_hint_url.url_id , bt_hint_url.url_type_id , bt_hint_url.url_accepted FROM bt_hint_url JOIN (SELECT bt_hint_url.hint_id, MAX(bt_hint_url.validation_classification ) AS newest_classification FROM bt_hint_url GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_url.hint_id AND newest_classification.newest_classification <=> bt_hint_url.validation_classification) bt_hint_url ON bt_hint_url.hint_id = change_ids.hint_id AND bt_hint_url.url_accepted = 1
+                                        	LEFT JOIN (SELECT bt_hint_text.hint_id, bt_hint_text.hint_title , bt_hint_text.hint_description , bt_hint_text.description_accepted FROM bt_hint_text JOIN (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification ) AS newest_classification FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) bt_hint_text ON bt_hint_text.hint_id = change_ids.hint_id AND bt_hint_text.description_accepted = 1
+                                        	LEFT JOIN b221_hint_comment_log ON change_ids.hint_id = b221_hint_comment_log.hint_id ;"),ifelse(paste0(change.id, collapse = ',')=='',"NULL",paste0(change.id, collapse = ',')))
   pull.hint.attributes = gta_sql_get_value(pull.hint.attributes)
-  #pull.hint.attributes = merge(pull.hint.attributes, col.id, by = 'hint.id')
+
+    #pull.hint.attributes = merge(pull.hint.attributes, col.id, by = 'hint.id')
   
   #add dfs with id and names of the attributes
   assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_id IN(",paste0(unique(pull.hint.attributes$assessment.id), collapse=','),");"))
   intervention.list <- gta_sql_get_value(paste0("SELECT DISTINCT bitl.intervention_type_id, bitl.intervention_type_name FROM b221_intervention_type_list bitl WHERE bitl.intervention_type_id IN (", paste0(unique(pull.hint.attributes$intervention.id),collapse=',') ,");"))
   product.list <- gta_sql_get_value(paste0("SELECT DISTINCT bpgl.product_group_id, bpgl.product_group_name FROM b221_product_group_list bpgl WHERE bpgl.product_group_id IN (", paste0(unique(pull.hint.attributes$product.group.id),collapse=',') ,");"))
   jurisdiction.list <- gta_sql_get_value(paste0("SELECT DISTINCT gjl.jurisdiction_id, gjl.jurisdiction_name FROM gta_jurisdiction_list gjl WHERE gjl.jurisdiction_id IN (", paste0(unique(pull.hint.attributes$jurisdiction.id),collapse=',') ,");"))
+  url.list <- gta_sql_get_value(paste0("SELECT DISTINCT url_id, url FROM bt_url_log WHERE url_id IN (", paste0(unique(pull.hint.attributes$url.id),collapse=',') ,");"))
+  url.type <- gta_sql_get_value(paste0("SELECT DISTINCT url_type_id, url_type_name FROM bt_url_type_list WHERE url_type_id IN (", paste0(unique(pull.hint.attributes$url.type.id),collapse=',') ,");"))
+  date.type <- gta_sql_get_value(paste0("SELECT DISTINCT date_type_id, date_type_name FROM bt_date_type_list WHERE date_type_id IN (", paste0(unique(pull.hint.attributes$date.type.id),collapse=',') ,");"))
 
   test_pull.attributes <<- pull.hint.attributes
 
   pull.hint.attributes <- pull.hint.attributes %>% 
                               left_join(col.id, by = 'hint.id')
- 
-  pass.hint.attributes <- 
+  
+  # TEST FUNCTION ----------------------------------------------------------
+  pass.hint.attributes <-
     pull.hint.attributes %>%
-    mutate(announcementdate = ifelse(date.type.id == 1, date, NA),
-           implementationdate = ifelse(date.type.id == 2, date, NA),
-           removaldate = ifelse(date.type.id == 3, date, NA)) %>%
-    select(!c(date, date.type.id)) %>%
+    mutate_at(.vars='date.type.id', .funs = function(x) {
+      mapvalues(unlist(x), date.type$date.type.id, date.type$date.type.name, warn_missing = F)
+    }) %>%
+    mutate(is.official = NA_character_,
+           announcementdate = ifelse(date.type.id == 'announcement', date, NA_character_),
+           implementationdate = ifelse(date.type.id == 'implementation', date, NA_character_),
+           removaldate = ifelse(date.type.id == 'remove', date, NA_character_)) %>%
+    mutate_at(.vars='url.type.id', .funs = function(x) {
+      url.type = mapvalues(unlist(x), url.type$url.type.id, url.type$url.type.name, warn_missing = F)
+      return(unlist(url.type))
+    }) %>%
+    mutate_at(.vars = 'url.id', .funs = function(x) {
+      url = mapvalues(unlist(x), url.list$url.id, url.list$url, warn_missing = F)
+      return(unlist(url))
+    }) %>%
+    mutate(is.official = ifelse(url.type.id == 'official', 1, 0),
+           comment = unlist(comment)) %>%
+    select(!c(date, date.type.id, url.type.id)) %>%
+    rowwise() %>%
+    mutate_at(.vars = 'assessment.id', .funs = function(x){
+      assessment.name = mapvalues(x, assessment.list$assessment.id, assessment.list$assessment.name, warn_missing = F)
+      assessment.name = ifelse(assessment.name %in% remove.assessment, NA_character_, assessment.name)
+      assessment.name = ifelse(is.null(add.assessment), assessment.name, add.assessment)
+      return(assessment.name)
+    }) %>%
+    mutate_at(.vars = 'intervention.id', .funs = function(x) {
+      intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
+      intervention.name = ifelse(intervention.name %in% remove.instrument, NA_character_, intervention.name)
+      return(intervention.name)
+    }) %>%
+    mutate_at(.vars = 'product.group.id', .funs = function(x) {
+        product.name = mapvalues(x, product.list$product.group.id, product.list$product.group.name, warn_missing = F)
+        product.name = ifelse(product.name %in% remove.product, NA_character_, product.name)
+        return(product.name)
+    }) %>%
+    mutate_at(.vars = 'jurisdiction.id', .funs = function(x) {
+        jurisdiction.name = mapvalues(x, jurisdiction.list$jurisdiction.id, jurisdiction.list$jurisdiction.name, warn_missing = F)
+        jurisdiction.name = ifelse(jurisdiction.name %in% remove.jurisdiction, NA_character_, jurisdiction.name)
+        return(jurisdiction.name)
+    }) %>%
+    mutate_at(.vars = 'announcementdate', .funs = function(x) {
+        announcementdate = x
+        announcementdate = ifelse(!is.null(remove.date.announced) & announcementdate %in% remove.date.announced, NA_character_, announcementdate)
+        announcementdate = ifelse(!is.null(add.date.announced), add.date.announced, announcementdate)
+        return(announcementdate)
+      return(x)
+    }) %>%
+    mutate_at(.vars = 'implementationdate', .funs = function(x) {
+        implementationdate = x
+        implementationdate = ifelse(!is.null(remove.date.implemented) & implementationdate %in% remove.date.implemented, NA_character_, implementationdate)
+        implementationdate = ifelse(!is.null(add.date.implemented), add.date.implemented, implementationdate)
+        return(implementationdate)
+      return(unlist(x))
+    }) %>%
+    mutate_at(.vars = 'removaldate', .funs = function(x) {
+        removaldate = x
+        removaldate = ifelse(!is.null(remove.date.removed) & removaldate %in% remove.date.removed, NA_character_, removaldate)
+        removaldate = ifelse(!is.null(add.date.removed), add.date.removed, removaldate)
+        return(removaldate)
+      return(unlist(x))
+    }) %>%
     mutate(hints = hint.id) %>%
     group_by(hints) %>%
     nest() %>%
-    mutate_at(.vars = 'data', .funs = function(x){ 
-              x %>% 
-                map(.f = function(x1) {
-                  x1 %>%
-                    as.list() %>%
-                    map(.f = function(x) { 
-                                x = ifelse(lengths(x) > 0, discard(x,is.na), x)
-                                return(unique(x))
-                              }) %>%
-                    map_at(.at = 'relevance', .f = function(x){
-                      relevance = ifelse(!is.null(hint.relevance), hint.relevance, x)
-                        return(relevance)
-                    }) %>%
-                    map_at(.at = 'assessment.id', .f = function(x){
-                      assessment.name = mapvalues(x, assessment.list$assessment.id, assessment.list$assessment.name, warn_missing = F) 
-                      assessment.name <- assessment.name %>%
-                        discard(.p = assessment.name %in% remove.assessment) %>%
-                        append(add.assessment)
-                      assessment.name[length(assessment.name) == 0] <- NA
-                      return(unique(assessment.name))
-                    }) %>%
-                    map_at(.at = 'intervention.id', .f = function(x) { 
-                      intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
-                      intervention.name <- intervention.name %>%
-                        discard(.p = intervention.name %in% remove.instrument) %>%
-                        append(add.instrument)
-                      intervention.name[length(intervention.name) == 0] <- NA
-                      return(unique(intervention.name))
-                    }) %>%
-                    map_at(.at = 'product.group.id', .f = function(x) { 
-                      product.name = mapvalues(x, product.list$product.group.id, product.list$product.group.name, warn_missing = F)
-                      product.name <- product.name %>%
-                        discard(.p = product.name %in% remove.product) %>%
-                        append(add.product)
-                      product.name[length(product.name) == 0] <- NA
-                      return(unique(product.name))
-                    }) %>%
-                    map_at(.at = 'jurisdiction.id', .f = function(x) { 
-                      jurisdiction.name = mapvalues(x, jurisdiction.list$jurisdiction.id, jurisdiction.list$jurisdiction.name, warn_missing = F)
-                      jurisdiction.name <- jurisdiction.name %>%
-                        discard(.p = jurisdiction.name %in% remove.jurisdiction) %>%
-                        append(add.jurisdiction)
-                      jurisdiction.name[length(jurisdiction.name) == 0] <- NA
-                      return(unique(jurisdiction.name))
-                    }) %>%
-                    map_at(.at = 'announcementdate', .f = function(x) { 
-                      announcementdate = x
-                      announcementdate = ifelse(!is.null(remove.date.announced) & announcementdate %in% remove.date.announced, NA, announcementdate)
-                      announcementdate = ifelse(!is.null(add.date.announced), add.date.announced, announcementdate)
-                      return(announcementdate)
-                    }) %>%
-                    map_at(.at = 'implementationdate', .f = function(x) { 
-                      implementationdate = x
-                      implementationdate = ifelse(!is.null(remove.date.implemented) & implementationdate %in% remove.date.implemented, NA, implementationdate)
-                      implementationdate = ifelse(!is.null(add.date.implemented), add.date.implemented, implementationdate)
-                      return(implementationdate)
-                    }) %>%
-                    map_at(.at = 'removaldate', .f = function(x) { 
-                      removaldate = x
-                      removaldate = ifelse(!is.null(remove.date.removed) & removaldate %in% remove.date.removed, NA, removaldate)
-                      removaldate = ifelse(!is.null(add.date.removed), add.date.removed, removaldate)
-                      return(removaldate)
-                    })
-                })
-      })
-
+    map(as.list) %>%
+    pluck('data') %>%
+    map(.f = function(x){
+      x %>%
+        modify(.f = function(x){
+          x <- x %>%
+            unique %>%
+            na.omit
+          if(length(x) == 0) x = NA_character_
+          if(length(x) > 1) x = list(x)
+          return(x)
+        }) %>%
+        filter(row_number() == 1) %>%
+          modify_at(.at = 'intervention.id', .f = function(x){
+            intervention.name <- x %>%
+              unlist %>%
+              append(add.instrument) %>%
+              unique
+            intervention.name = intervention.name[!is.na(intervention.name)]
+            if(length(intervention.name) == 0) intervention.name = NA_character_
+            return(list(intervention.name))
+          }) %>%
+         modify_at(.at = 'product.group.id', .f = function(x){
+            product.name <- x %>%
+              unlist %>%
+              append(add.product) %>%
+              unique
+            product.name = product.name[!is.na(product.name)]
+            if(length(product.name) == 0) product.name = NA_character_
+            return(list(product.name))
+          }) %>%
+         modify_at(.at = 'jurisdiction.id', .f = function(x){
+            jurisdiction.name <- x %>%
+              unlist %>%
+              append(add.jurisdiction) %>%
+              unique
+            jurisdiction.name = jurisdiction.name[!is.na(jurisdiction.name)]
+            if(length(jurisdiction.name) == 0) jurisdiction.name = NA_character_
+            return(list(jurisdiction.name))
+          })
+    })
+  
+  # WORKING FUNCTION ----------------------------------------------------------
+  # pass.hint.attributes <-
+  #   pull.hint.attributes %>%
+  #   mutate_at(.vars='date.type.id', .funs = function(x) {
+  #     mapvalues(unlist(x), date.type$date.type.id, date.type$date.type.name, warn_missing = F)
+  #   }) %>%
+  #   mutate(is.official = NA_character_,
+  #          announcementdate = ifelse(date.type.id == 'announcement', date, NA_character_),
+  #          implementationdate = ifelse(date.type.id == 'implementation', date, NA_character_),
+  #          removaldate = ifelse(date.type.id == 'remove', date, NA_character_)) %>%
+  #   group_by(hint.id) %>%
+  #   dplyr::summarise(across(.cols=everything(),.fns = function(x){
+  #              x = ifelse(lengths(x) > 0, discard(x,is.na), x) # remove NAs from vectors
+  #              return(list(unique(x)))
+  #          })) %>%
+  #   mutate_at(.vars='url.type.id', .funs = function(x) {
+  #     url.type = mapvalues(unlist(x), url.type$url.type.id, url.type$url.type.name, warn_missing = F)
+  #     return(unlist(url.type))
+  #   }) %>%
+  #   mutate_at(.vars = 'url.id', .funs = function(x) {
+  #     url = mapvalues(unlist(x), url.list$url.id, url.list$url, warn_missing = F)
+  #     return(unlist(url))
+  #   }) %>%
+  #   mutate(is.official = ifelse(url.type.id == 'official', 1, 0),
+  #          comment = unlist(comment)) %>%
+  #   select(!c(date, date.type.id, url.type.id)) %>%
+  #   mutate_at(.vars = 'relevance', .funs = function(x){
+  #         relevance = ifelse(!is.null(hint.relevance), hint.relevance, x)
+  #         return(unlist(relevance))
+  #   }) %>%
+  #   mutate_at(.vars = 'assessment.id', .funs = function(x){
+  #     x <- x %>% map(.f = function(x){
+  #       assessment.name = assessment.list$assessment.name[assessment.list$assessment.id == x]
+  #       assessment.name = ifelse(assessment.name %in% remove.assessment, NA_character_, assessment.name)
+  #       assessment.name = ifelse(is.null(add.assessment), assessment.name, add.assessment)
+  #       assessment.name[length(assessment.name) == 0] <- NA_character_ # character(0) -> NA
+  #       return(assessment.name)
+  #     })
+  #     return(unlist(x))
+  #   }) %>%
+  #   mutate_at(.vars = 'intervention.id', .funs = function(x) {
+  #     x %>% map(function(x){
+  #       intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
+  #       intervention.name <- intervention.name %>%
+  #         discard(.p = intervention.name %in% remove.instrument) %>%
+  #         append(add.instrument)
+  #       intervention.name[length(intervention.name) == 0] <- NA_character_  # character(0) -> NA
+  #       return(unique(intervention.name))
+  #     })
+  #   }) %>%
+  #   mutate_at(.vars = 'product.group.id', .funs = function(x) {
+  #     x %>% map(function(x){
+  #       product.name = mapvalues(x, product.list$product.group.id, product.list$product.group.name, warn_missing = F)
+  #       product.name <- product.name %>%
+  #         discard(.p = product.name %in% remove.product) %>%
+  #         append(add.product)
+  #       product.name[length(product.name) == 0] <- NA_character_  # character(0) -> NA
+  #       return(unique(product.name))
+  #     })
+  #   }) %>%
+  #   mutate_at(.vars = 'jurisdiction.id', .funs = function(x) {
+  #     x %>% map(function(x){
+  #       jurisdiction.name = mapvalues(x, jurisdiction.list$jurisdiction.id, jurisdiction.list$jurisdiction.name, warn_missing = F)
+  #       jurisdiction.name <- jurisdiction.name %>%
+  #         discard(.p = jurisdiction.name %in% remove.jurisdiction) %>%
+  #         append(add.jurisdiction)
+  #       jurisdiction.name[length(jurisdiction.name) == 0] <- NA_character_  # character(0) -> NA
+  #       return(unique(jurisdiction.name))
+  #     })
+  #   }) %>%
+  #   mutate_at(.vars = 'announcementdate', .funs = function(x) {
+  #     x <- x %>% map(.f = function(x){
+  #       announcementdate = unlist(x)
+  #       announcementdate = ifelse(!is.null(remove.date.announced) & announcementdate %in% remove.date.announced, NA_character_, announcementdate)
+  #       announcementdate = ifelse(!is.null(add.date.announced), add.date.announced, announcementdate)
+  #       return(announcementdate)
+  #     })
+  #     return(unlist(x))
+  #   }) %>%
+  #   mutate_at(.vars = 'implementationdate', .funs = function(x) {
+  #     x <- x %>% map(.f = function(x){
+  #       implementationdate = unlist(x)
+  #       implementationdate = ifelse(!is.null(remove.date.implemented) & implementationdate %in% remove.date.implemented, NA_character_, implementationdate)
+  #       implementationdate = ifelse(!is.null(add.date.implemented), add.date.implemented, implementationdate)
+  #       return(implementationdate)
+  #     })
+  #     return(unlist(x))
+  #   }) %>%
+  #   mutate_at(.vars = 'removaldate', .funs = function(x) {
+  #     x <- x %>% map(.f = function(x){
+  #       removaldate = unlist(x)
+  #       removaldate = ifelse(!is.null(remove.date.removed) & removaldate %in% remove.date.removed, NA_character_, removaldate)
+  #       removaldate = ifelse(!is.null(add.date.removed), add.date.removed, removaldate)
+  #       return(removaldate)
+  #     })
+  #     return(unlist(x))
+  #   }) %>%
+  #   mutate(hints = hint.id) %>%
+  #   group_by(hints) %>%
+  #   nest() %>%
+  #   map(as.list) %>%
+  #   pluck('data')
+  
   test_pass.attributes <<- pass.hint.attributes
-  # if hint is part of a collection the collection functions need to instead be ran!
-  if(nrow(col.id) == 0){ #is.na(col.id)
-    ## hint is not part of a collection
-    
-    # names as an input in the b221_process_display_info
-    out_names <- c('id','clicked','country','product','intervention','assessment','url','official','comment',
-                   'implementationdate','announcementdate','removaldate', 'discard_reasons', 'discard_comment')
+  stop()
+  # run b221_process_display_info or b221_process_collections for each row of pass.hint.attributes
+  pass.hint.attributes %>%
+        map(.f = function(x){
+            if(is.na(x$collection.id)){
+                  output <- x %>% 
+                    select(hint.id, relevance, jurisdiction.id, product.group.id, intervention.id, assessment.id, url.id, is.official, comment, implementationdate, announcementdate, removaldate, hint.title, hint.description) %>%
+                    setnames(c('id','clicked','country','product','intervention','assessment','url','official','comment',
+                               'implementationdate','announcementdate','removaldate', 'title', 'description'))
+                  test_x <<- output
+                  
+                  b221_process_display_info(is.freelancer = FALSE ,user.id = 82, processed.rows = output, text.modifiable = TRUE)
 
+            } else {
+              ## hint is part of a collection
+              test_star <<- unlist(x$collection.id)
+              col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",unlist(x$collection.id)," ;"))
 
-  } else {
-    ## hint is part of a collection
-    col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",col.id," ;"))
-    
-    if(col.star!=change.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
-    
-  }
+              if(col.star!=change.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
+            }
+        })
+  
+  # # if hint is part of a collection the collection functions need to instead be ran!
+  # if(nrow(col.id) == 0){ #is.na(col.id)
+  #   ## hint is not part of a collection
+  # 
+  # } else {
+  #   ## hint is part of a collection
+  #   col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",col.id," ;"))
+  #   
+  #   if(col.star!=change.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
+  #   
+  # }
   
   
 }
