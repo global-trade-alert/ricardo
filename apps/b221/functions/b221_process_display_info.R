@@ -1,13 +1,14 @@
-b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, processed.rows = NULL, is.in.collection = NULL){
+b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, processed.rows = NULL, is.in.collection = NULL, text.modifiable = NULL){
   
   # could be fancier and make sure that new submissions are not identical to previous ones but i have left this aside for now, it would be a where not exists statement which groups the attributes and compares the highest validation_classification with the new submission
-  
   setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate'),
            c('hint.id','relevance','implementer.name','product.group.name','intervention.type.name','assessment.name','url','is.official','comment','implementation.date','announcement.date','removal.date'))
   
   input.col.names = c('hint.id','implementer.name','url','is.official','assessment.name',
                       'product.group.name','intervention.type.name','comment','relevance','implementation.date','announcement.date','removal.date')
   multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name')
+  
+  if(text.modifiable == T) input.col.names = c(input.col.names, 'title','hint.description')
   
   # if someone knows how to pass the column names as string into the ... of tidyr::unnest with multiple.values.permitted[1], be my guest
   # instead i manually pasted the names
@@ -25,11 +26,13 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   temp.changes.name=paste0("b221.temp.changes.data.",user.id)
   assign(temp.changes.name,processed.rows,envir=globalenv())
   
+  test_processed.rows <<- processed.rows
+
   gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
   gta_sql_create_table(write.df=temp.changes.name,
                        append.existing = F,
                        table.prefix = '')
-  
+
   if(is.freelancer==T){
     push.updates = paste0("/* FREELANCER UPLOAD */
                           SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
@@ -122,7 +125,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
   } else {
     processed.rows$was.modified = 1
-    push.updates = paste0("/* FREELANCER UPLOAD */
+    push.updates = paste0("/* EDITOR UPLOAD */
                           SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
                           
                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
@@ -138,8 +141,8 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SELECT DISTINCT changes.hint_id, ",user.id," AS user_id, comment, CONVERT_TZ(NOW(),'UTC','CET') AS time_stamp FROM b221_temp_changes_data_",user.id," changes
                           WHERE comment IS NOT NULL AND NOT EXISTS (SELECT NULL FROM b221_hint_comment_log cmt_log WHERE cmt_log.hint_id = changes.hint_id AND changes.comment = cmt_log.comment);
                           
-                          INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_user)
-                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, ass_list.assessment_id, NULL AS assessment_accepted, NULL AS validation_user 
+                          INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
+                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, ass_list.assessment_id, NULL AS assessment_accepted, NULL AS validation_classification 
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN b221_assessment_list ass_list ON changes.assessment_name = ass_list.assessment_name
                           WHERE NOT EXISTS (SELECT NULL FROM b221_hint_assessment ht_ass WHERE ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = ass_list.assessment_id AND ht_ass.validation_classification IS NULL)
@@ -152,8 +155,8 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SET ht_ass.validation_classification = @classification_id,
                           ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
-                          INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_user)
-                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, prod_grp_list.product_group_id, NULL AS product_group_assessment, NULL as validation_user
+                          INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_classification)
+                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, prod_grp_list.product_group_id, NULL AS product_group_assessment, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN b221_product_group_list prod_grp_list ON changes.product_group_name = prod_grp_list.product_group_name
                           WHERE NOT EXISTS (SELECT NULL FROM b221_hint_product_group prod_grp WHERE prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = prod_grp_list.product_group_id AND prod_grp.validation_classification IS NULL)
@@ -166,8 +169,8 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SET ht_prod.validation_classification = @classification_id,
                           ht_prod.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
-                          INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_user)
-                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, int_list.intervention_type_id, NULL AS intervention_accepted, NULL as validation_user
+                          INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_classification)
+                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, int_list.intervention_type_id, NULL AS intervention_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN b221_intervention_type_list int_list ON changes.intervention_type_name = int_list.intervention_type_name
                           WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = int_list.intervention_type_id AND ht_int.validation_classification IS NULL)
@@ -182,8 +185,8 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           
                           CREATE INDEX src ON b221_temp_changes_data_",user.id," (url(300));
                           
-                          INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
-                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, jur_list.jurisdiction_id, NULL AS jurisdiction_accepted, NULL as validation_user
+                          INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_classification)
+                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, jur_list.jurisdiction_id, NULL AS jurisdiction_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN gta_jurisdiction_list jur_list ON changes.implementer_name = jur_list.jurisdiction_name
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_jurisdiction ht_jur WHERE ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = jur_list.jurisdiction_id AND ht_jur.validation_classification IS NULL)
@@ -196,45 +199,45 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           SET ht_jur.validation_classification = @classification_id, 
                           ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
-                          INSERT INTO bt_hint_date(hint_id, classification_id, date_type_id, `date`, date_accepted, validation_user)
+                          INSERT INTO bt_hint_date(hint_id, classification_id, date_type_id, `date`, date_accepted, validation_classification)
                           SELECT DISTINCT * FROM
-                          (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_user
+                          (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           UNION 
-                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'announcement') AS date_type_id, changes.announcement_date AS `date`, NULL as date_accepted, NULL as validation_user
+                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'announcement') AS date_type_id, changes.announcement_date AS `date`, NULL as date_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           UNION 
-                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_user
+                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes) new_dates
                           WHERE new_dates.`date` IS NOT NULL
-                          AND NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = new_dates.hint_id AND ht_date.`date` = new_dates.`date` AND ht_date.date_type_id = new_dates.date_type_id AND ht_date.validation_classification IS NULL)
-                          AND changes.in_collection = 0;
+                          AND NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = new_dates.hint_id AND ht_date.`date` = new_dates.`date` AND ht_date.date_type_id = new_dates.date_type_id AND ht_date.validation_classification IS NULL);
+                          #AND changes.in_collection = 0;
                           
                           UPDATE bt_hint_date ht_date
                           JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_date.hint_id = changed_hints.hint_id AND ht_date.validation_classification IS NULL
                           LEFT JOIN (SELECT DISTINCT * FROM
-                          (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_user
+                          (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           UNION 
-                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'announcement') AS date_type_id, changes.announcement_date AS `date`, NULL as date_accepted, NULL as validation_user
+                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'announcement') AS date_type_id, changes.announcement_date AS `date`, NULL as date_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           UNION 
-                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_user
+                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_classification
                           FROM b221_temp_changes_data_",user.id," changes) changes
                           WHERE changes.`date` IS NOT NULL) new_dates ON ht_date.hint_id = new_dates.hint_id AND ht_date.`date` = new_dates.`date` AND ht_date.date_type_id = new_dates.date_type_id AND ht_date.validation_classification IS NULL
                           SET ht_date.validation_classification = @classification_id, 
                           ht_date.date_accepted = (CASE WHEN new_dates.hint_id IS NOT NULL THEN 1 ELSE 0 END);                          
                           
-                          INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_user)
-                          SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, NULL AS url_accepted, NULL AS validation_user FROM 
+                          INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_classification)
+                          SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, NULL AS url_accepted, NULL AS validation_classification FROM 
                           (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
                           FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
                           JOIN bt_url_log ON changes_w_url_type.url = bt_url_log.url
-                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id AND ht_url.validation_classification IS NULL)
-                          AND changes.in_collection = 0;
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id AND ht_url.validation_classification IS NULL);
+                          #AND changes.in_collection = 0;
                           
-                          INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
-                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, changes.relevance, NULL as relevance_probability, NULL as relevance_accepted, NULL as validation_user 
+                          INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
+                          SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, changes.relevance, NULL as relevance_probability, NULL as relevance_accepted, NULL as validation_classification 
                           FROM b221_temp_changes_data_",user.id," changes
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_relevance ht_rel WHERE ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance AND ht_rel.validation_classification IS NULL)
                           AND changes.in_collection = 0;
@@ -249,6 +252,23 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id
                           SET bt_hint_log.hint_state_id = (CASE WHEN changes.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
                           (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+    
+    
+    if(text.modifiable == T){
+      
+      push.updates = paste0(push.updates, 
+                           "INSERT INTO bt_hint_text(hint_id, hint_title, hint_description, language_id, classification_id, description_accepted, validation_classification)
+                            SELECT DISTINCT changes.hint_id, changes.title AS hint_title, changes.hint_description AS hint_description, 1 AS language_id, @classification_id AS classification_id, 1 AS description_accepted, @classification_id as validation_classification
+                            FROM b221_temp_changes_data_",user.id," changes
+                            WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_hint_text.hint_id, bt_hint_text.hint_description, bt_hint_text.hint_title FROM bt_hint_text JOIN 
+                            (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification) AS newest_classification 
+                            FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id 
+                            AND bt_hint_text.language_id = 1 AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) ht_txt 
+                            WHERE ht_txt.hint_id = changes.hint_id AND ht_txt.hint_description COLLATE utf8mb4_general_ci = changes.hint_description 
+                            AND ht_txt.hint_title COLLATE utf8mb4_general_ci = changes.title);")
+      
+    }
+    
   }
   
   gta_sql_multiple_queries(push.updates, output.queries = 1, show.time = T, db.connection = 'pool')
