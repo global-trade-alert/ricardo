@@ -27,20 +27,17 @@ change.id = 1
 ## HINT level
 b221_hint_change_attribute<-function(change.id=NULL,
                                      is.intervention=F,
+                                     intervention.modifiable=F,
                                      add.instrument=NULL,
                                      remove.instrument=NULL,
-                                     add.assessment=NULL,
-                                     remove.assessment=NULL,
+                                     modify.assessment=NULL,
                                      add.product=NULL,
                                      remove.product=NULL,
                                      add.jurisdiction=NULL,
                                      remove.jurisdiction=NULL,
-                                     add.date.announced=NULL,
-                                     remove.date.announced=NULL,
-                                     add.date.implemented=NULL,
-                                     remove.date.implemented=NULL,
-                                     add.date.removed=NULL,
-                                     remove.date.removed=NULL,
+                                     modify.date.announced=NULL,
+                                     modify.date.implemented=NULL,
+                                     modify.date.removed=NULL,
                                      hint.relevance=NULL,
                                      hint.title=NULL,
                                      hint.description=NULL){
@@ -51,7 +48,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
     change.id=change.id[!is.na(change.id)]
     if(length(change.id)<1) return("no such intervention id was found")
   }
-  
+
   col.id=gta_sql_get_value(paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id IN (",paste0(change.id, collapse=','),");")) #paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id = ",change.id,";")
   test_col.id <<- col.id
   # find attributes pre-change
@@ -82,22 +79,22 @@ b221_hint_change_attribute<-function(change.id=NULL,
   pull.hint.attributes = gta_sql_get_value(pull.hint.attributes)
 
     #pull.hint.attributes = merge(pull.hint.attributes, col.id, by = 'hint.id')
-  
+
   #add dfs with id and names of the attributes
-  assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_id IN(",paste0(unique(pull.hint.attributes$assessment.id), collapse=','),");"))
-  intervention.list <- gta_sql_get_value(paste0("SELECT DISTINCT bitl.intervention_type_id, bitl.intervention_type_name FROM b221_intervention_type_list bitl WHERE bitl.intervention_type_id IN (", paste0(unique(pull.hint.attributes$intervention.id),collapse=',') ,");"))
-  product.list <- gta_sql_get_value(paste0("SELECT DISTINCT bpgl.product_group_id, bpgl.product_group_name FROM b221_product_group_list bpgl WHERE bpgl.product_group_id IN (", paste0(unique(pull.hint.attributes$product.group.id),collapse=',') ,");"))
-  jurisdiction.list <- gta_sql_get_value(paste0("SELECT DISTINCT gjl.jurisdiction_id, gjl.jurisdiction_name FROM gta_jurisdiction_list gjl WHERE gjl.jurisdiction_id IN (", paste0(unique(pull.hint.attributes$jurisdiction.id),collapse=',') ,");"))
-  url.list <- gta_sql_get_value(paste0("SELECT DISTINCT url_id, url FROM bt_url_log WHERE url_id IN (", paste0(unique(pull.hint.attributes$url.id),collapse=',') ,");"))
-  url.type <- gta_sql_get_value(paste0("SELECT DISTINCT url_type_id, url_type_name FROM bt_url_type_list WHERE url_type_id IN (", paste0(unique(pull.hint.attributes$url.type.id),collapse=',') ,");"))
-  date.type <- gta_sql_get_value(paste0("SELECT DISTINCT date_type_id, date_type_name FROM bt_date_type_list WHERE date_type_id IN (", paste0(unique(pull.hint.attributes$date.type.id),collapse=',') ,");"))
+  assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_id IN(",paste0(unique(ifelse(is.na(pull.hint.attributes$assessment.id), 'NULL',pull.hint.attributes$assessment.id )), collapse=','),");"))
+  intervention.list <- gta_sql_get_value(paste0("SELECT DISTINCT bitl.intervention_type_id, bitl.intervention_type_name FROM b221_intervention_type_list bitl WHERE bitl.intervention_type_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$intervention.id), 'NULL',pull.hint.attributes$intervention.id )),collapse=',') ,");"))
+  product.list <- gta_sql_get_value(paste0("SELECT DISTINCT bpgl.product_group_id, bpgl.product_group_name FROM b221_product_group_list bpgl WHERE bpgl.product_group_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$product.group.id), 'NULL',pull.hint.attributes$product.group.id )),collapse=',') ,");"))
+  jurisdiction.list <- gta_sql_get_value(paste0("SELECT DISTINCT gjl.jurisdiction_id, gjl.jurisdiction_name FROM gta_jurisdiction_list gjl WHERE gjl.jurisdiction_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$jurisdiction.id), 'NULL',pull.hint.attributes$jurisdiction.id)),collapse=',') ,");"))
+  url.list <- gta_sql_get_value(paste0("SELECT DISTINCT url_id, url FROM bt_url_log WHERE url_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$url.id), 'NULL',pull.hint.attributes$url.id)),collapse=',') ,");"))
+  url.type <- gta_sql_get_value(paste0("SELECT DISTINCT url_type_id, url_type_name FROM bt_url_type_list WHERE url_type_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$url.type.id), 'NULL',pull.hint.attributes$url.type.id)),collapse=',') ,");"))
+  date.type <- gta_sql_get_value(paste0("SELECT DISTINCT date_type_id, date_type_name FROM bt_date_type_list WHERE date_type_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$date.type.id), 'NULL',pull.hint.attributes$date.type.id)),collapse=',') ,");"))
 
   test_pull.attributes <<- pull.hint.attributes
 
   pull.hint.attributes <- pull.hint.attributes %>% 
                               left_join(col.id, by = 'hint.id')
-  
-  # TEST FUNCTION ----------------------------------------------------------
+
+  # COMPARE EXISTENT VALUES WITH FEEDED ----------------------------------------------------------
   pass.hint.attributes <-
     pull.hint.attributes %>%
     mutate_at(.vars='date.type.id', .funs = function(x) {
@@ -121,8 +118,8 @@ b221_hint_change_attribute<-function(change.id=NULL,
     rowwise() %>%
     mutate_at(.vars = 'assessment.id', .funs = function(x){
       assessment.name = mapvalues(x, assessment.list$assessment.id, assessment.list$assessment.name, warn_missing = F)
-      assessment.name = ifelse(assessment.name %in% remove.assessment, NA_character_, assessment.name)
-      assessment.name = ifelse(is.null(add.assessment), assessment.name, add.assessment)
+      #assessment.name = ifelse(assessment.name %in% remove.assessment, NA_character_, assessment.name)
+      assessment.name = ifelse(is.null(modify.assessment), assessment.name, modify.assessment)
       return(assessment.name)
     }) %>%
     mutate_at(.vars = 'intervention.id', .funs = function(x) {
@@ -141,25 +138,20 @@ b221_hint_change_attribute<-function(change.id=NULL,
         return(jurisdiction.name)
     }) %>%
     mutate_at(.vars = 'announcementdate', .funs = function(x) {
-        announcementdate = x
-        announcementdate = ifelse(!is.null(remove.date.announced) & announcementdate %in% remove.date.announced, NA_character_, announcementdate)
-        announcementdate = ifelse(!is.null(add.date.announced), add.date.announced, announcementdate)
+        announcementdate = ifelse(is.null(modify.date.announced), x, modify.date.announced)
         return(announcementdate)
-      return(x)
     }) %>%
     mutate_at(.vars = 'implementationdate', .funs = function(x) {
-        implementationdate = x
-        implementationdate = ifelse(!is.null(remove.date.implemented) & implementationdate %in% remove.date.implemented, NA_character_, implementationdate)
-        implementationdate = ifelse(!is.null(add.date.implemented), add.date.implemented, implementationdate)
+        implementationdate = ifelse(is.null(modify.date.implemented), x, modify.date.implemented)
         return(implementationdate)
-      return(unlist(x))
     }) %>%
     mutate_at(.vars = 'removaldate', .funs = function(x) {
-        removaldate = x
-        removaldate = ifelse(!is.null(remove.date.removed) & removaldate %in% remove.date.removed, NA_character_, removaldate)
-        removaldate = ifelse(!is.null(add.date.removed), add.date.removed, removaldate)
+        removaldate = ifelse(is.null(modify.date.removed), x, modify.date.removed)
         return(removaldate)
-      return(unlist(x))
+    }) %>%
+    mutate_at(.vars = 'relevance', .funs = function(x) {
+      relevance = ifelse(!is.null(hint.relevance), hint.relevance, NA_character_)
+      return(relevance)
     }) %>%
     mutate(hints = hint.id) %>%
     group_by(hints) %>%
@@ -206,111 +198,19 @@ b221_hint_change_attribute<-function(change.id=NULL,
           })
     })
   
-  # WORKING FUNCTION ----------------------------------------------------------
-  # pass.hint.attributes <-
-  #   pull.hint.attributes %>%
-  #   mutate_at(.vars='date.type.id', .funs = function(x) {
-  #     mapvalues(unlist(x), date.type$date.type.id, date.type$date.type.name, warn_missing = F)
-  #   }) %>%
-  #   mutate(is.official = NA_character_,
-  #          announcementdate = ifelse(date.type.id == 'announcement', date, NA_character_),
-  #          implementationdate = ifelse(date.type.id == 'implementation', date, NA_character_),
-  #          removaldate = ifelse(date.type.id == 'remove', date, NA_character_)) %>%
-  #   group_by(hint.id) %>%
-  #   dplyr::summarise(across(.cols=everything(),.fns = function(x){
-  #              x = ifelse(lengths(x) > 0, discard(x,is.na), x) # remove NAs from vectors
-  #              return(list(unique(x)))
-  #          })) %>%
-  #   mutate_at(.vars='url.type.id', .funs = function(x) {
-  #     url.type = mapvalues(unlist(x), url.type$url.type.id, url.type$url.type.name, warn_missing = F)
-  #     return(unlist(url.type))
-  #   }) %>%
-  #   mutate_at(.vars = 'url.id', .funs = function(x) {
-  #     url = mapvalues(unlist(x), url.list$url.id, url.list$url, warn_missing = F)
-  #     return(unlist(url))
-  #   }) %>%
-  #   mutate(is.official = ifelse(url.type.id == 'official', 1, 0),
-  #          comment = unlist(comment)) %>%
-  #   select(!c(date, date.type.id, url.type.id)) %>%
-  #   mutate_at(.vars = 'relevance', .funs = function(x){
-  #         relevance = ifelse(!is.null(hint.relevance), hint.relevance, x)
-  #         return(unlist(relevance))
-  #   }) %>%
-  #   mutate_at(.vars = 'assessment.id', .funs = function(x){
-  #     x <- x %>% map(.f = function(x){
-  #       assessment.name = assessment.list$assessment.name[assessment.list$assessment.id == x]
-  #       assessment.name = ifelse(assessment.name %in% remove.assessment, NA_character_, assessment.name)
-  #       assessment.name = ifelse(is.null(add.assessment), assessment.name, add.assessment)
-  #       assessment.name[length(assessment.name) == 0] <- NA_character_ # character(0) -> NA
-  #       return(assessment.name)
-  #     })
-  #     return(unlist(x))
-  #   }) %>%
-  #   mutate_at(.vars = 'intervention.id', .funs = function(x) {
-  #     x %>% map(function(x){
-  #       intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
-  #       intervention.name <- intervention.name %>%
-  #         discard(.p = intervention.name %in% remove.instrument) %>%
-  #         append(add.instrument)
-  #       intervention.name[length(intervention.name) == 0] <- NA_character_  # character(0) -> NA
-  #       return(unique(intervention.name))
-  #     })
-  #   }) %>%
-  #   mutate_at(.vars = 'product.group.id', .funs = function(x) {
-  #     x %>% map(function(x){
-  #       product.name = mapvalues(x, product.list$product.group.id, product.list$product.group.name, warn_missing = F)
-  #       product.name <- product.name %>%
-  #         discard(.p = product.name %in% remove.product) %>%
-  #         append(add.product)
-  #       product.name[length(product.name) == 0] <- NA_character_  # character(0) -> NA
-  #       return(unique(product.name))
-  #     })
-  #   }) %>%
-  #   mutate_at(.vars = 'jurisdiction.id', .funs = function(x) {
-  #     x %>% map(function(x){
-  #       jurisdiction.name = mapvalues(x, jurisdiction.list$jurisdiction.id, jurisdiction.list$jurisdiction.name, warn_missing = F)
-  #       jurisdiction.name <- jurisdiction.name %>%
-  #         discard(.p = jurisdiction.name %in% remove.jurisdiction) %>%
-  #         append(add.jurisdiction)
-  #       jurisdiction.name[length(jurisdiction.name) == 0] <- NA_character_  # character(0) -> NA
-  #       return(unique(jurisdiction.name))
-  #     })
-  #   }) %>%
-  #   mutate_at(.vars = 'announcementdate', .funs = function(x) {
-  #     x <- x %>% map(.f = function(x){
-  #       announcementdate = unlist(x)
-  #       announcementdate = ifelse(!is.null(remove.date.announced) & announcementdate %in% remove.date.announced, NA_character_, announcementdate)
-  #       announcementdate = ifelse(!is.null(add.date.announced), add.date.announced, announcementdate)
-  #       return(announcementdate)
-  #     })
-  #     return(unlist(x))
-  #   }) %>%
-  #   mutate_at(.vars = 'implementationdate', .funs = function(x) {
-  #     x <- x %>% map(.f = function(x){
-  #       implementationdate = unlist(x)
-  #       implementationdate = ifelse(!is.null(remove.date.implemented) & implementationdate %in% remove.date.implemented, NA_character_, implementationdate)
-  #       implementationdate = ifelse(!is.null(add.date.implemented), add.date.implemented, implementationdate)
-  #       return(implementationdate)
-  #     })
-  #     return(unlist(x))
-  #   }) %>%
-  #   mutate_at(.vars = 'removaldate', .funs = function(x) {
-  #     x <- x %>% map(.f = function(x){
-  #       removaldate = unlist(x)
-  #       removaldate = ifelse(!is.null(remove.date.removed) & removaldate %in% remove.date.removed, NA_character_, removaldate)
-  #       removaldate = ifelse(!is.null(add.date.removed), add.date.removed, removaldate)
-  #       return(removaldate)
-  #     })
-  #     return(unlist(x))
-  #   }) %>%
-  #   mutate(hints = hint.id) %>%
-  #   group_by(hints) %>%
-  #   nest() %>%
-  #   map(as.list) %>%
-  #   pluck('data')
-  
   test_pass.attributes <<- pass.hint.attributes
-  stop()
+  
+  # validate if we are not feeding empty attributes to b221_process_display/b221_process_collections
+  pass.hint.attributes %>%
+    map(.f = function(x){
+      hint.id = x$hint.id
+      x %>%
+        select(relevance, jurisdiction.id, product.group.id, intervention.id, assessment.id) %>%
+        map(.f = function(x){
+          if(is.na(x)) stop(paste0("Hint ",hint.id," contains empty attributes!"))
+        })
+    })
+
   # run b221_process_display_info or b221_process_collections for each row of pass.hint.attributes
   pass.hint.attributes %>%
         map(.f = function(x){
@@ -318,10 +218,10 @@ b221_hint_change_attribute<-function(change.id=NULL,
                   output <- x %>% 
                     select(hint.id, relevance, jurisdiction.id, product.group.id, intervention.id, assessment.id, url.id, is.official, comment, implementationdate, announcementdate, removaldate, hint.title, hint.description) %>%
                     setnames(c('id','clicked','country','product','intervention','assessment','url','official','comment',
-                               'implementationdate','announcementdate','removaldate', 'title', 'description'))
+                               'implementationdate','announcementdate','removaldate', 'title', 'hint.description'))
                   test_x <<- output
                   
-                  b221_process_display_info(is.freelancer = FALSE ,user.id = 82, processed.rows = output, text.modifiable = TRUE)
+                  #b221_process_display_info(is.freelancer = FALSE ,user.id = 82, processed.rows = output, text.modifiable = TRUE)
 
             } else {
               ## hint is part of a collection
