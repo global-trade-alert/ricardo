@@ -24,31 +24,33 @@ gta_sql_pool_close()
 change.id = 1
 
 
-## HINT level
 b221_hint_change_attribute<-function(change.id=NULL,
                                      is.intervention=F,
                                      intervention.modifiable=F,
-                                     add.instrument=NULL,
-                                     remove.instrument=NULL,
                                      modify.assessment=NULL,
-                                     add.product=NULL,
-                                     remove.product=NULL,
-                                     add.jurisdiction=NULL,
-                                     remove.jurisdiction=NULL,
                                      modify.date.announced=NULL,
                                      modify.date.implemented=NULL,
                                      modify.date.removed=NULL,
-                                     hint.relevance=NULL,
+                                     modify.relevance=NULL,
                                      modify.title=NULL,
-                                     modify.description=NULL){
+                                     modify.description=NULL,
+                                     add.instrument=NULL,
+                                     remove.instrument=NULL,
+                                     add.product=NULL,
+                                     remove.product=NULL,
+                                     add.jurisdiction=NULL,
+                                     remove.jurisdiction=NULL){
+  
+  # stop if intervention is not allowed to be modified
+  if(is.intervention & !intervention.modifiable) stop('Changing attributes of interventions is not allowed.')
   
   # find hint id if intervention id is what is provided
   if(is.intervention){
-    change.id=unique(gta_sql_get_value("SELECT DISTINCT hint_id FROM bt_hint_log WHERE gta_id = ",change.id,";"))
+    change.id=unique(gta_sql_get_value(paste0("SELECT DISTINCT hint_id FROM bt_hint_log WHERE gta_id IN (",paste0(change.id, collapse = ','),");")))
     change.id=change.id[!is.na(change.id)]
     if(length(change.id)<1) return("no such intervention id was found")
   }
-
+  
   col.id=gta_sql_get_value(paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id IN (",paste0(change.id, collapse=','),");")) #paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id = ",change.id,";")
   test_col.id <<- col.id
   
@@ -151,7 +153,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
         return(removaldate)
     }) %>%
     mutate_at(.vars = 'relevance', .funs = function(x) {
-      relevance = ifelse(!is.null(hint.relevance), hint.relevance, NA_character_)
+      relevance = ifelse(!is.null(modify.relevance), modify.relevance, NA_character_)
       return(relevance)
     }) %>%
     mutate(hints = hint.id) %>%
@@ -211,10 +213,13 @@ b221_hint_change_attribute<-function(change.id=NULL,
     map(.f = function(x){
       hint.id = x$hint.id
       x %>%
-        select(jurisdiction.id, product.group.id, intervention.id, assessment.id, relevance) %>%
-        map(.f = function(x){
-          if(is.na(x)) stop(paste0("Hint ",hint.id," contains empty attributes!"))
-        })
+        mutate_at(.vars = c('jurisdiction.id', 'product.group.id', 'intervention.id', 'assessment.id', 'relevance'),
+                  .funs = function(x){
+                    colname = quo_name(enquo(x))
+                    val = unlist(x)
+                    if(length(val) == 1)
+                      if(is.na(val)) stop(paste0("Hint ",hint.id," contains empty attributes in field '", colname, "'"))
+                  })
     })
 
   # run b221_process_display_info or b221_process_collections for each row of pass.hint.attributes
@@ -235,9 +240,9 @@ b221_hint_change_attribute<-function(change.id=NULL,
               ## hint is part of a collection ----------------------------------
               output <- x
               test_cl <<- output
-              col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",unlist(x$collection.id)," ;"))
+              col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",unlist(output$collection.id)," ;"))
 
-              if(col.star!=change.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
+              if(col.star!=output$hint.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
               
               #add dfs with id and names of the changed attributes
               assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_name = '",paste0(ifelse(is.na(output$assessment.id), 'NULL',output$assessment.id )),"';"))
@@ -270,8 +275,8 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                                          intervention = InterventionTypeId, 
                                                          assessment = AssessmentId, 
                                                          relevance = output$relevance, 
-                                                         discard = DiscardReasonsId,
-                                                         discard.comment = DiscardComment,
+                                                         #discard = DiscardReasonsId,
+                                                         #discard.comment = DiscardComment,
                                                          announcement.date = output$announcementdate, 
                                                          implementation.date = output$implementationdate, 
                                                          removal.date = output$removaldate)
