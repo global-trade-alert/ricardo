@@ -394,6 +394,9 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     
     print("COLLETION ID")
     
+    # Setup variable to set to "hide" if collection contains gta intervention
+    hideDiscardButton <- ""
+    
     if (collection) {
       query = paste0("SELECT cltn_log.collection_id, cltn_log.collection_name, 
                         GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) SEPARATOR ' ; ') AS jurisdiction_name,
@@ -441,6 +444,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       initialHints <- get_info_by_collection_id(collection.id = collectionId)
       if (any(initialHints$is.intervention == 1)) {
         gtaHint <- TRUE
+        hideDiscardButton = "hide"
       }
       
       initialHints$hint.title <- paste(initialHints$hint.id, initialHints$hint.title, sep=" - ")
@@ -600,6 +604,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
                         HTML(initialHints)),
                tags$div(class="options-bar",
                         tags$button(id="discardHintCollection-popup",
+                                    class=paste0(hideDiscardButton),
                                     tags$i(class="fa fa-times"),
                                     "Mark irrelevant"),
                         tags$button(id="deleteCollection-popup",
@@ -1521,7 +1526,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         hint.container$hint.ids <- c(hint.container$hint.ids, moveHint$hint.id)
         
         runjs(paste0("$('.initialValues').addClass('locked')"))
+        runjs(paste0("$('#discardHintCollection-popup').addClass('hide')"))
         lockHint <- lockHint(TRUE)
+        
       }
     }
     
@@ -1638,9 +1645,11 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     if (gtaHint){
       lockHint <- lockHint(TRUE)
       runjs(paste0("$('.initialValues').addClass('locked')"))
+      runjs(paste0("$('#discardHintCollection-popup').addClass('hide')"))
     } else {
       lockHint <- lockHint(FALSE)
       runjs(paste0("$('.initialValues').removeClass('locked')"))
+      runjs(paste0("$('#discardHintCollection-popup').removeClass('hide')"))
     }
   
     
