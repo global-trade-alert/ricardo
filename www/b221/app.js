@@ -244,6 +244,7 @@ function discardButton() {
 
 
 function markHints() {
+  console.log("markHints loaded");
 
   $('#b221-slideInRight').on('click','#hintContainer .hint-title', function (e) {
     console.log(e);
