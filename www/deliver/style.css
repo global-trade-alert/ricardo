@@ -506,6 +506,7 @@ tr.deleted .status-column {
 	overflow-y: scroll;
 }
 
+
 .editMode.show {
 	transition:left 0.5s ease-out;
 	left:0;
@@ -549,13 +550,17 @@ tr.deleted .status-column {
 	margin:0;
 }
 
-.editMode .editMode-header {
+.editMode .editMode-header, .saveMode .saveMode-header {
 	display:flex;
 	background-color: rgba(0,0,0,0.2);
   padding: calc(10px + 1vw);
 }
 
-.editMode .editMode-header h1 {
+.saveMode .saveMode-header {
+  border-radius: 10px 10px 0px 0px;
+}
+
+.editMode .editMode-header h1, .saveMode .saveMode-header h1 {
 	display:flex;
 	flex:1;
 }
@@ -573,12 +578,12 @@ tr.deleted .status-column {
 	transition:all 0.5s ease-out;
 }
 
-.editMode .editMode-header #save-edit:hover {
+.editMode .editMode-header #save-edit:hover, .saveMode .saveMode-header #save-xlsx:hover {
 	background-color:rgba(0,0,0,0.4);
 	transition:all 0.5s ease-out;
 }
 
-.editMode .editMode-header #save-edit img {
+.editMode .editMode-header #save-edit img, .saveMode .saveMode-header #save-xlsx img {
 	margin-right: 10px;
 	height: 20px;
 }
@@ -606,6 +611,15 @@ tr.deleted .status-column {
 	grid-template-columns: 1fr 1fr;
 	grid-gap: calc(5px + 0.5vw);
 	margin-top: calc(5px + 0.5vw);
+}
+
+.save-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-gap: 0px;
+  margin-top: 1px;
+  text-align: center;
+  font-size: 0.7em;
 }
 
 .canvas .form-grid > div {
@@ -1081,4 +1095,43 @@ td.addPadding {
   border: 1px solid #f1a899;
   background: #fddfdf;
   color: #5f3f3f;
+}
+
+.search-pane-export-xlsx{
+    width: 3em;
+    height: 100%;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.saveMode {
+	width: 90vw;
+  height: 30vh;
+  position: fixed;
+  top: 30vh;
+  left: 30vw;
+  background-color: #1874CD;
+  z-index: 99999;
+  max-width: 600px;
+  border-radius: 10px;
+  opacity: 0;
+  transition:opacity 0.3s linear;
+}
+
+.saveMode.show {
+  visibility: visible !important;
+	box-shadow:3px 0px 25px rgba(0,0,0,0.2);
+  opacity: 1;
+}
+
+.saveMode .saveMode-header #save-xlsx {
+	display:flex;
+	flex:1;
+	flex-grow: 0;
+	background-color:rgba(0,0,0,0.2);
+	padding:10px;
+	border-radius:5px;
+	border:none;
+	color:#FFFFFF;
+	white-space: nowrap;
 }

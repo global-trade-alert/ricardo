@@ -13,13 +13,13 @@ const showLesscontent = function(type, id){
 }
 
 $( document ).ready(function() {
-
-    // add html for discard prompt
-      div_prompt = $('<div />')
-                      .attr('id','prompt-form')
-                      .attr('hidden', 'hidden')
-                      .html(
-                        '<p>Please, indicate a discard reason</p>\
+  
+  // add html for discard prompt
+  div_prompt = $('<div />')
+  .attr('id','prompt-form')
+  .attr('hidden', 'hidden')
+  .html(
+    '<p>Please, indicate a discard reason</p>\
                         <form>\
                           <fieldset>\
                            <label for="reason">Select reason</label>\
@@ -30,30 +30,50 @@ $( document ).ready(function() {
                             <textarea id="other"></textarea>\
                           </fieldset>\
                         </form>'
-                      );
-
-    $('body').append(div_prompt);
-
+  );
+  
+  $('body').append(div_prompt);
+  
+  (async() => {
+    while(!window.hasOwnProperty("data_gta")) // wait till data_gta is loaded
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    window.data_gta.discard_reason.map(function(d) {
+      $('select#reason').append(
+        `<option value="${d}">${d}</option>`
+      )
+    });
+    $('select#reason').selectize({
+      maxItems: 6,
+      valueField: 'text',
+      labelField: 'text',
+      placeholder: "Choose reason...",
+      create: false
+    });
+  })();
+  
     (async() => {
-      while(!window.hasOwnProperty("data_gta")) // wait till data_gta is loaded
-          await new Promise(resolve => setTimeout(resolve, 1000));
-       window.data_gta.discard_reason.map(function(d) {
-                $('select#reason').append(
-                  `<option value="${d}">${d}</option>`
-                 )
-                });
-
-            $('select#reason').selectize({
-              maxItems: 6,
-              valueField: 'text',
-              labelField: 'text',
-              placeholder: "Choose reason...",
-              create: false
-            });
+      while(!document.querySelector('.save-cols')) // wait till .save-cols is loaded
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('save-cols is loaded')
+      let colnames = await buttonsClicks.getAllColumnsNames();
+      colnames.forEach(function(d, i) {
+        let checked = /confirmation|users|description/gi.test(d.name) ? false : true; //untick some cols initially
+        let input = $('<input />')
+                              .attr('type', 'checkbox')
+                              .attr('checked', checked)
+                              .attr('id', `column-${d.index}`)
+                              .addClass('col-export');
+        let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
+        $('.save-cols').append(
+          $('<div />').addClass(`inputs ${d.name.toLowerCase()}`)
+              .append(label, input)
+        );
+      })
+      $('#save-xlsx').on('click', function() {
+        buttonsClicks.saveXlsx();
+      })
     })();
-
-
-
+  
 });
 
 const buttonsClicks = {
@@ -234,7 +254,7 @@ const buttonsClicks = {
       $('.overlay').on('click', function(){
           $(this).removeClass('show');
           $( ".editMode" ).removeClass('show');
-          $('#save-edit').remove();
+           $('#save-edit').remove();
           $('#close-editMode').remove();
           $('.canvas').empty();
           $(this).unbind('click', arguments.callee);
@@ -247,76 +267,89 @@ const buttonsClicks = {
           $('#close-editMode').remove();
           $(this).unbind('click', arguments.callee);
       });
-
-      $( ".editMode" ).addClass('show');
-
-    },
-    duplicate: function(status, id) {
-      const that = this;
-      let div_overlay = $('<div />')
-                              .addClass('keep-row')
-                              .css({ 'height': $(`tr#${id}`).height()});
-      div_overlay.append($('<p />').text('Choose duplicates of this Entry'));
-      let buttons = $('<div />').addClass('dupl-buttons')
-                        .append($('<input id = "save-dupl" type="button" value="Remove duplicates"/>'))
-                        .append($('<input id = "cancel-dupl" type="button" value="Cancel"/>'));
-
-      div_overlay.append(buttons);
-
-      $(`tr#${id}`).append(div_overlay);
-
-      $('#save-dupl').on('click', function(){
-        let rows = [];
-        $('.remove-row').each(function() { //duplicates-remove:checked
-          rows.push($(this).closest('tr').attr('id'));
+    
+    
+    that.addOverlay('editMode');
+    
+    $( ".editMode" ).addClass('show');
+    
+  },
+  addOverlay: function(caller){
+      $('.overlay').addClass('show');
+      
+      $('.overlay').on('click', function(){
+        $(this).removeClass('show');
+        $( `.${caller}` ).removeClass('show');
+        $('.canvas').empty();
+        $(this).unbind('click', arguments.callee);
+    });
+  },
+  duplicate: function(status, id) {
+    const that = this;
+    let div_overlay = $('<div />')
+    .addClass('keep-row')
+    .css({ 'height': $(`tr#${id}`).height()});
+    div_overlay.append($('<p />').text('Choose duplicates of this Entry'));
+    let buttons = $('<div />').addClass('dupl-buttons')
+    .append($('<input id = "save-dupl" type="button" value="Remove duplicates"/>'))
+    .append($('<input id = "cancel-dupl" type="button" value="Cancel"/>'));
+    
+    div_overlay.append(buttons);
+    
+    $(`tr#${id}`).append(div_overlay);
+    
+    $('#save-dupl').on('click', function(){
+      let rows = [];
+      $('.remove-row').each(function() { //duplicates-remove:checked
+        rows.push($(this).closest('tr').attr('id'));
       });
-        that.stopDuplicatesMode();
-        rows.forEach(d => that.removeRow(d));
-      });
-      $('#cancel-dupl').on('click', function(){
-         that.stopDuplicatesMode();
-      });
-
-      $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
-
-      $('#DataTables_Table_0 tr').each(function(){
-          const this_row = $(this);
-          let id_this = this_row.attr('id');
-          if( id_this != id){
-            $(this).on('click', function(){
-                that.addDuplicateOverlay(id_this);
-                $(this).unbind('click', arguments.callee);
-            })
-          }
-      })
-    },
-    convertToConfirmed: function(className, id){
-      $(`tr#${id}`).removeClass(className).addClass('confirmed').find('.status-label').text('confirmed');
-      $(`tr#${id}`).find('.accept').remove();
-      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
-      this.rowAttachEvents('confirmed', id);
-    },
-    convertToDeleted: function(className, id){
-      $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');
-      $(`tr#${id}`).find('.accept').remove();
-      $(`tr#${id}`).find('.restore').attr('style', 'display: ');
-      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'deleted';
-      this.rowAttachEvents('deleted', id);
-    },
-    redrawDataTable: function(id){
-      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).invalidate().draw(false);
-    },
-    removeRow: function(id){
-      //$(`tr#${id}`).fadeOut('fast', function(){
-        if (id != undefined);
-        $('#DataTables_Table_0').DataTable().row(`tr#${id}`).remove().draw(false);
+      that.stopDuplicatesMode();
+      rows.forEach(d => that.removeRow(d));
+    });
+    $('#cancel-dupl').on('click', function(){
+      that.stopDuplicatesMode();
+    });
+    
+    $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': 'none'}) });
+    
+    $('#DataTables_Table_0 tr').each(function(){
+      const this_row = $(this);
+      let id_this = this_row.attr('id');
+      if( id_this != id){
+        $(this).on('click', function(){
+          that.addDuplicateOverlay(id_this);
+          $(this).unbind('click', arguments.callee);
+        })
+      }
+    })
+  },
+  convertToConfirmed: function(className, id){
+    $(`tr#${id}`).removeClass(className).addClass('confirmed').find('.status-label').text('confirmed');
+    $(`tr#${id}`).find('.accept').remove();
+    $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
+    this.rowAttachEvents('confirmed', id);
+  },
+  convertToDeleted: function(className, id){
+    $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');
+    $(`tr#${id}`).find('.accept').remove();
+    $(`tr#${id}`).find('.restore').attr('style', 'display: ');
+    $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'deleted';
+    this.rowAttachEvents('deleted', id);
+  },
+  redrawDataTable: function(id){
+    $('#DataTables_Table_0').DataTable().row(`tr#${id}`).invalidate().draw(false);
+  },
+  removeRow: function(id){
+    //$(`tr#${id}`).fadeOut('fast', function(){
+      if (id != undefined);
+      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).remove().draw(false);
       //});
-    },
-    updateSearchPanes: function(){
-      $('#DataTables_Table_0').DataTable().settings()[0]._searchPanes.s.panes
-                                            .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
-    },
-    updateRowData: function(currentStatus, data, id, rowData){
+  },
+  updateSearchPanes: function(){
+    $('#DataTables_Table_0').DataTable().settings()[0]._searchPanes.s.panes
+    .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
+  },
+  updateRowData: function(currentStatus, data, id, rowData){
       // console.log('UPDATE ROW DATA');
       // console.log(rowData)
       // console.log(currentStatus)
@@ -346,120 +379,156 @@ const buttonsClicks = {
       this.redrawDataTable();
       this.updateSearchPanes();
       this.rowAttachEvents(currentStatus, id);
-    },
-    getRowData: function(id){
-        let columns = this.getColumnsNames();
-        let col_ind = columns.flatMap(d => d.index);
-        console.log(columns)
-        let output = [];
-        $('#DataTables_Table_0').DataTable().row($(`tr#${id}`)).data().forEach(function(d,i){
-          d = d == null ? '' : d.toString();
-          if (col_ind.indexOf(i) != -1)
-          output.push({data: d, name: columns.filter(d => d.index == i)[0].name, index: columns.filter(d => d.index == i)[0].index })
-        })
-        return output;
-    },
-    getColumnsNames: function(){
-        let output = [];
-
-        let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
-                                'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
-
-        $('#DataTables_Table_0').DataTable().columns().every( function (i) {
-
-              if (filtered_columns.includes(this.header().innerHTML))
-              output.push({ index: i, name: this.header().innerHTML})
-        });
-        return output;
-    },
-    rowAttachEvents: function(status, id){
-        $(`tr#${id}`).find('.buttons-column').each(function(){
-            let that = $(this);
-
-              $(that).children().each(function(){
-                if ($(this).attr('class') != 'duplicates-remove')
-                $(this).off('click').on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
-              })
-        })
-    },
-    stopDuplicatesMode: function(){
-      $('.keep-row').remove();
-      $('.remove-row').remove();
-      $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': ''}) });
-      /*$('.duplicates-remove').each(function(){
-        $(this).off('change');
-        $(this).prop( "checked", false ).css({'display': 'none'});
-      });*/
-       $('#DataTables_Table_0 tr').each(function(){
-         $(this).off('click');
+  },
+  getRowData: function(id){
+    let columns = this.getColumnsNames();
+    let col_ind = columns.flatMap(d => d.index);
+    console.log(columns)
+    let output = [];
+    $('#DataTables_Table_0').DataTable().row($(`tr#${id}`)).data().forEach(function(d,i){
+      d = d == null ? '' : d.toString();
+      if (col_ind.indexOf(i) != -1)
+        output.push({data: d, name: columns.filter(d => d.index == i)[0].name, index: columns.filter(d => d.index == i)[0].index })
+    })
+    return output;
+  },
+  getColumnsNames: function(){
+    let output = [];
+    
+    let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
+                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
+    
+    $('#DataTables_Table_0').DataTable().columns().every( function (i) {
+      
+      if (filtered_columns.includes(this.header().innerHTML))
+        output.push({ index: i, name: this.header().innerHTML})
+    });
+    return output;
+  },
+  getAllColumnsNames : async function(){
+    let output = [];
+    while(!document.querySelector('#DataTables_Table_0')) // wait till #DataTables_Table_0 is loaded
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    $('#DataTables_Table_0').DataTable().columns().every( function (i) {
+        output.push({ index: i, name: this.header().innerHTML})
+    });
+    return output;
+  },
+  rowAttachEvents: function(status, id){
+    $(`tr#${id}`).find('.buttons-column').each(function(){
+      let that = $(this);
+      
+      $(that).children().each(function(){
+        if ($(this).attr('class') != 'duplicates-remove')
+          $(this).off('click').on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
       })
-    },
-    addDuplicateOverlay: function(id){
-      const that = this;
-      let div_overlay = $('<div />')
-                              .addClass('remove-row')
-                              .css({ 'height': $(`tr#${id}`).height()})
-
-      div_overlay.append($('<p />').text('Duplicate row'));
-
-      $(`tr#${id}`).append(div_overlay);
-      $(`tr#${id}`).find('.remove-row').on('click', function(){
-          event.stopPropagation();
-          $(`tr#${id}`).on('click', function(){
-                const this_inner = $(this);
-                that.addDuplicateOverlay(id);
-                this_inner.unbind('click', arguments.callee);
-            });
-          $(this).remove();
+    })
+  },
+  stopDuplicatesMode: function(){
+    $('.keep-row').remove();
+    $('.remove-row').remove();
+    $('.edit,.duplicate,.delete,.accept').each(function(){ $(this).css({'display': ''}) });
+    /*$('.duplicates-remove').each(function(){
+      $(this).off('change');
+      $(this).prop( "checked", false ).css({'display': 'none'});
+    });*/
+      $('#DataTables_Table_0 tr').each(function(){
+        $(this).off('click');
+      })
+  },
+  addDuplicateOverlay: function(id){
+    const that = this;
+    let div_overlay = $('<div />')
+    .addClass('remove-row')
+    .css({ 'height': $(`tr#${id}`).height()})
+    
+    div_overlay.append($('<p />').text('Duplicate row'));
+    
+    $(`tr#${id}`).append(div_overlay);
+    $(`tr#${id}`).find('.remove-row').on('click', function(){
+      event.stopPropagation();
+      $(`tr#${id}`).on('click', function(){
+        const this_inner = $(this);
+        that.addDuplicateOverlay(id);
+        this_inner.unbind('click', arguments.callee);
       });
-    },
-    addDeletePrompt: function(currentStatus, id){
-      const that = this;
-          $(function() {
-            $("#prompt-form").dialog({
-                  autoOpen: false,
-                  height: 300,
-                  width: 250,
-                  modal: true,
-                  resizable: false,
-                  buttons: {
-                    OK: function() {
-                      let selected = $('select#reason').selectize()[0].selectize.getValue(),
-                          other = $('#prompt-form textarea').val(),
-                          reasons = selected.concat(other).filter(d => d != '').join(',');
-
-                      if (reasons.length == 0){
-                        $('#other').addClass( "prompt-error" );
-                        $('#prompt-form div.selectize-input').addClass( "prompt-error" );
-                      } else {
-                        that.convertToDeleted(currentStatus, id);
-                        $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
-                        $(this).dialog( "close" );
-                        that.redrawDataTable();
-                        that.updateSearchPanes();
-                      }
-                      console.log({selected: selected, other: other})
-                    },
-                    cancel: function(){
-                      $(this).dialog( "close" );
-                    }
-                  },
-                  open: function(){
-                      $('select#reason').selectize()[0].selectize.clear();
-                      $('.prompt-error').removeClass( "prompt-error" );
-                      $('#prompt-form textarea').val('');
-                  }
-              });
-          $("#prompt-form").dialog("open");
-          //$("#prompt-form").parent().draggable( "disable" );
-        });
-    }
+      $(this).remove();
+    });
+  },
+  addDeletePrompt: function(currentStatus, id){
+    const that = this;
+    $(function() {
+      $("#prompt-form").dialog({
+        autoOpen: false,
+        height: 300,
+        width: 250,
+        modal: true,
+        resizable: false,
+        buttons: {
+          OK: function() {
+            let selected = $('select#reason').selectize()[0].selectize.getValue(),
+            other = $('#prompt-form textarea').val(),
+            reasons = selected.concat(other).filter(d => d != '').join(',');
+            
+            if (reasons.length == 0){
+              $('#other').addClass( "prompt-error" );
+              $('#prompt-form div.selectize-input').addClass( "prompt-error" );
+            } else {
+              that.convertToDeleted(currentStatus, id);
+              $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              $(this).dialog( "close" );
+              that.redrawDataTable();
+              that.updateSearchPanes();
+            }
+            console.log({selected: selected, other: other})
+          },
+          cancel: function(){
+            $(this).dialog( "close" );
+          }
+        },
+        open: function(){
+          $('select#reason').selectize()[0].selectize.clear();
+          $('.prompt-error').removeClass( "prompt-error" );
+          $('#prompt-form textarea').val('');
+        }
+      });
+      $("#prompt-form").dialog("open");
+      //$("#prompt-form").parent().draggable( "disable" );
+    });
+  },
+  initializeSaveMode: function(){
+    const that = this;
+    $('.saveMode').addClass('show');
+    that.addOverlay('saveMode');
+    console.log(that.getColumnsNames())
+  },
+  saveXlsx: function(){
+    let output = [],
+        columns = [],
+        data = $('#DataTables_Table_0').DataTable().rows({ filter: 'applied'}).data().toArray();
+    $('.col-export').each(function(){ 
+        if ($(this).is(':checked'))
+          columns.push({ index: $(this).attr('id').match(/\d+/gi)[0], name: $(this).siblings('label').html() })
+    });
+    data.forEach(function(d,i){
+      let row = {};
+      d.map(function(d1,i1){
+        columns.map(function(d2){
+          if (i1 == d2.index) 
+              row[d2.name] = d1;
+        })
+      })
+      output.push(row)
+    })
+    console.log(output)
+    Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(output), {priority: "event"});
+  }
 };
 
 // On button click #search-pane-toggle-button collapse searchpanes
 function searchPaneUI() {
   console.log('Toggling Class');
   $('#deliver-deliverTable').on('click','#search-pane-toggle-button', function(){
-  $('#deliver-deliverTable').toggleClass('collapsePanes');
-});
+    $('#deliver-deliverTable').toggleClass('collapsePanes');
+  });
 }

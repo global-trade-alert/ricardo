@@ -1,7 +1,7 @@
 // FUNCTIONS
 
 // wait till content is added to HTML
-  (async() => {
+ (async() => {
     while(document.querySelectorAll('.control-bar,#b221-slideInRight,#confirm-discard').length == 0)
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('content is loaded')
@@ -10,7 +10,6 @@
     $('#confirm-discard').css({'visibility': ''});
     discardButton();
   })();
-
 // REACTIVATING LEADS ITEM
 function checkLeads() {
   $('#b221-leadsTable').on('click', '.leads-item .right-col .evaluate',function (e) {
@@ -439,7 +438,7 @@ function discardExistingCollection() {
   console.log(state)
 
   if (event_source == 'MainScreen') { //if single hint is discarded
-    let id = $('#confirm-discard').attr('class').match(/(?<=leadsID_).*/gi)[0];
+    let id = $('#confirm-discard').attr('class').replace(/.*leadsID_/gi, ''); //.match(/(?<=leadsID_).*/gi)[0];
     del_or_dis('Discard','hint','Mark irrelevant');
     Shiny.setInputValue("b221-discardSingleHint", JSON.stringify({ reasons, id: id }), {priority: "event"});
   } else { //if collection is discarded
