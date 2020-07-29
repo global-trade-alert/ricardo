@@ -5,8 +5,8 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
            c('hint.id','relevance','implementer.name','product.group.name','intervention.type.name','assessment.name','url','is.official','comment','implementation.date','announcement.date','removal.date'))
   
   input.col.names = c('hint.id','implementer.name','url','is.official','assessment.name',
-                      'product.group.name','intervention.type.name','comment','relevance','implementation.date','announcement.date','removal.date')
-  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name')
+                      'product.group.name','intervention.type.name','comment','relevance','implementation.date','announcement.date','removal.date', 'discard.reason', 'discard.reason.comment')
+  multiple.values.permitted = c('implementer.name','product.group.name','intervention.type.name','collection.name', 'discard.reason')
   
   if(text.modifiable == T) input.col.names = c(input.col.names, 'title','hint.description')
   
@@ -15,11 +15,13 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   unnest1 = tidyr::unnest(processed.rows[,c('hint.id','implementer.name')], implementer.name) 
   unnest2 = tidyr::unnest(processed.rows[,c('hint.id','product.group.name')], product.group.name)
   unnest3 = tidyr::unnest(processed.rows[,c('hint.id','intervention.type.name')], intervention.type.name)
+  unnest4 = tidyr::unnest(processed.rows[,c('hint.id','discard.reason')], discard.reason)
   
-  processed.rows = as.data.frame(merge(merge(merge(processed.rows[,input.col.names[!input.col.names %in% multiple.values.permitted]], 
+  processed.rows = as.data.frame(merge(merge(merge(merge(processed.rows[,input.col.names[!input.col.names %in% multiple.values.permitted]], 
                                                    unnest1, by='hint.id', all.x = T),
                                              unnest2, by='hint.id', all.x = T),
-                                       unnest3, by='hint.id', all.x = T))
+                                       unnest3, by='hint.id', all.x = T),
+                                     unnest4, by='hint.id', all.x = T))
   processed.rows$was.modified = 1
   processed.rows$in.collection = NA
   
@@ -200,18 +202,18 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
                           INSERT INTO bt_hint_date(hint_id, classification_id, date_type_id, `date`, date_accepted, validation_classification)
-                          SELECT DISTINCT * FROM
-                          (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_classification
+                          SELECT DISTINCT hint_id, classification_id, date_type_id, `date`, date_accepted, validation_classification FROM
+                          (SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'implementation') AS date_type_id, changes.implementation_date AS `date`, NULL as date_accepted, NULL as validation_classification, changes.in_collection AS in_collection
                           FROM b221_temp_changes_data_",user.id," changes
                           UNION 
-                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'announcement') AS date_type_id, changes.announcement_date AS `date`, NULL as date_accepted, NULL as validation_classification
+                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'announcement') AS date_type_id, changes.announcement_date AS `date`, NULL as date_accepted, NULL as validation_classification, changes.in_collection AS in_collection
                           FROM b221_temp_changes_data_",user.id," changes
                           UNION 
-                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_classification
+                          SELECT changes.hint_id, @classification_id AS classification_id, (SELECT bt_date_type_list.date_type_id FROM bt_date_type_list WHERE bt_date_type_list.date_type_name = 'removal') AS date_type_id, changes.removal_date AS `date`, NULL as date_accepted, NULL as validation_classification, changes.in_collection AS in_collection
                           FROM b221_temp_changes_data_",user.id," changes) new_dates
                           WHERE new_dates.`date` IS NOT NULL
-                          AND NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = new_dates.hint_id AND ht_date.`date` = new_dates.`date` AND ht_date.date_type_id = new_dates.date_type_id AND ht_date.validation_classification IS NULL);
-                          #AND changes.in_collection = 0;
+                          AND NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = new_dates.hint_id AND ht_date.`date` = new_dates.`date` AND ht_date.date_type_id = new_dates.date_type_id AND ht_date.validation_classification IS NULL)
+                          AND new_dates.in_collection = 0;
                           
                           UPDATE bt_hint_date ht_date
                           JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_date.hint_id = changed_hints.hint_id AND ht_date.validation_classification IS NULL
@@ -230,12 +232,20 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           
                           INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_classification)
                           SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, NULL AS url_accepted, NULL AS validation_classification FROM 
-                          (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                          (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id, changes.in_collection AS in_collection
                           FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
                           JOIN bt_url_log ON changes_w_url_type.url = bt_url_log.url
-                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id AND ht_url.validation_classification IS NULL);
-                          #AND changes.in_collection = 0;
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id AND ht_url.validation_classification IS NULL)
+                          AND changes_w_url_type.in_collection = 0;
                           
+                          UPDATE bt_hint_url ht_url 
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_url.hint_id = changed_hints.hint_id
+                          JOIN bt_url_log ON bt_url_log.url_id = ht_url.url_id
+                          LEFT JOIN (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                           FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
+                          ON ht_url.hint_id = changes_w_url_type.hint_id AND changes_w_url_type.url = bt_url_log.url AND changes_w_url_type.url_type_id = ht_url.url_type_id
+                          SET ht_url.validation_classification = @classification_id, ht_url.url_accepted = (CASE WHEN changes_w_url_type.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                                  
                           INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
                           SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, changes.relevance, NULL as relevance_probability, NULL as relevance_accepted, NULL as validation_classification 
                           FROM b221_temp_changes_data_",user.id," changes
@@ -245,8 +255,24 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           UPDATE bt_hint_relevance ht_rel
                           JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON ht_rel.hint_id = changed_hints.hint_id AND ht_rel.validation_classification IS NULL
                           LEFT JOIN (SELECT DISTINCT hint_id, relevance FROM b221_temp_changes_data_",user.id,") changes ON ht_rel.hint_id = changes.hint_id AND changes.relevance = ht_rel.relevance AND ht_rel.validation_classification IS NULL
-                          SET ht_rel.validation_classification = 49, 
+                          SET ht_rel.validation_classification = @classification_id, 
                           ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                          
+                          INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_classification )
+                          SELECT DISTINCT changes.hint_id, @classification_id as classification_id,
+                          bdr.discard_reason_id, changes.discard_reason_comment, 
+                          NULL AS reason_accepted, NULL AS validation_classification
+                          FROM b221_temp_changes_data_",user.id," AS changes
+                          JOIN bt_discard_reason_list bdr ON changes.discard_reason COLLATE utf8mb4_general_ci = bdr.discard_reason_name
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason bt_dis WHERE bt_dis.hint_id = changes.hint_id AND bt_dis.discard_reason_id = bdr.discard_reason_id AND bt_dis.discard_reason_comment COLLATE utf8mb4_general_ci <=> changes.discard_reason_comment AND bt_dis.validation_classification IS NULL)
+                          AND changes.in_collection = 0;
+                          
+                          UPDATE bt_hint_discard_reason bt_dis
+                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON bt_dis.hint_id = changed_hints.hint_id AND bt_dis.validation_classification IS NULL
+                          JOIN bt_discard_reason_list dis_list ON bt_dis.discard_reason_id = dis_list.discard_reason_id
+                          LEFT JOIN (SELECT DISTINCT hint_id, discard_reason, discard_reason_comment FROM b221_temp_changes_data_",user.id,") changes ON bt_dis.hint_id = changes.hint_id AND bt_dis.discard_reason_comment COLLATE utf8mb4_general_ci <=> changes.discard_reason_comment AND changes.discard_reason COLLATE utf8mb4_general_ci = dis_list.discard_reason_name AND bt_dis.validation_classification IS NULL
+                          SET bt_dis.validation_classification = @classification_id,
+                          bt_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
                           
                           UPDATE bt_hint_log
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id
