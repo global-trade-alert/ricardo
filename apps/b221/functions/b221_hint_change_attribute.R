@@ -34,12 +34,15 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                      modify.relevance=NULL,
                                      modify.title=NULL,
                                      modify.description=NULL,
+                                     modify.discard.comment=NULL,
                                      add.instrument=NULL,
                                      remove.instrument=NULL,
                                      add.product=NULL,
                                      remove.product=NULL,
                                      add.jurisdiction=NULL,
-                                     remove.jurisdiction=NULL){
+                                     remove.jurisdiction=NULL,
+                                     add.discard.reason=NULL,
+                                     remove.discard.reason=NULL){
   
   # stop if intervention is not allowed to be modified
   if(is.intervention & !intervention.modifiable) stop('Changing attributes of interventions is not allowed.')
@@ -125,6 +128,10 @@ b221_hint_change_attribute<-function(change.id=NULL,
       assessment.name = ifelse(is.null(modify.assessment), assessment.name, modify.assessment)
       return(assessment.name)
     }) %>%
+    mutate_at(.vars = 'discard.reason.comment', .funs = function(x){
+      discard.reason.comment = ifelse(is.null(modify.discard.comment), x, modify.discard.comment)
+      return(discard.reason.comment)
+    }) %>%
     mutate_at(.vars = 'intervention.id', .funs = function(x) {
       intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
       intervention.name = ifelse(intervention.name %in% remove.instrument, NA_character_, intervention.name)
@@ -139,6 +146,11 @@ b221_hint_change_attribute<-function(change.id=NULL,
         jurisdiction.name = mapvalues(x, jurisdiction.list$jurisdiction.id, jurisdiction.list$jurisdiction.name, warn_missing = F)
         jurisdiction.name = ifelse(jurisdiction.name %in% remove.jurisdiction, NA_character_, jurisdiction.name)
         return(jurisdiction.name)
+    }) %>%
+    mutate_at(.vars = 'discard.reason.id', .funs = function(x) {
+      discard.reason.name = mapvalues(x, discard.reasons.list$discard.reason.id, discard.reasons.list$discard.reason.name, warn_missing = F)
+      discard.reason.name = ifelse(discard.reason.name %in% remove.discard.reason, NA_character_, discard.reason.name)
+      return(discard.reason.name)
     }) %>%
     mutate_at(.vars = 'announcementdate', .funs = function(x) {
         announcementdate = ifelse(is.null(modify.date.announced), x, modify.date.announced)
@@ -201,7 +213,12 @@ b221_hint_change_attribute<-function(change.id=NULL,
             return(list(jurisdiction.name))
           }) %>%
           modify_at(.at = 'discard.reason.id', .f = function(x){
-            discard.name <- x
+            discard.name <- x %>%
+              unlist %>%
+              append(add.discard.reason) %>%
+              unique
+            discard.name = discard.name[!is.na(discard.name)]
+            if(length(discard.name) == 0) discard.name = NA_character_
             return(list(discard.name))
           })
     })
@@ -227,6 +244,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
         map(.f = function(x){
             if(is.na(x$collection.id)){
               ## hint is not part of a collection ------------------------------
+              print(paste0('Hint ', x$hint.id, ' is not part of a collection...'))
                   output <- x %>% 
                     select(hint.id, relevance, jurisdiction.id, product.group.id, intervention.id, assessment.id, url.id, is.official, comment, implementationdate, announcementdate, removaldate,
                            hint.title, hint.description, discard.reason.id, discard.reason.comment) %>%
@@ -234,15 +252,20 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard.reason', 'discard.reason.comment'))
                   test_ht <<- output
                   
+                  if(output$clicked == 0 & is.na(output$discard.reason)){ stop('The hint is marked as irrelevant, please add the discard reasons!') }
+                  
+                  print('running b221_process_display_info...')
                   b221_process_display_info(is.freelancer = FALSE ,user.id = 82, processed.rows = output, text.modifiable = TRUE)
 
             } else {
               ## hint is part of a collection ----------------------------------
               output <- x
               test_cl <<- output
+              print(paste0('Hint ', x$hint.id, ' is part of a collection...'))
               col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",unlist(output$collection.id)," ;"))
 
               if(col.star!=output$hint.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
+              if(output$relevance == 0 & is.na(output$discard.reason.id)){ stop('The hint is marked as irrelevant, please add the discard reasons!') }
               
               #add dfs with id and names of the changed attributes
               assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_name = '",paste0(ifelse(is.na(output$assessment.id), 'NULL',output$assessment.id )),"';"))
@@ -258,7 +281,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
               AssessmentId = as.numeric(mapvalues(output$assessment.id, assessment.list$assessment.name, assessment.list$assessment.id, warn_missing = F))
               DiscardReasonsId = as.numeric(mapvalues(unlist(output$discard.reason.id), discard.reasons.list$discard.reason.name, discard.reasons.list$discard.reason.id, warn_missing = F))
               DiscardReasonsId = ifelse(is.na(DiscardReasonsId), NA, DiscardReasonsId)
-              DiscardComment = ifelse(is.na(output$discard.reason.comment), "", discard.reason.comment)
+              DiscardComment = ifelse(is.na(output$discard.reason.comment), '', output$discard.reason.comment)
               
               ImplementerId <<- ImplementerId
               InterventionTypeId <<- InterventionTypeId
@@ -267,6 +290,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
               DiscardReasonsId <<- DiscardReasonsId
               DiscardComment <<- DiscardComment
               
+              print('running bt_find_collection_attributes...')
               attributes = bt_find_collection_attributes(collection.id = output$collection.id, 
                                                          hints.id = output$hint.id, 
                                                          starred.hint.id = col.star, 
@@ -275,14 +299,15 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                                          intervention = InterventionTypeId, 
                                                          assessment = AssessmentId, 
                                                          relevance = output$relevance, 
-                                                         #discard = DiscardReasonsId,
-                                                         #discard.comment = DiscardComment,
+                                                         discard = DiscardReasonsId,
+                                                         discard.comment = DiscardComment,
                                                          announcement.date = output$announcementdate, 
                                                          implementation.date = output$implementationdate, 
                                                          removal.date = output$removaldate)
               
               test_attributes <<- attributes
               
+              print('running b221_process_collections_hints...')
               b221_process_collections_hints(is.freelancer = F,
                                              user.id = 82,
                                              collection.id = output$collection.id,
@@ -292,8 +317,8 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                              product = attributes$product,
                                              intervention = attributes$intervention,
                                              assessment = attributes$assessment,
-                                             #discard = attributes$discard,
-                                             #discard.comment = attributes$discard.comment,
+                                             discard = attributes$discard,
+                                             discard.comment = attributes$discard.comment,
                                              announcement.date = attributes$announcement.date,
                                              implementation.date = attributes$implementation.date,
                                              removal.date = attributes$removal.date,
