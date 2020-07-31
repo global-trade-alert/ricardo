@@ -159,6 +159,12 @@ bt_export_main_db=function(to.db = 'ricardodev'){
                               SELECT DISTINCT bt_base_export.hint_id, bt_base_export.act_id AS state_act_id FROM bt_base_export
                               WHERE NOT EXISTS (SELECT NULL FROM bt_hint_state_act WHERE bt_hint_state_act.hint_id = bt_base_export.hint_id AND bt_hint_state_act.state_act_id = bt_base_export.act_id);
                               
+                              DELETE bt_hint_documentation_status FROM bt_hint_documentation_status WHERE EXISTS (SELECT NULL FROM bt_base_export WHERE bt_base_export.hint_id = bt_hint_documentation_status.hint_id);
+
+                              INSERT INTO bt_hint_documentation_status(hint_id, documentation_status_id)
+                              SELECT DISTINCT bt_base_export.hint_id, IF(bt_base_export.status_id = 4, (SELECT documentation_status_id FROM dlvr_documentation_status_list WHERE documentation_status_name = 'GTA - published'),(SELECT documentation_status_id FROM dlvr_documentation_status_list WHERE documentation_status_name = 'GTA - under analysis')) 
+                              FROM bt_base_export;
+
                               SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
                                                         
                               INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)

@@ -252,7 +252,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard.reason', 'discard.reason.comment'))
                   test_ht <<- output
                   
-                  if(output$clicked == 0 & is.na(output$discard.reason)){ stop('The hint is marked as irrelevant, please add the discard reasons!') }
+                  if(output$clicked == 0 & is.na(output$discard.reason)){ stop(paste0('The hint ', output$id, ' is marked as irrelevant, please add the discard reasons!')) }
                   
                   print('running b221_process_display_info...')
                   b221_process_display_info(is.freelancer = FALSE ,user.id = 82, processed.rows = output, text.modifiable = TRUE)
@@ -265,7 +265,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
               col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",unlist(output$collection.id)," ;"))
 
               if(col.star!=output$hint.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
-              if(output$relevance == 0 & is.na(output$discard.reason.id)){ stop('The hint is marked as irrelevant, please add the discard reasons!') }
+              if(output$relevance == 0 & is.na(output$discard.reason.id)){ stop(paste0('The hint ', output$hint.id, ' is marked as irrelevant, please add the discard reasons!')) }
               
               #add dfs with id and names of the changed attributes
               assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_name = '",paste0(ifelse(is.na(output$assessment.id), 'NULL',output$assessment.id )),"';"))

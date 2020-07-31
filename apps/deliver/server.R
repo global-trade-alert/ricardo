@@ -4,7 +4,7 @@
 
   load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
   
-  # preprocess data
+  # preprocess data ----------------------------------DELETE THIS AFTER CONNECTING dlvr_pull_display
   new_env$covid.data <-
     new_env$covid.data %>%
     mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
@@ -66,9 +66,20 @@
     new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
                          "gta.intervention.type","date.announced","date.implemented","date.removed",
                          "description","source", "products","instruments")]
+  
+  new_env <<- new_env
 
+  # ----------------------------------------------------------------------------
 
 deliverserver <- function(input, output, session, user, app, prm, ...) {
+  
+
+# Pull data ---------------------------------------------------------------
+  names <- reactive({
+    output <- dlvr_pull_display()
+    
+    
+  })
   
   observe({
     products_unique <-
@@ -81,11 +92,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       gta_sql_get_value("SELECT assessment_name FROM b221_assessment_list")
     discard_reason <- list('reason1', 'reason2', 'reason3', 'reason4', 'reason5', 'reason6')
     
-    print(list(Products = products_unique,
-               Instruments = instruments_unique,
-               Jurisdiction = jurisdiction_unique,
-               'Initial assessment' = assessment_unique,
-               discard_reason = discard_reason))
+    # print(list(Products = products_unique,
+    #            Instruments = instruments_unique,
+    #            Jurisdiction = jurisdiction_unique,
+    #            'Initial assessment' = assessment_unique,
+    #            discard_reason = discard_reason))
     
       session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
                                                                 Instruments = instruments_unique,
@@ -96,8 +107,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   
   ns <- NS("deliver")
   
+  
+
+# Output Table ------------------------------------------------------------
   output$deliverTable <- DT::renderDataTable(DT::datatable(
-    data = new_env$covid.data, #retrieve_data(),
+    data = names(), #retrieve_data(),
     colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Jurisdiction' = 5, 'Initial assessment' = 6, 'GTA intervention type' = 7, 
                  'Announcement date' = 8, 'Implementation date' = 9, 'Removal date' = 10, 'Description' = 11,
                  'Source' = 12, 'Products' = 13, 'Instruments' = 14),
@@ -452,6 +466,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     extensions = c("Select", 'SearchPanes'),
     selection = "none"
     ),
-  server = F)
+  server = T)
   
 }
