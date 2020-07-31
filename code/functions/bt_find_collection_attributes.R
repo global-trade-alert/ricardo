@@ -18,44 +18,20 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
   pull.intervention.attributes <<- pull.intervention.attributes
   # if there are interventions in the collection, these supercede the provided attributes
   if(nrow(pull.intervention.attributes)>0){
-    
-    # globally required attributes
     intervention = na.omit(unique(pull.intervention.attributes$intervention.id))
+    product = na.omit(unique(pull.intervention.attributes$product.group.id))
     country = na.omit(unique(pull.intervention.attributes$jurisdiction.id))
     announcement.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 1)$date))
+    implementation.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 2)$date))
+    removal.date = na.omit(max(subset(tidyr::spread(pull.intervention.attributes, key='date.type.id', value='date'), !is.na(`2`))$`3`))
     assessment = na.omit(ifelse(length(unique(pull.intervention.attributes$assessment.id))>1,4,unique(pull.intervention.attributes$assessment.id)))
     relevance = 1
     discard = na.omit(unique(pull.intervention.attributes$discard.reason.id))
     discard.comment = na.omit(unique(pull.intervention.attributes$discard.reason.comment))
     starred.hint.id = unique(pull.intervention.attributes$hint.id) # if there is an intervention in a collection then this should be starred (can non intervention hints be starred whilst in a collection with an intervention? I answer no here)
-    
-    ## potential gaps in GTA data
-    product = na.omit(unique(pull.intervention.attributes$product.group.id))
-    if(length(product)==0){product=1}
-    
-    
-    # JF replaced this on 200616
-    # implementation.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 2)$date))
-    # if(abs(implementation.date)==Inf){implementation.date=NA}
-    
-    if(nrow(subset(pull.intervention.attributes, date.type.id == 2 & is.na(date)==F))>0){
-      implementation.date=min(subset(pull.intervention.attributes, date.type.id == 2 & is.na(date)==F)$date)
-    } else {
-      implementation.date=NULL
-    }
-    
-    # JF replaced this on 200616
-    # removal.date = na.omit(max(subset(tidyr::spread(pull.intervention.attributes, key='date.type.id', value='date'), !is.na(`2`))$`3`))
-    # if(abs(removal.date)==Inf){removal.date=NA}
-    
-    if(nrow(subset(pull.intervention.attributes, date.type.id == 3 & is.na(date)==F))>0){
-      removal.date=min(subset(pull.intervention.attributes, date.type.id == 3 & is.na(date)==F)$date)
-    } else {
-      removal.date=NULL
-    }
-    
   }
-  
+  print(discard)
+  print(discard.comment)
   # check if collection's attributes were changed
   if(!is.null(collection.id)){
     

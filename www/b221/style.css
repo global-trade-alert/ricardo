@@ -138,13 +138,38 @@ table.dataTable thead .sorting_desc {
 	flex:1;
 	align-items:center;
 	justify-content: center;
-}
-
-#b221-leadsTable .leads-item .right-col #discard {
 	border-bottom:1px solid #dadada;
 }
 
-#b221-leadsTable .leads-item.dismiss .right-col #discard {
+body.freelancer #b221-leadsTable .leads-item .right-col #update-to-existing,
+body.freelancer #b221-leadsTable .leads-item .right-col #duplicate-of-existing {
+	display:none;
+}
+
+#b221-leadsTable .leads-item .right-col #no-policy-mentioned span,
+#b221-leadsTable .leads-item .right-col #update-to-existing span,
+#b221-leadsTable .leads-item .right-col #duplicate-of-existing span {
+	transform:rotate(-90deg);
+	color:#CCCCCC;
+	text-align: center;
+	white-space: nowrap;
+	font-size: 0.9em;
+	font-weight: 600;
+	overflow: hidden;
+	transition:all 0.2s ease-out;
+}
+
+#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned span,
+#b221-leadsTable .leads-item.update-to-existing .right-col #update-to-existing span,
+#b221-leadsTable .leads-item.duplicate-of-existing .right-col #duplicate-of-existing span {
+	color:#FFFFFF;
+	transition:all 0.2s ease-out;
+}
+
+#b221-leadsTable .leads-item.dismiss .right-col #discard,
+#b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned,
+#b221-leadsTable .leads-item.update-to-existing .right-col #update-to-existing,
+#b221-leadsTable .leads-item.duplicate-of-existing .right-col #duplicate-of-existing {
 	background-color:#ee3e3e;
 	transition:all 0.2s ease-out;
 }
@@ -152,6 +177,10 @@ table.dataTable thead .sorting_desc {
 #b221-leadsTable .leads-item .right-col #discard span {
 	color:#cccccc;
 	transition:all 0.2s ease-out;
+}
+
+#b221-leadsTable .leads-item .right-col #relevant {
+	border-bottom:none;
 }
 
 #b221-leadsTable .leads-item.reactivate .right-col #relevant {
@@ -1148,7 +1177,7 @@ table.dataTable thead .sorting_desc {
 	justify-content: flex-end;
 }
 
-#collectionValues .options-bar #discardCollection-popup {
+#discardHintCollection-popup, #deleteCollection-popup {
 	background-color: #2485e6;
   color: #FFFFFF;
   height: 40px;
@@ -1156,18 +1185,19 @@ table.dataTable thead .sorting_desc {
   border: none;
   border-radius: 5px;
 	cursor:pointer;
+  margin-right: 10px;
 }
 
-#collectionValues .options-bar #discardCollection-popup:hover {
+#discardHintCollection-popup:hover, #deleteCollection-popup:hover {
 	background-color:#175da2;
 	transition:background-color 0.2s ease-out;
 }
 
-#collectionValues .options-bar #confirm-discard {
+#confirm-discard {
+  position: fixed !important;
 	opacity:0;
 	visibility: hidden;
 	transition: all 0.5s ease-out;
-	position: fixed;
   top: 0px;
   left: 0px;
   width: 100%;
@@ -1176,13 +1206,13 @@ table.dataTable thead .sorting_desc {
   z-index: 1000;
 }
 
-#collectionValues .options-bar #confirm-discard.show {
+#confirm-discard.show {
 	opacity:1;
 	visibility: visible;
 	transition: all 0.5s ease-out;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner {
+#confirm-discard .confirm-discard-inner {
 		background-color: #FFFFFF;
     width: 90%;
     border-radius: 5px;
@@ -1195,7 +1225,7 @@ table.dataTable thead .sorting_desc {
     padding: calc(25px + 1vw);
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner p {
+#confirm-discard .confirm-discard-inner p {
 	width: 100%;
 	padding-bottom: 10px;
 	font-size: 1em;
@@ -1203,25 +1233,26 @@ table.dataTable thead .sorting_desc {
 	text-align: center;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner .button-wrap {
+#confirm-discard .confirm-discard-inner .button-wrap {
 	width:100%;
 	display:grid;
 	grid-template-columns: 1fr 1fr;
 	grid-gap: 20px;
+	margin-top:20px;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner button {
+#confirm-discard .confirm-discard-inner button {
 	height:40px;
 	cursor:pointer;
 	transition:all 0.2s ease-out;
 }
 
-#collectionValues .options-bar #confirm-discard .confirm-discard-inner button.cancel:hover {
+#confirm-discard .confirm-discard-inner button.cancel:hover {
 	background-color:#dbdbdb;
 	transition:all 0.2s ease-out;
 }
 
-#collectionValues .options-bar #b221-discardCollection {
+#b221-discardHintCollection {
 	background-color:#ee3e3e;
 	color:#FFFFFF;
 	transition:background-color 0.2s ease-out;
@@ -1229,13 +1260,13 @@ table.dataTable thead .sorting_desc {
 	height:40px;
 }
 
-#collectionValues .options-bar #b221-discardCollection:hover {
+#b221-discardHintCollection:hover {
 	background-color:#c63131;
 	color:#FFFFFF;
 	transition:background-color 0.2s ease-out;
 }
 
-#collectionValues .options-bar #b221-discardCollection i {
+#b221-discardHintCollection i {
 	margin-right:5px;
 }
 

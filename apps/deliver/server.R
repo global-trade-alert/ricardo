@@ -124,11 +124,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     #            'Initial assessment' = assessment_unique,
     #            discard_reason = discard_reason))
     
-      session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
-                                                                Instruments = instruments_unique,
-                                                                Jurisdiction = jurisdiction_unique,
-                                                                'Initial assessment' = assessment_unique,
-                                                                discard_reason = discard_reason)))
+    session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
+                                                              Instruments = instruments_unique,
+                                                              Jurisdiction = jurisdiction_unique,
+                                                              'Initial assessment' = assessment_unique,
+                                                              discard_reason = discard_reason)))
   })
   
   ns <- NS("deliver")
@@ -150,7 +150,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       }"),
       pageLength = 300,
       scrollX = FALSE,
-
+      
       deferRender = TRUE,
       scrollY = JS('window.innerHeight - 160'),
       scroller = TRUE,
@@ -251,10 +251,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                   $(td).css('padding', '0px')
                                 }
                                 ")),
-          list(targets = c(0:9),
-               className = 'dt-center'),
-          list(targets = 0,
-               render = JS("function (data, type, row){
+        list(targets = c(0:9),
+             className = 'dt-center'),
+        list(targets = 0,
+             render = JS("function (data, type, row){
 
                             if (type === 'sp') {
                               return data;
@@ -288,40 +288,40 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                    
                             return output;
                }"),
-               searchPanes = list(
-                 orthogonal = 'sp'
-               )
-               ),
-          list(targets = 2,
-               render = JS("function (data, type, row){
+             searchPanes = list(
+               orthogonal = 'sp'
+             )
+        ),
+        list(targets = 2,
+             render = JS("function (data, type, row){
                             let users = data.split(',').map(d =>`<div class=\"usr-label\">${d}</div>`).join('');
                              return `<div class=\"box-usr-label\">
                                         ${users}
                                      </div>`
                }")
-          ),
-          list(targets = 4,
-               render = JS("function (data, type, row){
+        ),
+        list(targets = 4,
+             render = JS("function (data, type, row){
                             if (type === 'sp') {
                               return data.split(',')
                             }
                             return data;
                }"),
-               searchPanes = list(
-                 orthogonal = 'sp'
-               )
-          ),
-          list(targets = 7,
-               render = JS("function(data,type,row){
+             searchPanes = list(
+               orthogonal = 'sp'
+             )
+        ),
+        list(targets = 7,
+             render = JS("function(data,type,row){
                             if (data != null){
                                 return `<div class=\"ann-date\">${data}</div>` 
                             } else {
                                 return ''
                             }
                }")
-               ),
-          list(targets = 13,
-               render = JS("function (data, type, row) {
+        ),
+        list(targets = 13,
+             render = JS("function (data, type, row) {
                             if (type === 'sp') {
                               return data.split(',')
                             }
@@ -337,43 +337,62 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 
                             return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
-               searchPanes = list(
-                 orthogonal = 'sp',
-                 dtOpts = list(
-                   initComplete = JS("function(){
+             searchPanes = list(
+               orthogonal = 'sp',
+               dtOpts = list(
+                 initComplete = JS("function(){
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
                           
                            // Add toggle button to bottom of search panes
-                          console.log('TESTING ADD BUTTON FUNCTION');
                           let newNode = document.createElement('div');
                           newNode.setAttribute('id', 'search-pane-toggle-button');
                           let innerNode = document.createElement('span');
                           innerNode.setAttribute('class','material-icons');
                           innerNode.innerHTML = 'expand_less';
                           newNode.appendChild(innerNode);
-                          console.log($('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow'));
                           let referenceNode = $('#deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow')[0];
                           referenceNode.appendChild(newNode);
                           
+                          // Add export .xlsx to bottom of search panes
+                          let export_div = document.createElement('div');
+                          Object.assign(export_div, {
+                            className: 'search-pane-export-xlsx',
+                            title: 'export as .xlsx',
+                            onclick: function(){ buttonsClicks['initializeSaveMode']();  }
+                          });
+                          let img = document.createElement('img');
+                          Object.assign(img, {
+                            src: 'www/deliver/save-xlsx.svg',
+                            id: 'export-svg'
+                          })
+                          export_div.appendChild(img);
+                          referenceNode.appendChild(export_div);
+                          
                           searchPaneUI();
+                          
+                                                                                    
+                          let pagination = $('#DataTables_Table_0_paginate');
+                          console.log('PAGINATION');
+                          console.log(pagination);
+                          pagination.appendTo('.dtsp-panesContainer .dtsp-titleRow');
                          
                    }"),
-                   drawCallback = JS("function(settings){
+                 drawCallback = JS("function(settings){
                                      const api = this.api();
                    }"),
-                   predrawCallback = JS("function(settings){
+                 predrawCallback = JS("function(settings){
                                      const api = this.api();
 
                    }"),
-                   createdRow = JS("function(row, data, dataIndexcells){
+                 createdRow = JS("function(row, data, dataIndexcells){
 
                                    }")
-                 )
                )
-          ),
-          list(targets = 12,
-               render = JS("function (data, type, row) {
+             )
+        ),
+        list(targets = 12,
+             render = JS("function (data, type, row) {
                             if (type === 'sp') {
                                 return data.split(',')
                             } 
@@ -388,39 +407,38 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             all = `<div class = \"col-left\">${all.join('')}</div>`;
                             return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
-               searchPanes = list(
-                 orthogonal = 'sp'
-               )
-               ),
-          list(targets = 11,
-               render = JS("function(data, type, row, meta){
+             searchPanes = list(
+               orthogonal = 'sp'
+             )
+        ),
+        list(targets = 11,
+             render = JS("function(data, type, row, meta){
                           data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>');
 
                           let output = `<div class=\"source-less\">${data}</div>`;
 
                           return output
                }")),
-          list(targets = 10,
-               render = JS("function(data, type, row, meta){
+        list(targets = 10,
+             render = JS("function(data, type, row, meta){
                           let output = `<div class=\"description-less\">${data}</div>`;
 
                           return output
                }")),
-          
-          # searchPanes extension
-          list(
-            searchPanes = list(
-              show = FALSE
-              ),
-            targets = c(1:3,6:11)#,12:22
-            )
-        ),
+        
+        # searchPanes extension
+        list(
+          searchPanes = list(
+            show = FALSE
+          ),
+          targets = c(1:3,6:11)#,12:22
+        )
+      ),
       
       initComplete = JS("function(settings) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
                             settings._searchPanes.regenerating = true // allow recalculation of searchPanes
-                            
 
       }"),
       
@@ -450,11 +468,23 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             .then(() => {
                                 $('#hide').css({'display': ''});
                                   api.$('.description-less').each(function(){ // all un-opened descriptions
+                                  $(this)[0].setAttribute('style', `max-height:${$(this)[0].parentNode.scrollHeight}px;`);
                                   let id = api.row( $(this).closest('tr') ).id();
-                                
                                     if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
                                         $(this).parent('td').append(`<button id =\"toggle-description_${id}\"
                                                                           class=\"more-less\" onclick=\'showMorecontent(\"description\",${id})\'>
+                                                                          <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
+                                    }
+                                })
+                              api.$('.source-less').each(function(){ // all un-opened sources
+                                  // console.log($(this));
+                                  // console.log($(this)[0].scrollHeight);
+                                  // console.log($(this)[0].parentNode.scrollHeight);
+                                  $(this)[0].setAttribute('style', `max-height:${$(this)[0].parentNode.scrollHeight}px;`);
+                                  let id = api.row( $(this).closest('tr') ).id();
+                                  if(isEllipsisActive($(this)) == true && $(this).siblings('.more-less').length == 0){
+                                        $(this).parent('td').append(`<button id =\"toggle-source_${id}\"
+                                                                          class=\"more-less\" onclick=\'showMorecontent(\"source\",${id})\'>
                                                                           <span class=\\'material-icons\\'>add_circle_outline</span></button>`)
                                     }
                                 })
@@ -498,5 +528,37 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     selection = "none"
     ),
   server = T)
+  
+  observeEvent(input$saveXlsx, {
+    export <- jsonlite::fromJSON(input$saveXlsx)
+
+    print(export)
+    export <- export %>%
+      mutate('Product: medical consumables' = if('Products' %in% names(.)) str_detect(Products, 'medical consumables') else NULL,
+             'Product: Medical equipment' = if('Products' %in% names(.)) str_detect(Products, 'medical equipment.') else NULL,
+             'Product: Medicines or drugs' = if('Products' %in% names(.)) str_detect(Products, 'medicines or drugs') else NULL,
+             'Product: Food' = if('Products' %in% names(.)) str_detect(Products, 'food') else NULL,
+             'Product: Any medical product' = if('Products' %in% names(.)) str_detect(Products, 'uncertain') else NULL,
+             'Product: other' = if('Product' %in% names(.)) str_detect(Products, 'other') else NULL,
+             'Is export barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export barrier') else NULL,
+             'Is import barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'import barrier') else NULL,
+             'Domestic subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'domestic subsidy') else NULL,
+             'Export subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export subsidy') else NULL) %>%
+      select(!any_of(c('Products', 'Instruments')))
+    
+    data_export <<- list("WB data" = export, "Notes" = c('Data as available on CURRENTTIME.'))
+    
+    runjs("$('#deliver-downloadXlsx')[0].click();
+           $('.overlay').click();")
+  })
+  
+  output$downloadXlsx <- downloadHandler(
+    filename = function() {
+      paste0("test", ".xlsx")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(data_export, file = file)
+    }
+  )
   
 }

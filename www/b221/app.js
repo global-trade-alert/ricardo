@@ -1,8 +1,15 @@
 // FUNCTIONS
 
-
-
-
+// wait till content is added to HTML
+ (async() => {
+    while(document.querySelectorAll('.control-bar,#b221-slideInRight,#confirm-discard').length == 0)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('content is loaded')
+    $('.control-bar').css({'visibility': ''});
+    $('#b221-slideInRight').css({'visibility': ''});
+    $('#confirm-discard').css({'visibility': ''});
+    discardButton();
+  })();
 // REACTIVATING LEADS ITEM
 function checkLeads() {
   $('#b221-leadsTable').on('click', '.leads-item .right-col .evaluate',function (e) {
@@ -43,18 +50,44 @@ function checkLeadsManual() {
 
     if(!$(e.target).is('#b221-leadsTable .no-touch')) {
       if (elementType == "discard" && ! $(this).hasClass('dismiss')) {
-          $(changeEl).removeClass('reactivate');
+          removeValClasses(changeEl);
           $(changeEl).addClass('dismiss');
           // Shiny.setInputValue("b221-checkLeadsClick", [elementType, elementID], {priority: "event"});
-          collectData(`#${elementID}`,'dismiss');
+          //collectData(`#${elementID}`,'dismiss');
+          $('#confirm-discard > div > div.form-group').css({'display': ''})
+          del_or_dis();
+          $('#confirm-discard').addClass(`show ${elementID}`);
+
       } else if (elementType == "relevant" && ! $(this).hasClass('reactivate')) {
-          $(changeEl).removeClass('dismiss');
+          removeValClasses(changeEl);
           // console.log(`#${elementID}`);
           collectData(`#${elementID}`,'reactivate');
+      } else if (elementType == "no-policy-mentioned" && ! $(this).hasClass('no-policy-mentioned')) {
+        removeValClasses(changeEl);
+        $(changeEl).addClass('no-policy-mentioned');
+        collectData(`#${elementID}`,'no-policy-mentioned');
+      }
+      else if (elementType == "update-to-existing" && ! $(this).hasClass('no-policy-mentioned')) {
+        removeValClasses(changeEl);
+        $(changeEl).addClass('update-to-existing');
+        collectData(`#${elementID}`,'update-to-existing');
+      }
+      else if (elementType == "duplicate-of-existing" && ! $(this).hasClass('no-policy-mentioned')) {
+        removeValClasses(changeEl);
+        $(changeEl).addClass('duplicate-of-existing');
+        collectData(`#${elementID}`,'duplicate-of-existing');
       }
   }
 
   });
+}
+
+function removeValClasses(el) {
+  $(el).removeClass('reactivate');
+  $(el).removeClass('dismiss');
+  $(el).removeClass('no-policy-mentioned');
+  $(el).removeClass('update-to-existing');
+  $(el).removeClass('duplicate-of-existing');
 }
 
 function hintsBasicUI() {
@@ -167,26 +200,50 @@ function slideInBasicUI() {
     $(`#renameCollection_${colID}`).removeClass('visible');
   });
 
+}
 
-
+function slideInDiscardButton() {
+  $('#b221-slideInRight').on('click','#discardHintCollection-popup', function () {
+    del_or_dis('Discard','collection','Mark irrelevant');
+    $('#confirm-discard > div > div.form-group').css({'display': ''})
+    $('#confirm-discard').addClass('show');
+    $('#b221-discardSelect').selectize()[0].selectize.clear(); //clear discard-select
+    $('#b221-discardOther').val(''); //clear discard-other
+  });
+    $('#b221-slideInRight').on('click','#deleteCollection-popup', function () {
+    $('#confirm-discard > div > div.discard-select-fields').css({'display': 'none'})
+    del_or_dis('Delete', 'collection', 'Delete');
+    $('#confirm-discard').addClass('show');
+  })
 }
 
 function discardButton() {
 
-  $('#b221-slideInRight').on('click','#discardCollection-popup', function () {
-    $('#confirm-discard').addClass('show');
-  })
-
-  $('#b221-slideInRight').on('click','#confirm-discard .cancel', function () {
+// CANCEL BUTTON
+  $('#confirm-discard .cancel').on('click', function () {
     $('#confirm-discard').removeClass('show');
+    $('#b221-discardSelect').selectize()[0].selectize.clear(); //clear discard-select
+    $('#b221-discardOther').val(''); //clear discard-other
+  let id = $('#confirm-discard').attr('class').match(/leadsID_.*/gi); //checks if pop-up was initiated from .evaluate button
+  if (id != null){
+    $(`#${id[0]}`).removeClass('dismiss');
+  }
+
+  $('#confirm-discard').removeClass (function (index, className) {
+      return (className.match (/leadsID_.*/gi) || []).join(' ');
+  });
 })
 
-  $('#b221-slideInRight').on('click','#confirm-discard #b221-discardCollection', function () {
-    $('#confirm-discard').removeClass('show');
+// DELETE COLLECTION BUTTON
+  $('#confirm-discard #b221-discardHintCollection').on('click', function () {
+
   })
+
 }
 
+
 function markHints() {
+  console.log("markHints loaded");
 
   $('#b221-slideInRight').on('click','#hintContainer .hint-title', function (e) {
     console.log(e);
@@ -281,7 +338,7 @@ function checkNull(el) {
 
 //  Collect data for a general submit of hints
 function collectData(type='', state=''){
-  // console.log("Collector running");
+  console.log("Collector running");
   let selector = `${type}`;
   let output = [];
   // console.log(state);
@@ -300,43 +357,64 @@ function collectData(type='', state=''){
           let announcementdate = $(`#announcementdate_${id} input`).val().length != 0 ? $(`#announcementdate_${id} input`).val() : null;
           let implementationdate = $(`#implementationdate_${id} input`).val().length != 0 ? $(`#implementationdate_${id} input`).val() : null;
           let removaldate = $(`#removaldate_${id} input`).val().length != 0 ? $(`#removaldate_${id} input`).val() : null;
+          let discard_reasons_select = $('#b221-discardSelect').val().length == 0 ? [null] : $('#b221-discardSelect').val();
+          let discard_comment = $('#b221-discardOther').val() == "" ? null : $('#b221-discardOther').val();
           output.push({id: id, clicked: clicked, country: country, product: product, intervention: intervention,
-            assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate:
-removaldate})
+                      assessment: assessment, official: official, comment: comment, url: url, announcementdate: announcementdate, implementationdate: implementationdate, removaldate: removaldate, discard_reasons: discard_reasons_select,
+                      discard_comment: discard_comment
+          })
     });
-    // console.log(output)
+     console.log(output)
     let validate = [output[0].country[0], output[0].product[0], output[0].intervention[0]];
-
+    console.log(validate);
     if (state == 'reactivate') {
         if (validate.some(checkNull)) {
           Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});
         } else {
           Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
           $(`${type}`).addClass('reactivate');
-          $(`${type}`).removeClass('show-submission')
+          $(`${type}`).removeClass('show-submission');
         }
-      } else {
+      } else if (state == 'dismiss') {
         Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
         $(`${type}`).addClass('dismiss');
-        $(`${type}`).removeClass('show-submission')
+        $(`${type}`).removeClass('show-submission');
+
+    } else if (state == 'no-policy-mentioned') {
+      output[0].discard_reasons = "no policy mentioned";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('no-policy-mentioned');
+      $(`${type}`).removeClass('show-submission');
+    } else if (state == 'update-to-existing') {
+      output[0].discard_reasons = "update to existing intervention";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('update-to-existing');
+      $(`${type}`).removeClass('show-submission');
+    } else if (state == 'duplicate-of-existing') {
+      output[0].discard_reasons = "duplicate of other hint or GTA entry";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('duplicate-of-existing');
+      $(`${type}`).removeClass('show-submission');
     }
-  }
+      }
 
     catch(error) {
-      // console.log(error);
+      console.log(error);
       Shiny.setInputValue("b221-showError", "allFields", {priority: "event"});
     }
 
 }
 
-function saveNewCollection() {
-  var state = $('#b221-slideInRight .collectionHeader')[0].id;
-  var hintId = $('#b221-slideInRight .removeslideinui')[0].id;
-  // console.log("COLLETION HINT ID: "+hintId);
-  var starredHint = null;
-  var officialHint = [];
-
-  var childIds = [];
+function saveNewCollection(relevance) {
+  let state = $('#b221-slideInRight .collectionHeader')[0].id,
+  hintId = $('#b221-slideInRight .removeslideinui')[0].id,
+  starredHint = null,
+  officialHint = [],
+  childIds = [],
+  discard_reasons = collectReasons();
 
     $("#hintContainer > div.hint-item").each((index, elem) => {
       if ($(elem).hasClass('starred')) {
@@ -348,12 +426,60 @@ function saveNewCollection() {
     childIds.push(parseInt(elem.id.replace("hintId_","")));
   });
 
-  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint}), {priority: "event"});
+  Shiny.setInputValue("b221-saveNewCollection", JSON.stringify({childIds, state, hintId, starredHint, officialHint, discard_reasons, relevance}),    {priority: "event"});
 }
 
 
 function discardExistingCollection() {
-  var state = $('#b221-slideInRight .collectionHeader')[0].id;
+  let event_source = $('#b221-slideInRight').css('right') == '0px' ? 'slideIn' : 'MainScreen', // find out if discard single Hint or a collection
+      state = $('#b221-slideInRight .collectionHeader').length > 0 ? $('#b221-slideInRight .collectionHeader')[0].id : null,
+      reasons = collectReasons();
+  console.log(reasons)
+  console.log(state)
 
-  Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({state}), {priority: "event"});
+  if (event_source == 'MainScreen') { //if single hint is discarded
+    let id = $('#confirm-discard').attr('class').replace(/.*leadsID_/gi, ''); //.match(/(?<=leadsID_).*/gi)[0];
+    del_or_dis('Discard','hint','Mark irrelevant');
+    Shiny.setInputValue("b221-discardSingleHint", JSON.stringify({ reasons, id: id }), {priority: "event"});
+  } else { //if collection is discarded
+    let del_dis = $('#confirm-discard > div > div.discard-select-fields').css('display') == 'none' ? 'Delete' : 'Discard';
+    del_or_dis(del_dis);
+    Shiny.setInputValue("b221-discardExistingCollection", JSON.stringify({ state: state, reasons: reasons, del_or_dis: del_dis}),             {priority: "event"});
+    //del_or_dis == 'Delete' ? : saveNewCollection(discard_reasons = reasons);
+  }
+
+}
+
+var collectReasons = function(){
+  let select = $('#b221-discardSelect').val(),
+      other = $('#b221-discardOther').val(),
+      reasons = Object.assign({},
+        select.length == 0 ? null : {select},
+        other === '' ? null : {other}
+      );
+  reasons = jQuery.isEmptyObject(reasons) ? null : reasons;
+  return reasons;
+}
+
+var del_or_dis = function(type = 'Discard', hintCollection = 'Hint', buttonName = 'Mark irrelevant') {
+    if (type == 'Delete'){
+      $('.confirm-discard-inner > p').text(`You are deleting this ${hintCollection}`)
+      $('#b221-discardHintCollection i')[0].className = '';
+      $('#b221-discardHintCollection i').addClass('fa fa-trash');
+    } else {
+      $('.confirm-discard-inner > p').text(`You are marking this ${hintCollection} as irrelevant`)
+      $('#b221-discardHintCollection i')[0].className = '';
+      $('#b221-discardHintCollection i').addClass('fa fa-times');
+    }
+    $('#b221-discardHintCollection').html(function(){ return $(this).html().replace(/Delete|Discard/gi, buttonName) })
+}
+
+var clear_discard = function(){
+      $('#confirm-discard').removeClass('show');
+
+      $('#confirm-discard').removeClass (function (index, className) {
+                return (className.match (/leadsID_.*/gi) || []).join(' ');
+              });
+              $('#b221-discardSelect').selectize()[0].selectize.clear();
+              $('#b221-discardOther').val('');
 }

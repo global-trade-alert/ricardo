@@ -10,9 +10,13 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
   
   if(text.modifiable == T) input.col.names = c(input.col.names, 'title','hint.description')
   
-  # if someone knows how to pass the column names as string into the ... of tidyr::unnest with multiple.values.permitted[1], be my guest
-  # instead i manually pasted the names
-  unnest1 = tidyr::unnest(processed.rows[,c('hint.id','implementer.name')], implementer.name) 
+  multiple.values.permitted = subset(multiple.values.permitted, multiple.values.permitted %in% colnames(processed.rows))
+  print(colnames(processed.rows))
+  
+  # multiple.values.permitted %>% 
+  #      purrr::map(function(x) processed.rows <<- processed.rows %>% tidyr::unnest(x, keep_empty = TRUE) )
+  
+  unnest1 = tidyr::unnest(processed.rows[,c('hint.id','implementer.name')], implementer.name)
   unnest2 = tidyr::unnest(processed.rows[,c('hint.id','product.group.name')], product.group.name)
   unnest3 = tidyr::unnest(processed.rows[,c('hint.id','intervention.type.name')], intervention.type.name)
   unnest4 = tidyr::unnest(processed.rows[,c('hint.id','discard.reason')], discard.reason)
@@ -36,6 +40,7 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                        table.prefix = '')
 
   if(is.freelancer==T){
+    
     push.updates = paste0("/* FREELANCER UPLOAD */
                           SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
                           
@@ -129,6 +134,19 @@ b221_process_display_info=function(is.freelancer = NULL, user.id = NULL, process
                           JOIN bt_discard_reason_list dis_list ON changes.discard_reason = dis_list.discard_reason_name 
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason dis_hint WHERE dis_hint.hint_id = changes.hint_id AND dis_hint.discard_reason_id = dis_list.discard_reason_id AND dis_hint.discard_reason_comment COLLATE utf8mb4_general_ci <=> changes.discard_reason_comment AND dis_hint.validation_classification IS NULL)
                           AND changes.in_collection = 0;
+                          
+                          DELETE bt_hint_discard_reason
+                          FROM (SELECT * FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes
+                          LEFT JOIN bt_hint_discard_reason ON changes.hint_id = bt_hint_discard_reason.hint_id
+                          WHERE 1 = 1;
+                          
+                          INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_user )
+                        	SELECT DISTINCT changes.hint_id, @classification_id as classification_id,
+                        	bdr.discard_reason_id, changes.discard_reason_comment, 
+                        	NULL AS reason_accepted, NULL AS validation_user
+                        	FROM b221_temp_changes_data_",user.id," AS changes
+                        	JOIN bt_discard_reason_list bdr ON changes.discard_reason = bdr.discard_reason_name
+                        	WHERE changes.in_collection = 0;
                           
                           UPDATE bt_hint_log
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id

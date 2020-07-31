@@ -172,6 +172,29 @@ label {
 	display:flex;
 	border: 1px solid #dadada;
 	margin-bottom: 5px;
+	position: relative;
+}
+
+#deliver-deliverTable table tr.edited {
+	border-bottom: 5px solid rgb(255, 226, 16);
+}
+
+#deliver-deliverTable table td.edited {
+	/* border-top: 5px solid rgb(255, 226, 16); */
+	box-shadow: inset 0px 0px 40px rgba(255, 225, 13, 0.5);
+}
+
+
+#deliver-deliverTable table tr .edited-icon {
+	position: absolute;
+  bottom: 5px;
+  padding: 3px 15px;
+  background-color: #ffe210;
+  border-radius: 20px;
+  color: #a57e0b;
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+  left: 5px;
+  font-size: 0.8em;
 }
 
 #deliver-deliverTable table thead {
@@ -235,8 +258,7 @@ label {
 
 #deliver-deliverTable table .documentation-status,
 #deliver-deliverTable table .jurisdiction,
-#deliver-deliverTable table .type,
-#deliver-deliverTable table .source {
+#deliver-deliverTable table .type {
 	flex-grow:1;
 	flex-shrink:0;
 	flex-basis: 80px;
@@ -245,7 +267,8 @@ label {
 
 
 #deliver-deliverTable table .products,
-#deliver-deliverTable table .instruments {
+#deliver-deliverTable table .instruments,
+#deliver-deliverTable table .source {
 	flex-grow:1;
 	flex-shrink:0;
 	flex-basis: 120px;
@@ -346,7 +369,7 @@ table .instr-label {
 
 .description-more {
   height: auto;
-  max-height: 2000px;
+  max-height: 2000px !important;
   overflow: hidden;
   /*max-width: 500px;
   width: 370px !important;*/
@@ -366,7 +389,7 @@ table .instr-label {
 
 .source-more {
   height: auto;
-  max-height: 2000px;
+  max-height: 2000px !important;
   overflow: hidden;
   /*max-width: 250px !important;
   width: 250px !important;*/
@@ -483,10 +506,40 @@ tr.deleted .status-column {
 	overflow-y: scroll;
 }
 
+
 .editMode.show {
 	transition:left 0.5s ease-out;
 	left:0;
 	box-shadow:3px 0px 25px rgba(0,0,0,0.2);
+}
+
+.editMode #close-editMode {
+
+}
+
+.editMode #close-editMode {
+    height: 40px;
+    width: 40px;
+    border-radius:5px;
+		border:none;
+    display: flex;
+    justify-content: center;
+		margin-left:10px;
+    align-items: center;
+    cursor: pointer;
+		transition:all 0.2s ease-out;
+		background-color: rgba(0,0,0,0.2);
+}
+
+.editMode #close-editMode:hover {
+		transition:all 0.2s ease-out;
+		background-color: rgba(0,0,0,0.4);
+}
+
+.editMode #close-editMode span {
+		color:#FFFFFF;
+		font-weight:900;
+		font-size: 2em;
 }
 
 .editMode h1, .duplicatesMode h1 {
@@ -497,13 +550,17 @@ tr.deleted .status-column {
 	margin:0;
 }
 
-.editMode .editMode-header {
+.editMode .editMode-header, .saveMode .saveMode-header {
 	display:flex;
 	background-color: rgba(0,0,0,0.2);
   padding: calc(10px + 1vw);
 }
 
-.editMode .editMode-header h1 {
+.saveMode .saveMode-header {
+  border-radius: 10px 10px 0px 0px;
+}
+
+.editMode .editMode-header h1, .saveMode .saveMode-header h1 {
 	display:flex;
 	flex:1;
 }
@@ -521,12 +578,12 @@ tr.deleted .status-column {
 	transition:all 0.5s ease-out;
 }
 
-.editMode .editMode-header #save-edit:hover {
+.editMode .editMode-header #save-edit:hover, .saveMode .saveMode-header #save-xlsx:hover {
 	background-color:rgba(0,0,0,0.4);
 	transition:all 0.5s ease-out;
 }
 
-.editMode .editMode-header #save-edit img {
+.editMode .editMode-header #save-edit img, .saveMode .saveMode-header #save-xlsx img {
 	margin-right: 10px;
 	height: 20px;
 }
@@ -554,6 +611,15 @@ tr.deleted .status-column {
 	grid-template-columns: 1fr 1fr;
 	grid-gap: calc(5px + 0.5vw);
 	margin-top: calc(5px + 0.5vw);
+}
+
+.save-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-gap: 0px;
+  margin-top: 1px;
+  text-align: center;
+  font-size: 0.7em;
 }
 
 .canvas .form-grid > div {
@@ -766,6 +832,7 @@ input#cancel-dupl{
 	flex: 1;
 	flex-grow: 0;
 	flex-basis: 50px;
+	order:4;
 }
 
 #search-pane-toggle-button span {
@@ -853,6 +920,9 @@ input#cancel-dupl{
 	float: left;
 	display: flex;
 	flex:1;
+	order:1;
+	flex-grow:0;
+	white-space: nowrap;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow .dtsp-clearAll {
@@ -868,6 +938,42 @@ input#cancel-dupl{
   justify-content: center;
 	height:30px;
 	align-items: center;
+	order:3;
+}
+
+.deliver #deliver-deliverTable .dtsp-panesContainer .dtsp-titleRow #DataTables_Table_0_paginate{
+	display:flex;
+	justify-content: center;
+	order:2;
+	flex:1;
+}
+
+
+.deliver #deliver-deliverTable .dataTables_paginate,
+.deliver #deliver-deliverTable .dataTables_paginate {
+	width:100%;
+	display:flex;
+	justify-content: center;
+}
+
+.deliver #deliver-deliverTable .dataTables_paginate img,
+.deliver #deliver-deliverTable .dataTables_paginate img {
+	width:30px;
+}
+
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button,
+.deliver #deliver-deliverTable .dataTables_wrapper .dataTables_paginate .paginate_button {
+	padding:10px;
+	border-radius:5px;
+	padding: 5px;
+  border: none;
+  color: #ffffff !important;
+  font-weight: 700;
 }
 
 
@@ -989,4 +1095,43 @@ td.addPadding {
   border: 1px solid #f1a899;
   background: #fddfdf;
   color: #5f3f3f;
+}
+
+.search-pane-export-xlsx{
+    width: 3em;
+    height: 100%;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.saveMode {
+	width: 90vw;
+  height: 30vh;
+  position: fixed;
+  top: 30vh;
+  left: 30vw;
+  background-color: #1874CD;
+  z-index: 99999;
+  max-width: 600px;
+  border-radius: 10px;
+  opacity: 0;
+  transition:opacity 0.3s linear;
+}
+
+.saveMode.show {
+  visibility: visible !important;
+	box-shadow:3px 0px 25px rgba(0,0,0,0.2);
+  opacity: 1;
+}
+
+.saveMode .saveMode-header #save-xlsx {
+	display:flex;
+	flex:1;
+	flex-grow: 0;
+	background-color:rgba(0,0,0,0.2);
+	padding:10px;
+	border-radius:5px;
+	border:none;
+	color:#FFFFFF;
+	white-space: nowrap;
 }

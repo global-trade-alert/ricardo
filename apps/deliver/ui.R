@@ -23,13 +23,21 @@ deliverui <- function(id) {
              tags$div(class="overlay"),
              tags$div(class="editMode",
                       tags$div(class="editMode-header",
-                               tags$h1('Edit Mode'),
+                               tags$h1('Edit Mode')),
+                      tags$div(class="canvas")),
+             tags$div(class="saveMode",
+                      style = 'visibility: hidden;',
+                      tags$div(class="saveMode-header",
+                               tags$h1('Save Mode'),
                                tags$button(type="button",
-                                           id="save-edit",
+                                           id="save-xlsx",
                                            tags$img(src="www/deliver/save.svg",
                                                     style="margin-right:10px;"),
-                                           "Save data")),
-                      tags$div(class="canvas"))
+                                           "Save .xslx")),
+                      tags$div(class='save-cols')),
+             tags$div(style='visibility:hidden;',
+                      downloadButton(ns("downloadXlsx"), "Download"))
+             
   )
   )
   )
