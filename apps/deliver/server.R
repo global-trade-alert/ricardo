@@ -87,7 +87,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output$original.description = NULL
     output$original.title = NULL
     output$users = "Users"
+    output$product.group.name <- gsub(" ; ",",",output$product.group.name)
+    output$intervention.type.name <- gsub(" ; ",",",output$intervention.type.name)
     # output$english.description = "Description"
+    change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1)) 
     output <- output %>%
       select(confirmation.status,
              hint.id,
@@ -325,7 +328,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             if (type === 'sp') {
                               return data.split(',')
                             }
-                            let output = data.split(' ; ').map(d => `<div class=\"instr-label\">${d}</div>`);
+                            let output = data.split(',').map(d => `<div class=\"instr-label\">${d}</div>`);
 
                             let all = [];
                             
@@ -396,7 +399,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             if (type === 'sp') {
                                 return data.split(',')
                             } 
-                            let output = data.split(' ; ').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
+                            let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
                             
                             let all = [];
 
@@ -560,5 +563,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       openxlsx::write.xlsx(data_export, file = file)
     }
   )
-  
+ 
+  observeEvent(input$changeData, {
+    changedData <- jsonlite::fromJSON(input$changeData)
+  })
+   
 }

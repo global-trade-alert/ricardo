@@ -352,13 +352,8 @@ const buttonsClicks = {
     .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
   },
   updateRowData: function(currentStatus, data, id, rowData){
-      // console.log('UPDATE ROW DATA');
-      // console.log(rowData)
-      // console.log(currentStatus)
-      // console.log(data)
-      // console.log(merged);
       console.log("DATA TABLE ROW OUTPUT");
-      $(`tr#${id} .description`).addClass('TEST');
+      var changedData = [{}];
       rowData.forEach((row) => {
         let index = row.index;
         // console.log(index);
@@ -367,7 +362,9 @@ const buttonsClicks = {
         // console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
         if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
           $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
+          changedData[0][`index_${row.index}`] = data.find(x => x.index === index).data;
         }
+        Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
       });
 
       $(`tr#${id}`).removeClass(currentStatus);
