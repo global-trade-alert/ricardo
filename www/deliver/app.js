@@ -244,6 +244,8 @@ const buttonsClicks = {
           });
           // console.log(output)
           console.log("BEFORE UPDATE ROW DATA");
+          // console.log(rowData);
+          // console.log(output);
           that.updateRowData(currentStatus, output, id, rowData);
           $('.overlay').click();
           $('#save-edit').remove();
@@ -356,16 +358,14 @@ const buttonsClicks = {
       // console.log(data)
       // console.log(merged);
       console.log("DATA TABLE ROW OUTPUT");
-      console.log($('#DataTables_Table_0').DataTable().cell($(`tr#${id} .description`)));
       $(`tr#${id} .description`).addClass('TEST');
       rowData.forEach((row) => {
         let index = row.index;
         // console.log(index);
         console.log("ROW");
-        console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
-        console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
+        // console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
+        // console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
         if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
-          console.log("CHANGED");
           $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
         }
       });

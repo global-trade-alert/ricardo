@@ -87,7 +87,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output$original.description = NULL
     output$original.title = NULL
     output$users = "Users"
-    output$english.description = "Description"
+    # output$english.description = "Description"
     output <- output %>%
       select(confirmation.status,
              hint.id,
@@ -325,7 +325,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             if (type === 'sp') {
                               return data.split(',')
                             }
-                            let output = data.split(',').map(d => `<div class=\"instr-label\">${d}</div>`);
+                            let output = data.split(' ; ').map(d => `<div class=\"instr-label\">${d}</div>`);
 
                             let all = [];
                             
@@ -396,7 +396,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             if (type === 'sp') {
                                 return data.split(',')
                             } 
-                            let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
+                            let output = data.split(' ; ').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
                             
                             let all = [];
 
@@ -527,7 +527,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     extensions = c("Select", 'SearchPanes'),
     selection = "none"
     ),
-  server = T)
+  server = F)
   
   observeEvent(input$saveXlsx, {
     export <- jsonlite::fromJSON(input$saveXlsx)
