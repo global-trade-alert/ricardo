@@ -77,7 +77,33 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 # Pull data ---------------------------------------------------------------
   names <- reactive({
     output <- dlvr_pull_display()
-    
+    output$confirmation.status <- as.character(sample(4, size = nrow(output), replace = TRUE))
+    output <- output %>%
+      mutate(confirmation.status = str_replace(confirmation.status, "1", "confirmed")) %>%
+      mutate(confirmation.status = str_replace(confirmation.status, "2", "updated")) %>%
+      mutate(confirmation.status = str_replace(confirmation.status, "3", "new")) %>%
+      mutate(confirmation.status = str_replace(confirmation.status, "4", "deleted"))
+    output$gta.intervention.type = "GTA intervention type"
+    output$original.description = NULL
+    output$original.title = NULL
+    output$users = "Users"
+    output$english.description = "Description"
+    output <- output %>%
+      select(confirmation.status,
+             hint.id,
+             users,
+             documentation.status,
+             jurisdiction.name,
+             assessment.name,
+             gta.intervention.type,
+             announcement.date,
+             implementation.date,
+             removal.date,
+             english.description,
+             url,
+             product.group.name,
+             intervention.type.name,
+             everything())
     
   })
   
@@ -158,12 +184,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       ),
       autoWidth = FALSE,
       columnDefs = list(
+       # Hide table columns
+          list(
+            visible = FALSE,
+            targets = c(14:31)
+          ),
        # set columns widths
           list(  # Confirmation status
             targets = 0,
             className = "dt-head-left status"
           ),
-          list(  # Entry ID
+          list(  # Hint ID
             targets = 1,
             className = "dt-head-left smallPadding entry-id"
           ),
