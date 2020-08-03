@@ -4,8 +4,8 @@
 
 deliverserver <- function(input, output, session, user, app, prm, ...) {
   
-
-# Pull data ---------------------------------------------------------------
+  
+  # Pull data ---------------------------------------------------------------
   names <- reactive({
     output <- dlvr_pull_display(last.deliverable = "2020-07-29 12:20:13")
     output$confirmation.status <- as.character(sample(4, size = nrow(output), replace = TRUE))
@@ -38,7 +38,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              product.group.name,
              intervention.type.name,
              everything())
-
+    
     change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1))
     output <- output
   })
@@ -70,8 +70,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   ns <- NS("deliver")
   
   
-
-# Output Table ------------------------------------------------------------
+  
+  # Output Table ------------------------------------------------------------
   output$deliverTable <- DT::renderDataTable(DT::datatable(
     data = names(), #retrieve_data(),
     colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Is official?' = 5, 'Jurisdiction' = 6, 'Initial assessment' = 7, 'GTA intervention type' = 8, 
@@ -120,74 +120,74 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       ),
       autoWidth = FALSE,
       columnDefs = list(
-       # Hide table columns
-          list(
-            visible = FALSE,
-            targets = c(15:33)
-          ),
-       # set columns widths
-          list(  # Confirmation status
-            targets = 0,
-            className = "dt-head-left status"
-          ),
-          list(  # Hint ID
-            targets = 1,
-            className = "dt-head-left smallPadding entry-id"
-          ),
-          list(  # Users
-            targets = 2,
-            className = "dt-head-left smallPadding users"
-          ),
-          list( # Documentation status
-            targets = 3,
-            className = "dt-head-left smallPadding documentation-status"
-          ),
-         list( # Documentation status
-           targets = 4,
-           className = "dt-head-left smallPadding is-official"
-         ),
-          list( # Jurisdiction
-            targets = 5,
-            className = "dt-head-left smallPadding jurisdiction"
-          ),
-          list( # Initial assessment
-            targets = 6,
-            className = "dt-head-left smallPadding assessment"
-          ),
-          list( # GTA intervention type
-            targets = 7,
-            className = "dt-head-left smallPadding type"
-          ),
-          list( # Announcement date
-            targets = 8,
-            className = "dt-head-left smallPadding announcement-date"
-          ),
-          list(  # Implementation date
-            targets = 9,
-            className = "dt-head-left smallPadding implementation-date"
-          ),
-          list(  # Removal date
-            targets = 10,
-            className = "dt-head-left smallPadding removal-date"
-          ), # 43%
-          list(  # Description
-            targets = 11,
-            className = "dt-head-left smallPadding description"
-          ),
-          list(  # Source,
-            targets = 12,
-            className = "dt-head-left smallPadding source"
-          ),
-          list(  # Products
-            targets = 13,
-            className = "dt-head-left smallPadding products"
-          ),
-          list(  # Instruments
-            targets = 14,
-            className = "dt-head-left smallPadding instruments"
-          ),
-          list(targets = '_all',
-               createdCell = JS("function (td, cellData, rowData, row, col) {
+        # Hide table columns
+        list(
+          visible = FALSE,
+          targets = c(15:34)
+        ),
+        # set columns widths
+        list(  # Confirmation status
+          targets = 0,
+          className = "dt-head-left status"
+        ),
+        list(  # Hint ID
+          targets = 1,
+          className = "dt-head-left smallPadding entry-id"
+        ),
+        list(  # Users
+          targets = 2,
+          className = "dt-head-left smallPadding users"
+        ),
+        list( # Documentation status
+          targets = 3,
+          className = "dt-head-left smallPadding documentation-status"
+        ),
+        list( # Documentation status
+          targets = 4,
+          className = "dt-head-left smallPadding is-official"
+        ),
+        list( # Jurisdiction
+          targets = 5,
+          className = "dt-head-left smallPadding jurisdiction"
+        ),
+        list( # Initial assessment
+          targets = 6,
+          className = "dt-head-left smallPadding assessment"
+        ),
+        list( # GTA intervention type
+          targets = 7,
+          className = "dt-head-left smallPadding type"
+        ),
+        list( # Announcement date
+          targets = 8,
+          className = "dt-head-left smallPadding announcement-date"
+        ),
+        list(  # Implementation date
+          targets = 9,
+          className = "dt-head-left smallPadding implementation-date"
+        ),
+        list(  # Removal date
+          targets = 10,
+          className = "dt-head-left smallPadding removal-date"
+        ), # 43%
+        list(  # Description
+          targets = 11,
+          className = "dt-head-left smallPadding description"
+        ),
+        list(  # Source,
+          targets = 12,
+          className = "dt-head-left smallPadding source"
+        ),
+        list(  # Products
+          targets = 13,
+          className = "dt-head-left smallPadding products"
+        ),
+        list(  # Instruments
+          targets = 14,
+          className = "dt-head-left smallPadding instruments"
+        ),
+        list(targets = '_all',
+             createdCell = JS("function (td, cellData, rowData, row, col) {
                                   $(td).css('padding', '0px')
                                 }
                                 ")),
@@ -195,7 +195,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              className = 'dt-center'),
         list(targets = 0,
              render = JS("function (data, type, row){
-
                             if (type === 'sp') {
                               return data;
                             }
@@ -216,7 +215,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               var status = '<span class=\\'material-icons\\'>update</span>';
                             } else if (data == 'new') {
                               var status = '<span class=\\'material-icons\\'>fiber_new</span>';
-
                             }
                             
                             let output = `<div class=\"status-row\">
@@ -243,8 +241,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         list(targets = 5,
              render = JS("function (data, type, row){
                             if (type === 'sp') {
-                              return data.split(',')
-                            }
+                              return data != null ? data.split(',') : '';
+                              }
                             return data;
                }"),
              searchPanes = list(
@@ -262,7 +260,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         ),
         list(targets = 14,
              render = JS("function (data, type, row) {
-                          if (data != null) {
                             if (type === 'sp') {
                               return data != null ? data.split(',') : '';
                             }
@@ -329,10 +326,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                    }"),
                  predrawCallback = JS("function(settings){
                                      const api = this.api();
-
                    }"),
                  createdRow = JS("function(row, data, dataIndexcells){
-
                                    }")
                )
              )
@@ -355,7 +350,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               all = `<div class = \"col-left\">${all.sort().join('')}</div>`;
                               return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                             }
-
                 }"),
              searchPanes = list(
                orthogonal = 'sp'
@@ -365,12 +359,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              render = JS("function(data, type, row, meta){
                           data = data != null ? data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>') : '';
                           return `<div class=\"source-less\">${data}</div>`;
-
                }")),
         list(targets = 11,
              render = JS("function(data, type, row, meta){
                           let output = `<div class=\"description-less\">${data == null ? '' : data}</div>`;
-
                           return output
                }")),
         
@@ -379,7 +371,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           searchPanes = list(
             show = FALSE
           ),
-          targets = c(1:4,7:33)#,12:22
+          targets = c(1:4,7:34)#,12:22
         )
       ),
       
@@ -387,12 +379,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
                             settings._searchPanes.regenerating = true // allow recalculation of searchPanes
-
       }"),
       
       infoCallback = JS("function(settings, start, end, max, total, pre){
                                 const api = this.api();
-
       }"),
       
       #clear display before creating content
@@ -437,7 +427,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                     }
                                 })
                             })
-
       }"),
       
       drawCallback = JS("function(settings){
@@ -449,11 +438,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 })
                               
                               let data = api.rows( { page: 'current' } ).data();
-
                         }"),
       
       rowCallback = JS("function(row, data){
-
       }"),
       
       createdRow = JS("function(row, data, dataIndex, cells){
@@ -468,18 +455,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 $(this).on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
                               })
                         })
-
       }")
     ),
     class = "row-border compact",
     extensions = c("Select", 'SearchPanes'),
     selection = "none"
-    ),
+  ),
   server = F)
   
   observeEvent(input$saveXlsx, {
     export <- jsonlite::fromJSON(input$saveXlsx)
-
+    
     print(export)
     export <- export %>%
       mutate('Product: medical consumables' = if('Products' %in% names(.)) str_detect(Products, 'medical consumables') else NULL,
@@ -508,7 +494,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       openxlsx::write.xlsx(data_export, file = file)
     }
   )
- 
+  
   observeEvent(input$changeData, {
     changedData <<- jsonlite::fromJSON(input$changeData)
     changedData <- merge(changedData, change_attribute_table, by="index", keep.x=T)
@@ -532,7 +518,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                remove.product=switch(exists("product"), switch(length(setdiff(strsplit(product$dataOld,",")[[1]],strsplit(product$dataNew,",")[[1]]))>0, setdiff(strsplit(product$dataOld,",")[[1]],strsplit(product$dataNew,",")[[1]]), NULL), NULL),
                                add.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataNew,",")[[1]],strsplit(jurisdiction$dataOld,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataNew,",")[[1]],strsplit(jurisdiction$dataOld,",")[[1]]), NULL), NULL),
                                remove.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]), NULL), NULL)
-                               )
+    )
     
   })
   
