@@ -2,75 +2,6 @@
 # Don't forget to add these variables as function parameters as well
 # SERVER
 
-  load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")), new_env <- new.env() )
-  
-  # preprocess data ----------------------------------DELETE THIS AFTER CONNECTING dlvr_pull_display
-  new_env$covid.data <-
-    new_env$covid.data %>%
-    mutate(inst.export.barrier = ifelse(inst.export.barrier == TRUE, "export barrier", "")) %>%
-    mutate(inst.import.barrier = ifelse(inst.import.barrier == TRUE, "import barrier", "")) %>%
-    mutate(inst.domestic.subsidy = ifelse(inst.domestic.subsidy == TRUE, "domestic subsidy", "")) %>%
-    mutate(inst.export.subsidy = ifelse(inst.export.subsidy == TRUE, "export subsidy", "")) %>%
-    mutate(inst.other = ifelse(inst.other == TRUE, "other", "")) %>%
-    mutate(inst.unclear = ifelse(inst.unclear == TRUE, "unclear", "")) %>%
-    mutate(prd.med.con = ifelse(prd.med.con == TRUE, "medical consumables", "")) %>%
-    mutate(prd.med.eqm = ifelse(prd.med.eqm == TRUE, "medical equipment", "")) %>%
-    mutate(prd.med.drug = ifelse(prd.med.drug == TRUE, "medicines or drugs", "")) %>%
-    mutate(prd.other = ifelse(prd.other == TRUE, "other", "")) %>%
-    mutate(prd.food = ifelse(prd.food == TRUE, "food", "")) %>%
-    mutate(prd.med.any = ifelse(prd.med.any == TRUE, "any medical product", "")) %>%
-    mutate(products = paste(prd.med.con, prd.med.eqm, prd.med.drug, prd.other, prd.food, prd.med.any, sep=',')) %>%
-    mutate(instruments = paste(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-                               inst.export.subsidy, inst.other, inst.unclear, sep=',')) %>%
-    select (-c(inst.export.barrier, inst.import.barrier, inst.domestic.subsidy,
-               inst.export.subsidy, inst.other, inst.unclear, prd.med.con, prd.med.eqm,
-               prd.med.drug, prd.other, prd.food, prd.med.any))
-  
-  new_env$covid.data$products <-
-    new_env$covid.data$products %>%
-    str_replace_all("\\,{2,}", ",") %>%
-    str_replace_all("^\\,", "") %>%
-    str_replace_all("\\,$", "")
-  
-  new_env$covid.data$products <-
-    new_env$covid.data$products %>%
-      str_replace_all("any medical product", "uncertain")
-  
-  new_env$covid.data$instruments <-
-    new_env$covid.data$instruments %>%
-    str_replace_all("\\,{2,}", ",") %>%
-    str_replace_all("^\\,", "") %>%
-    str_replace_all("\\,$", "")
-  
-  # create confirmation column with random values
-  new_env$covid.data$confirmation <- as.character(sample(4, size = nrow(new_env$covid.data), replace = TRUE))
-  new_env$covid.data <- 
-    new_env$covid.data %>%
-    mutate(confirmation = str_replace(confirmation, "1", "confirmed")) %>%
-    mutate(confirmation = str_replace(confirmation, "2", "updated")) %>%
-    mutate(confirmation = str_replace(confirmation, "3", "new")) %>%
-    mutate(confirmation = str_replace(confirmation, "4", "deleted"))
-  
-  # create users involved column with random users
-  new_env$covid.data$users <- as.character(sample(6, size = nrow(new_env$covid.data), replace = TRUE))
-  new_env$covid.data <- 
-    new_env$covid.data %>%
-    mutate(users = str_replace(users, "1", "LG,PB")) %>%
-    mutate(users = str_replace(users, "2", "PB,JF,KM,LG")) %>%
-    mutate(users = str_replace(users, "3", "JF")) %>%
-    mutate(users = str_replace(users, "4", "DR,JF")) %>%
-    mutate(users = str_replace(users, "5", "OR")) %>%
-    mutate(users = str_replace(users, "6", "KM"))
-  
-  new_env$covid.data <- 
-    new_env$covid.data[c("confirmation","entry.id", "users", "entry.type","country","initial.assessment",
-                         "gta.intervention.type","date.announced","date.implemented","date.removed",
-                         "description","source", "products","instruments")]
-  
-  new_env <<- new_env
-
-  # ----------------------------------------------------------------------------
-
 deliverserver <- function(input, output, session, user, app, prm, ...) {
   
 
@@ -107,19 +38,20 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              product.group.name,
              intervention.type.name,
              everything())
+
     change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1))
     output <- output
   })
   
   observe({
     products_unique <-
-      gta_sql_get_value("SELECT product_group_name FROM b221_product_group_list")
+      gta_sql_get_value("SELECT DISTINCT product_group_name FROM b221_product_group_list;")
     instruments_unique <-
-      gta_sql_get_value("SELECT intervention_type_name FROM b221_intervention_type_list")
+      gta_sql_get_value("SELECT DISTINCT intervention_type_name FROM b221_intervention_type_list;")
     jurisdiction_unique <-
-      gta_sql_get_value("SELECT jurisdiction_name FROM gta_jurisdiction_list")
+      gta_sql_get_value("SELECT DISTINCT jurisdiction_name FROM gta_jurisdiction_list;")
     assessment_unique <-
-      gta_sql_get_value("SELECT assessment_name FROM b221_assessment_list")
+      gta_sql_get_value("SELECT DISTINCT assessment_name FROM b221_assessment_list;")
     discard_reason <- list('reason1', 'reason2', 'reason3', 'reason4', 'reason5', 'reason6')
     
     # print(list(Products = products_unique,
@@ -164,7 +96,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       searchPanes = list(
         cascadePanes = TRUE,
         viewTotal = TRUE,
-        emptyMessage = "<i><b>no products</b></i>",
+        emptyMessage = "<i><b>no data</b></i>",
         dtOpts = list(
           select = list(
             style = "multi"
@@ -332,22 +264,24 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              render = JS("function (data, type, row) {
                           if (data != null) {
                             if (type === 'sp') {
-                              return data.split(',')
+                              return data != null ? data.split(',') : '';
                             }
-                            let output = data.split(',').map(d => `<div class=\"instr-label\">${d}</div>`);
-
-                            let all = [];
-                            
-                            for (let i in output){
-                              all.push(output[i])
+                            if (data == null){
+                              return '';
+                            } else {
+                              let output = data.split(',').map(d => `<div class=\"instr-label\">${d}</div>`);
+  
+                              let all = [];
+                              
+                              for (let i in output){
+                                all.push(output[i])
+                              }
+                              
+                              all = `<div class = \"col-left\">${all.sort().join('')}</div>`;
+  
+                              return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                             }
-                            
-                            all = `<div class = \"col-left\">${all.join('')}</div>`;
 
-                            return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
-                          } else {
-                          return '';
-                          }
                 }"),
              searchPanes = list(
                orthogonal = 'sp',
@@ -405,23 +339,23 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         ),
         list(targets = 13,
              render = JS("function (data, type, row) {
-                            if (data != null) {
-                              if (type === 'sp') {
-                                  return data.split(',')
-                              } 
+                            if (type === 'sp') {
+                                return data != null ? data.split(',') : '';
+                            } 
+                            if (data == null){
+                              return ''
+                            } else {
                               let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
-                              
                               let all = [];
   
                               for (let i in output){
                                 all.push(output[i])
                               }
                               
-                              all = `<div class = \"col-left\">${all.join('')}</div>`;
+                              all = `<div class = \"col-left\">${all.sort().join('')}</div>`;
                               return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
-                            } else {
-                            return '';
                             }
+
                 }"),
              searchPanes = list(
                orthogonal = 'sp'
@@ -429,15 +363,13 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         ),
         list(targets = 12,
              render = JS("function(data, type, row, meta){
-                          data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>');
+                          data = data != null ? data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>') : '';
+                          return `<div class=\"source-less\">${data}</div>`;
 
-                          let output = `<div class=\"source-less\">${data}</div>`;
-
-                          return output
                }")),
         list(targets = 11,
              render = JS("function(data, type, row, meta){
-                          let output = `<div class=\"description-less\">${data}</div>`;
+                          let output = `<div class=\"description-less\">${data == null ? '' : data}</div>`;
 
                           return output
                }")),
@@ -447,7 +379,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           searchPanes = list(
             show = FALSE
           ),
-          targets = c(1:3,7:12)#,12:22
+          targets = c(1:4,7:33)#,12:22
         )
       ),
       

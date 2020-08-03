@@ -278,6 +278,7 @@ label {
 #deliver-deliverTable table .entry-id,
 #deliver-deliverTable table .users,
 #deliver-deliverTable table .assessment,
+#deliver-deliverTable table .is-official,
 #deliver-deliverTable table .announcement-date,
 #deliver-deliverTable table .removal-date,
 #deliver-deliverTable table .implementation-date {
