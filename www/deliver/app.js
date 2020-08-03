@@ -119,7 +119,7 @@ const buttonsClicks = {
         rowData.forEach(function(d,i){
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
-            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
+            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|is official|assessment/gi)[0].toLowerCase()){
               case 'date':
 
                 input = $('<input />')
@@ -148,21 +148,20 @@ const buttonsClicks = {
                         .attr('id', `column-${d.index}`)
                         .addClass('products');
 
-                  window.data_gta[d.name].map(function(d1,i) {
+                  window.data_gta[d.name].sort().map(function(d1,i) {
                           let selected = data.includes(d1) ? 'selected' : '';
                           input.append(
                             `<option ${selected} value="${d1}">${d1}</option>`
                            )
                           })
                 break;
-              case 'documentation status':
-
-                let checked = /^official source/gi.test(d.data) ? true : false;
+              case 'is official':
+                let checked = d.data == 1 ? true : false;
                 input = $('<input />')
                         .attr('type', 'checkbox')
                         .attr('checked', checked)
                         .attr('id', `column-${d.index}`)
-                        .addClass('doc-status');
+                        .addClass('is-official');
 
                 label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
                 break;
@@ -210,6 +209,7 @@ const buttonsClicks = {
               valueField: 'text',
               labelField: 'text',
               searchField: 'text',
+              sortField: 'text',
               create: false
             });
 
@@ -217,7 +217,6 @@ const buttonsClicks = {
               maxItems: 1,
               create: false
             });
-
         });
 
       $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
@@ -228,20 +227,18 @@ const buttonsClicks = {
 
       $('#save-edit').on('click', function(){
         let output= [];
-          $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
+          $('.canvas div textarea,.datepicker,select.products,select.assessment,input.is-official').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
               let value = "";
               if ($(this).val() != null) {
                 value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
               }
+              if ($(this)[0].type == 'checkbox'){
+                value = $(this).is(':checked') ? '1' : '0';
+                }
               output.push({ data: value, index: parseInt(index) });
           });
 
-          $('.doc-status').each(function(){ // separate for documentation status
-              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-              let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
-              output.push({ data: value, index: parseInt(index) });
-          });
           // console.log(output)
           console.log("BEFORE UPDATE ROW DATA");
           // console.log(rowData);
@@ -353,17 +350,17 @@ const buttonsClicks = {
   },
   updateRowData: function(currentStatus, data, id, rowData){
       console.log("DATA TABLE ROW OUTPUT");
-      var changedData = [{}];
+      var changedData = [];
+      console.log(rowData)
+      console.log(data)
       rowData.forEach((row) => {
         let index = row.index;
-        // console.log(index);
         console.log("ROW");
-        // console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
-        // console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
         if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
           $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
-          changedData[0][`index_${row.index}`] = data.find(x => x.index === index).data;
+          changedData.push({index: row.index, data: data.find(x => x.index === index).data})
         }
+         console.log(changedData);
         Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
       });
 
@@ -393,7 +390,7 @@ const buttonsClicks = {
     let output = [];
     
     let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
-                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
+                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Is Official?'];
     
     $('#DataTables_Table_0').DataTable().columns().every( function (i) {
       
