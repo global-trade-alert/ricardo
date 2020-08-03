@@ -76,7 +76,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 
 # Pull data ---------------------------------------------------------------
   names <- reactive({
-    output <- dlvr_pull_display()
+    output <- dlvr_pull_display(last.deliverable = "2020-07-29 12:20:13")
     output$confirmation.status <- as.character(sample(4, size = nrow(output), replace = TRUE))
     output <- output %>%
       mutate(confirmation.status = str_replace(confirmation.status, "1", "confirmed")) %>%
@@ -90,12 +90,12 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output$product.group.name <- gsub(" ; ",",",output$product.group.name)
     output$intervention.type.name <- gsub(" ; ",",",output$intervention.type.name)
     # output$english.description = "Description"
-    change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1)) 
     output <- output %>%
       select(confirmation.status,
              hint.id,
              users,
              documentation.status,
+             is.official,
              jurisdiction.name,
              assessment.name,
              gta.intervention.type,
@@ -107,7 +107,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              product.group.name,
              intervention.type.name,
              everything())
-    
+    change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1))
+    output <- output
   })
   
   observe({
@@ -141,9 +142,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 # Output Table ------------------------------------------------------------
   output$deliverTable <- DT::renderDataTable(DT::datatable(
     data = names(), #retrieve_data(),
-    colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Jurisdiction' = 5, 'Initial assessment' = 6, 'GTA intervention type' = 7, 
-                 'Announcement date' = 8, 'Implementation date' = 9, 'Removal date' = 10, 'Description' = 11,
-                 'Source' = 12, 'Products' = 13, 'Instruments' = 14),
+    colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Is official?' = 5, 'Jurisdiction' = 6, 'Initial assessment' = 7, 'GTA intervention type' = 8, 
+                 'Announcement date' = 9, 'Implementation date' =10, 'Removal date' = 11, 'Description' = 12,
+                 'Source' = 13, 'Products' = 14, 'Instruments' = 15),
     
     rownames = FALSE,
     escape = FALSE,
@@ -190,7 +191,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
        # Hide table columns
           list(
             visible = FALSE,
-            targets = c(14:31)
+            targets = c(15:33)
           ),
        # set columns widths
           list(  # Confirmation status
@@ -209,44 +210,48 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 3,
             className = "dt-head-left smallPadding documentation-status"
           ),
+         list( # Documentation status
+           targets = 4,
+           className = "dt-head-left smallPadding is-official"
+         ),
           list( # Jurisdiction
-            targets = 4,
+            targets = 5,
             className = "dt-head-left smallPadding jurisdiction"
           ),
           list( # Initial assessment
-            targets = 5,
+            targets = 6,
             className = "dt-head-left smallPadding assessment"
           ),
           list( # GTA intervention type
-            targets = 6,
+            targets = 7,
             className = "dt-head-left smallPadding type"
           ),
           list( # Announcement date
-            targets = 7,
+            targets = 8,
             className = "dt-head-left smallPadding announcement-date"
           ),
           list(  # Implementation date
-            targets = 8,
+            targets = 9,
             className = "dt-head-left smallPadding implementation-date"
           ),
           list(  # Removal date
-            targets = 9,
+            targets = 10,
             className = "dt-head-left smallPadding removal-date"
           ), # 43%
           list(  # Description
-            targets = 10,
+            targets = 11,
             className = "dt-head-left smallPadding description"
           ),
           list(  # Source,
-            targets = 11,
+            targets = 12,
             className = "dt-head-left smallPadding source"
           ),
           list(  # Products
-            targets = 12,
+            targets = 13,
             className = "dt-head-left smallPadding products"
           ),
           list(  # Instruments
-            targets = 13,
+            targets = 14,
             className = "dt-head-left smallPadding instruments"
           ),
           list(targets = '_all',
@@ -303,7 +308,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                      </div>`
                }")
         ),
-        list(targets = 4,
+        list(targets = 5,
              render = JS("function (data, type, row){
                             if (type === 'sp') {
                               return data.split(',')
@@ -314,7 +319,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                orthogonal = 'sp'
              )
         ),
-        list(targets = 7,
+        list(targets = 8,
              render = JS("function(data,type,row){
                             if (data != null){
                                 return `<div class=\"ann-date\">${data}</div>` 
@@ -323,8 +328,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             }
                }")
         ),
-        list(targets = 13,
+        list(targets = 14,
              render = JS("function (data, type, row) {
+                          if (data != null) {
                             if (type === 'sp') {
                               return data.split(',')
                             }
@@ -339,6 +345,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             all = `<div class = \"col-left\">${all.join('')}</div>`;
 
                             return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
+                          } else {
+                          return '';
+                          }
                 }"),
              searchPanes = list(
                orthogonal = 'sp',
@@ -394,27 +403,31 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                )
              )
         ),
-        list(targets = 12,
+        list(targets = 13,
              render = JS("function (data, type, row) {
-                            if (type === 'sp') {
-                                return data.split(',')
-                            } 
-                            let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
-                            
-                            let all = [];
-
-                            for (let i in output){
-                              all.push(output[i])
+                            if (data != null) {
+                              if (type === 'sp') {
+                                  return data.split(',')
+                              } 
+                              let output = data.split(',').map(d => `<div class=\"prd-label\">${d}</div>`)//.join('');
+                              
+                              let all = [];
+  
+                              for (let i in output){
+                                all.push(output[i])
+                              }
+                              
+                              all = `<div class = \"col-left\">${all.join('')}</div>`;
+                              return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
+                            } else {
+                            return '';
                             }
-                            
-                            all = `<div class = \"col-left\">${all.join('')}</div>`;
-                            return data != '' ? `<div class=\"box-item-label\">${all}</div>` : '';
                 }"),
              searchPanes = list(
                orthogonal = 'sp'
              )
         ),
-        list(targets = 11,
+        list(targets = 12,
              render = JS("function(data, type, row, meta){
                           data = data.replace(/(https?[^ ]+)/gi, '<a href=\"$1\" target=\"_blank\">$1</a>');
 
@@ -422,7 +435,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 
                           return output
                }")),
-        list(targets = 10,
+        list(targets = 11,
              render = JS("function(data, type, row, meta){
                           let output = `<div class=\"description-less\">${data}</div>`;
 
@@ -434,7 +447,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           searchPanes = list(
             show = FALSE
           ),
-          targets = c(1:3,6:11)#,12:22
+          targets = c(1:3,7:12)#,12:22
         )
       ),
       
@@ -565,7 +578,30 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   )
  
   observeEvent(input$changeData, {
-    changedData <- jsonlite::fromJSON(input$changeData)
+    changedData <<- jsonlite::fromJSON(input$changeData)
+    changedData <- merge(changedData, change_attribute_table, by="index", keep.x=T)
+    change.id = as.numeric(unique(changedData$hintId))
+    
+    if ("jurisdiction.name" %in% changedData$name) { jurisdiction <- changedData[changedData$name == "jurisdiction.name",] }
+    if ("intervention.type.name" %in% changedData$name) { instrument <- changedData[changedData$name == "intervention.type.name",] }
+    if ("product.group.name" %in% changedData$name) { product <- changedData[changedData$name == "product.group.name",] }
+    
+    b221_hint_change_attribute(change.id=change.id,
+                               is.intervention=F,
+                               intervention.modifiable=T,
+                               modify.assessment=switch("assessment.name" %in% changedData$name, changedData$dataNew[changedData$name=="assessment.name"], NULL),
+                               modify.date.announced=switch("announcement.date" %in% changedData$name, changedData$dataNew[changedData$name=="announcement.date"], NULL),
+                               modify.date.implemented=switch("implementation.date" %in% changedData$name, changedData$dataNew[changedData$name=="implementation.date"], NULL),
+                               modify.date.removed=switch("removal.date" %in% changedData$name, changedData$dataNew[changedData$name=="removal.date"], NULL),
+                               modify.description=switch("english.description" %in% changedData$name, changedData$dataNew[changedData$name=="english.description"], NULL),
+                               add.instrument=switch(exists("instrument"), switch(length(setdiff(strsplit(instrument$dataNew,",")[[1]],strsplit(instrument$dataOld,",")[[1]]))>0, setdiff(strsplit(instrument$dataNew,",")[[1]],strsplit(instrument$dataOld,",")[[1]]), NULL),NULL),
+                               remove.instrument=switch(exists("instrument"), switch(length(setdiff(strsplit(instrument$dataOld,",")[[1]],strsplit(instrument$dataNew,",")[[1]]))>0, setdiff(strsplit(instrument$dataOld,",")[[1]],strsplit(instrument$dataNew,",")[[1]]), NULL), NULL),
+                               add.product=switch(exists("product"), switch(length(setdiff(strsplit(product$dataNew,",")[[1]],strsplit(product$dataOld,",")[[1]]))>0, setdiff(strsplit(product$dataNew,",")[[1]],strsplit(product$dataOld,",")[[1]]), NULL), NULL),
+                               remove.product=switch(exists("product"), switch(length(setdiff(strsplit(product$dataOld,",")[[1]],strsplit(product$dataNew,",")[[1]]))>0, setdiff(strsplit(product$dataOld,",")[[1]],strsplit(product$dataNew,",")[[1]]), NULL), NULL),
+                               add.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataNew,",")[[1]],strsplit(jurisdiction$dataOld,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataNew,",")[[1]],strsplit(jurisdiction$dataOld,",")[[1]]), NULL), NULL),
+                               remove.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]), NULL), NULL)
+                               )
+    
   })
-   
+  
 }
