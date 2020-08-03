@@ -21,7 +21,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output$product.group.name <- gsub(" ; ",",",output$product.group.name)
     output$intervention.type.name <- gsub(" ; ",",",output$intervention.type.name)
     # output$english.description = "Description"
-    change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1)) 
     output <- output %>%
       select(confirmation.status,
              hint.id,
@@ -39,7 +38,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              product.group.name,
              intervention.type.name,
              everything())
-    test_output <<- output
+
+    change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1))
+    output <- output
   })
   
   observe({
@@ -73,9 +74,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
 # Output Table ------------------------------------------------------------
   output$deliverTable <- DT::renderDataTable(DT::datatable(
     data = names(), #retrieve_data(),
-    colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Is Official?' = 5,
-                 'Jurisdiction' = 6, 'Initial assessment' = 7, 'GTA intervention type' = 8, 
-                 'Announcement date' = 9, 'Implementation date' = 10, 'Removal date' = 11, 'Description' = 12,
+    colnames = c('Confirmation Status' = 1, 'Entry ID' = 2, 'Users' = 3, 'Documentation status' = 4, 'Is official?' = 5, 'Jurisdiction' = 6, 'Initial assessment' = 7, 'GTA intervention type' = 8, 
+                 'Announcement date' = 9, 'Implementation date' =10, 'Removal date' = 11, 'Description' = 12,
                  'Source' = 13, 'Products' = 14, 'Instruments' = 15),
     
     rownames = FALSE,
@@ -142,10 +142,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
             targets = 3,
             className = "dt-head-left smallPadding documentation-status"
           ),
-           list( # is official
-             targets = 4,
-             className = "dt-head-left smallPadding is-official"
-           ),
+         list( # Documentation status
+           targets = 4,
+           className = "dt-head-left smallPadding is-official"
+         ),
           list( # Jurisdiction
             targets = 5,
             className = "dt-head-left smallPadding jurisdiction"
@@ -262,6 +262,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         ),
         list(targets = 14,
              render = JS("function (data, type, row) {
+                          if (data != null) {
                             if (type === 'sp') {
                               return data != null ? data.split(',') : '';
                             }
@@ -509,8 +510,30 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   )
  
   observeEvent(input$changeData, {
-    changedData <- jsonlite::fromJSON(input$changeData)
-    test_changedData <<- changedData
+    changedData <<- jsonlite::fromJSON(input$changeData)
+    changedData <- merge(changedData, change_attribute_table, by="index", keep.x=T)
+    change.id = as.numeric(unique(changedData$hintId))
+    
+    if ("jurisdiction.name" %in% changedData$name) { jurisdiction <- changedData[changedData$name == "jurisdiction.name",] }
+    if ("intervention.type.name" %in% changedData$name) { instrument <- changedData[changedData$name == "intervention.type.name",] }
+    if ("product.group.name" %in% changedData$name) { product <- changedData[changedData$name == "product.group.name",] }
+    
+    b221_hint_change_attribute(change.id=change.id,
+                               is.intervention=F,
+                               intervention.modifiable=T,
+                               modify.assessment=switch("assessment.name" %in% changedData$name, changedData$dataNew[changedData$name=="assessment.name"], NULL),
+                               modify.date.announced=switch("announcement.date" %in% changedData$name, changedData$dataNew[changedData$name=="announcement.date"], NULL),
+                               modify.date.implemented=switch("implementation.date" %in% changedData$name, changedData$dataNew[changedData$name=="implementation.date"], NULL),
+                               modify.date.removed=switch("removal.date" %in% changedData$name, changedData$dataNew[changedData$name=="removal.date"], NULL),
+                               modify.description=switch("english.description" %in% changedData$name, changedData$dataNew[changedData$name=="english.description"], NULL),
+                               add.instrument=switch(exists("instrument"), switch(length(setdiff(strsplit(instrument$dataNew,",")[[1]],strsplit(instrument$dataOld,",")[[1]]))>0, setdiff(strsplit(instrument$dataNew,",")[[1]],strsplit(instrument$dataOld,",")[[1]]), NULL),NULL),
+                               remove.instrument=switch(exists("instrument"), switch(length(setdiff(strsplit(instrument$dataOld,",")[[1]],strsplit(instrument$dataNew,",")[[1]]))>0, setdiff(strsplit(instrument$dataOld,",")[[1]],strsplit(instrument$dataNew,",")[[1]]), NULL), NULL),
+                               add.product=switch(exists("product"), switch(length(setdiff(strsplit(product$dataNew,",")[[1]],strsplit(product$dataOld,",")[[1]]))>0, setdiff(strsplit(product$dataNew,",")[[1]],strsplit(product$dataOld,",")[[1]]), NULL), NULL),
+                               remove.product=switch(exists("product"), switch(length(setdiff(strsplit(product$dataOld,",")[[1]],strsplit(product$dataNew,",")[[1]]))>0, setdiff(strsplit(product$dataOld,",")[[1]],strsplit(product$dataNew,",")[[1]]), NULL), NULL),
+                               add.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataNew,",")[[1]],strsplit(jurisdiction$dataOld,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataNew,",")[[1]],strsplit(jurisdiction$dataOld,",")[[1]]), NULL), NULL),
+                               remove.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]), NULL), NULL)
+                               )
+    
   })
-   
+  
 }
