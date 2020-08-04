@@ -389,7 +389,7 @@ const buttonsClicks = {
     let output = [];
     
     let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
-                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Is Official?'];
+                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Is official?'];
     
     $('#DataTables_Table_0').DataTable().columns().every( function (i) {
       
