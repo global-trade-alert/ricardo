@@ -349,31 +349,30 @@ const buttonsClicks = {
     .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
   },
   updateRowData: function(currentStatus, data, id, rowData){
-      console.log("DATA TABLE ROW OUTPUT");
-      var changedData = [];
-      console.log(rowData)
-      console.log(data)
-      rowData.forEach((row) => {
-        let index = row.index;
-        console.log("ROW");
-        if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
-          $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
-          changedData.push({index: row.index, data: data.find(x => x.index === index).data})
-        }
-         console.log(changedData);
-        Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
-      });
+    console.log("DATA TABLE ROW OUTPUT");
+    var changedData = [];
+    console.log(rowData);
+    rowData.forEach((row) => {
+      let index = row.index;
+      if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
+        $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
+        console.log('changed data');
+        changedData.push({index: row.index, dataNew: data.find(x => x.index === index).data, dataOld: row.data.replace(/(\r\n|\n|\r)/gm, ""), hintId: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 1).data()});
+      }
+       console.log(changedData);
+    });
+    Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
 
-      $(`tr#${id}`).removeClass(currentStatus);
-      $(`tr#${id}`).addClass('edited');
-      $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
-      data.map(function(d){
-          $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
-      })
-      this.redrawDataTable();
-      this.updateSearchPanes();
-      this.rowAttachEvents(currentStatus, id);
-  },
+    $(`tr#${id}`).removeClass(currentStatus);
+    $(`tr#${id}`).addClass('edited');
+    $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
+    data.map(function(d){
+        $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
+    })
+    this.redrawDataTable();
+    this.updateSearchPanes();
+    this.rowAttachEvents(currentStatus, id);
+},
   getRowData: function(id){
     let columns = this.getColumnsNames();
     let col_ind = columns.flatMap(d => d.index);
