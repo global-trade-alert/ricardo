@@ -857,11 +857,13 @@ input#cancel-dupl{
 	bottom:0;
 	padding:calc(10px + 1vw);
 	border-radius: 0px;
+	max-height:320px;
+	height:50vh;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer {
 	transition: all 0.5s ease-out;
-	width: calc(100% - 20px - 1vw);
+	width: calc(100% - 150px - 1vw);
 	right:calc(10px + 0.5vw);
 	bottom:calc(10px + 0.5vw);
 	background-color:rgba(25, 44, 64, 0.8);
@@ -874,6 +876,37 @@ input#cancel-dupl{
 	overflow:visible;
 	border-radius: 5px;
 	margin:0;
+	max-height:50px;
+	height:100%;
+}
+
+#deliver-lastDeliverable {
+	background-color:rgba(25, 44, 64, 0.8);
+	border:none;
+	-webkit-backdrop-filter: blur(10px) saturate(250%) contrast(120%);
+	backdrop-filter: blur(10px) saturate(250%) contrast(120%);
+	padding: calc(5px + 0.2vw);
+	position: fixed;
+	color:#FFFFFF;
+	width: calc(130px - 1vw) !important;
+	left:calc(10px + 0.5vw);
+	bottom:calc(10px + 0.5vw);
+	border-radius: 5px;
+	display: flex;
+	align-items: center;
+	height:50px;
+}
+
+#deliver-lastDeliverable label {
+	display:none;
+}
+
+#deliver-lastDeliverable input.form-control {
+	height:30px !important;
+	background-color: transparent;
+	color: #FFFFFF;
+	border:none;
+	font-weight: 400;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer div.dtsp-searchPanes {
@@ -892,7 +925,7 @@ input#cancel-dupl{
 }
 
 .deliver #deliver-deliverTable.collapsePanes div.dtsp-searchPanes {
-	max-height:500px;
+	max-height:100%;
 	transition:all 0.5s ease-out;
 	opacity:1;
 	visibility:visible;
@@ -904,7 +937,7 @@ input#cancel-dupl{
   display: block;
   float: left;
   max-width: 100% !important;
-	height: 30vh;
+  height: 30vh;
   max-height: 250px;
 }
 

@@ -6,8 +6,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   
   
   # Pull data ---------------------------------------------------------------
-  names <- reactive({
-    output <- dlvr_pull_display(last.deliverable = "2020-07-29 12:20:13")
+  names <- eventReactive(input$lastDeliverable, {
+    print("create table")
+    output <- dlvr_pull_display(last.deliverable = paste0(input$lastDeliverable, " 12:20:13"))
     output$confirmation.status <- as.character(sample(4, size = nrow(output), replace = TRUE))
     output <- output %>%
       mutate(confirmation.status = str_replace(confirmation.status, "1", "confirmed")) %>%
@@ -285,6 +286,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                orthogonal = 'sp',
                dtOpts = list(
                  initComplete = JS("function(){
+                          console.log('RUND INITCOMPLETE SEARCH PANES');  
                           $('.dtsp-searchPane:visible').removeClass('dtsp-columns-3');
                           $('.dtsp-searchPane:visible').addClass('dtsp-columns-5');
                           
@@ -317,9 +319,20 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           
                                                                                     
                           let pagination = $('#DataTables_Table_0_paginate');
-                          console.log('PAGINATION');
-                          console.log(pagination);
                           pagination.appendTo('.dtsp-panesContainer .dtsp-titleRow');
+                          
+                          // let  input = $('<input />')
+                          //     .attr('type', 'text')
+                          //     .attr('id', `deliver-lastDeliverable`)
+                          //     .addClass('datepicker');
+                          // let input = $('#deliver-lastDeliverable');
+                          // input.appendTo('.dtsp-panesContainer .dtsp-titleRow');
+                          
+                          // $('#deliver-lastDeliverable').bsDatepicker({ format: 'yyyy-mm-dd' });
+                          // Shiny.bindAll();
+                          // $('#deliver-lastDeliverable').each(function(){
+                          //   $(this).bsDatepicker('setDate', '2020-05-20');
+                          // });
                          
                    }"),
                  drawCallback = JS("function(settings){
