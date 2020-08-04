@@ -1,27 +1,27 @@
-library(pool)
-library(gtasql)
-library(gtalibrary)
-library(plyr)
-library(tidyverse)
-gta_setwd()
-
-gta_sql_pool_open(db.title="ricardodev",
-                  db.host = gta_pwd("ricardodev")$host,
-                  db.name = "dlvr_app_extension_dev",
-                  db.user = gta_pwd("ricardodev")$user,
-                  db.password = gta_pwd("ricardodev")$password,
-                  table.prefix = "")
-
-gta_sql_pool_open(db.title="ricardomainclone",
-                  db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
-                  db.name = 'dlvr_app_extension_dev',
-                  db.user = 'gtaricardodev',
-                  db.password = '4rbjDVRote7YLsTqfmWXfbwdf7jVt8VjwXUhgy',
-                  table.prefix = "")
-
-gta_sql_pool_close()
-
-change.id = 1
+# library(pool)
+# library(gtasql)
+# library(gtalibrary)
+# library(plyr)
+# library(tidyverse)
+# gta_setwd()
+# 
+# gta_sql_pool_open(db.title="ricardodev",
+#                   db.host = gta_pwd("ricardodev")$host,
+#                   db.name = "dlvr_app_extension_dev",
+#                   db.user = gta_pwd("ricardodev")$user,
+#                   db.password = gta_pwd("ricardodev")$password,
+#                   table.prefix = "")
+# 
+# gta_sql_pool_open(db.title="ricardomainclone",
+#                   db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
+#                   db.name = 'dlvr_app_extension_dev',
+#                   db.user = 'gtaricardodev',
+#                   db.password = '4rbjDVRote7YLsTqfmWXfbwdf7jVt8VjwXUhgy',
+#                   table.prefix = "")
+# 
+# gta_sql_pool_close()
+# 
+# change.id = 1
 
 
 b221_hint_change_attribute<-function(change.id=NULL,
