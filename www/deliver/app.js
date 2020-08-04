@@ -327,6 +327,7 @@ const buttonsClicks = {
     $(`tr#${id}`).find('.accept').remove();
     $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
     this.rowAttachEvents('confirmed', id);
+    Shiny.setInputValue("deliver-confirmHint", JSON.stringify(id), {priority: "event"});
   },
   convertToDeleted: function(className, id){
     $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');

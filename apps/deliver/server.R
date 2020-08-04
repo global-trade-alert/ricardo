@@ -40,7 +40,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
              everything())
 
     change_attribute_table <<- data.frame(name=colnames(output), index=seq(0,length(output)-1,1))
-    output <- output
+    output_test <<- output
   })
   
   observe({
@@ -238,6 +238,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                              return `<div class=\"box-usr-label\">
                                         ${users}
                                      </div>`
+
                }")
         ),
         list(targets = 5,
@@ -262,7 +263,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         ),
         list(targets = 14,
              render = JS("function (data, type, row) {
-                          if (data != null) {
                             if (type === 'sp') {
                               return data != null ? data.split(',') : '';
                             }
@@ -519,6 +519,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     if ("product.group.name" %in% changedData$name) { product <- changedData[changedData$name == "product.group.name",] }
     
     b221_hint_change_attribute(change.id=change.id,
+                               user.id = user$id, 
+                               is.superuser=F,
                                is.intervention=F,
                                intervention.modifiable=T,
                                modify.assessment=switch("assessment.name" %in% changedData$name, changedData$dataNew[changedData$name=="assessment.name"], NULL),
@@ -534,6 +536,17 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                remove.jurisdiction=switch(exists("jurisdiction"), switch(length(setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]))>0, setdiff(strsplit(jurisdiction$dataOld,",")[[1]],strsplit(jurisdiction$dataNew,",")[[1]]), NULL), NULL)
                                )
     
+  })
+  
+  observeEvent(input$confirmHint, {
+    confirmedHint <<- jsonlite::fromJSON(input$confirmHint)
+    print(confirmedHint)
+    confirmedHint_classifications <- names() %>%
+      filter(hint.id == confirmedHint) %>%
+      select(c('hint.id', 'url.classification', 'text.classification', 'jur.classification', 
+               'rlvnt.classification', 'ass.classification', 'int.classification', 'prod.classification', 
+               'date.classification', 'discard.classification'))
+    dlvr_confirm_status(confirm.table=confirmedHint_classifications)
   })
   
 }
