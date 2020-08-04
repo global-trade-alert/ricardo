@@ -1,10 +1,11 @@
-b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
+b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NULL, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
                                         product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, announcement.date = NULL, implementation.date = NULL, removal.date = NULL, discard = NULL, discard.comment = NULL, collection.unchanged = NULL, empty.attributes = NULL){
   
   if(is.null(is.freelancer) | length(is.freelancer)!= 1 | !is.logical(is.freelancer) | is.na(is.freelancer)) stop('is.freelancer must be false if you are an editor, or true if you are a freelancer, no other value permitted')
   if(is.null(hints.id) | length(hints.id)< 1) stop('hints.id must be numeric or NA and at least length 1, expected is a vector')
   if(!xor(is.null(new.collection.name), is.null(collection.id))) stop('either collection.id or new.collection.name must be a provided, not both, not neither')
   if(!is.numeric(collection.id) & !is.character(new.collection.name)) stop('collection.id or new.collection.name must be numeric or character respectively (only one can be provided)')
+  confirm_status = ifelse(is.null(is.superuser) || is.superuser == FALSE, 0, 1)
   
   hints.id = unique(hints.id)
   hints.id=hints.id[!is.na(hints.id)]
@@ -160,7 +161,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_assessment.assessment_id FROM b221_hint_collection JOIN b221_collection_assessment ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_assessment.collection_id) changes 
                                         ON ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = changes.assessment_id AND ht_ass.validation_classification IS NULL
                                         SET ht_ass.validation_classification = @classification_id,
-                                        ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_ass.confirm_status = ", confirm_status, ";
                                         
                                         INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_classification)
                                         SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id , NULL AS product_group_assessment, NULL AS validation_classification 
@@ -175,7 +177,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_product_group.product_group_id FROM b221_hint_collection JOIN b221_collection_product_group ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_product_group.collection_id) changes 
                                         ON prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = changes.product_group_id AND prod_grp.validation_classification IS NULL
                                         SET prod_grp.validation_classification = @classification_id,
-                                        prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        prod_grp.confirm_status = ", confirm_status, ";
                                         
                                         INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_classification)
                                         SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id , NULL AS intervention_accepted, NULL AS validation_classification 
@@ -190,7 +193,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_intervention.intervention_type_id FROM b221_hint_collection JOIN b221_collection_intervention ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_intervention.collection_id) changes 
                                         ON ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = changes.intervention_type_id AND ht_int.validation_classification IS NULL
                                         SET ht_int.validation_classification = @classification_id, 
-                                        ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_int.confirm_status = ", confirm_status, ";
                                         
                                         INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_classification)
                                         SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, NULL AS jurisdiction_accepted, NULL AS validation_classification 
@@ -205,7 +209,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_jurisdiction.jurisdiction_id FROM b221_hint_collection JOIN b221_collection_jurisdiction ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_jurisdiction.collection_id) changes 
                                         ON ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = changes.jurisdiction_id AND ht_jur.validation_classification IS NULL
                                         SET ht_jur.validation_classification = @classification_id, 
-                                        ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_jur.confirm_status = ", confirm_status, ";
                                         
                                         INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_classification)
                                         SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, NULL AS date_accepted, NULL AS validation_classification 
@@ -220,7 +225,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_date.`date`, b221_collection_date.date_type_id FROM b221_hint_collection JOIN b221_collection_date ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_date.collection_id) changes 
                                         ON ht_date.hint_id = changes.hint_id AND ht_date.`date` = changes.`date` AND ht_date.date_type_id = changes.date_type_id AND ht_date.validation_classification IS NULL
                                         SET ht_date.validation_classification = @classification_id, 
-                                        ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_date.confirm_status = ", confirm_status, ";
                                         
                                         INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
                                         SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, NULL AS relevance_accepted, NULL AS validation_classification 
@@ -235,7 +241,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
                                         ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance AND ht_rel.validation_classification IS NULL
                                         SET ht_rel.validation_classification = @classification_id, 
-                                        ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                        ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_rel.confirm_status = ", confirm_status, ";
                                         
                                         INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_classification )
                                         SELECT DISTINCT ht_cltn.hint_id,  @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment, 
@@ -253,7 +260,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                         b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
                                         ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment AND ht_dis.validation_classification IS NULL
                                         SET ht_dis.validation_classification = @classification_id, 
-                                        ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+                                        ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_dis.confirm_status = ", confirm_status, ";;")
       
       if(is.freelancer){
         if(!any(is.na(new.hints)) & length(new.hints) != 0){
@@ -294,7 +302,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_assessment.assessment_id FROM b221_hint_collection JOIN b221_collection_assessment ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_assessment.collection_id) changes 
                                           ON ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = changes.assessment_id AND ht_ass.validation_classification IS NULL
                                           SET ht_ass.validation_classification = @classification_id,
-                                          ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                          ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_ass.confirm_status = ", confirm_status, ";
                                           
                                           INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id , NULL AS product_group_assessment, NULL AS validation_classification 
@@ -309,7 +318,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_product_group.product_group_id FROM b221_hint_collection JOIN b221_collection_product_group ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_product_group.collection_id) changes 
                                           ON prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = changes.product_group_id AND prod_grp.validation_classification IS NULL
                                           SET prod_grp.validation_classification = @classification_id,
-                                          prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                          prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          prod_grp.confirm_status = ", confirm_status, ";
                                           
                                           INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id , NULL AS intervention_accepted, NULL AS validation_classification 
@@ -324,7 +334,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_intervention.intervention_type_id FROM b221_hint_collection JOIN b221_collection_intervention ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_intervention.collection_id) changes 
                                           ON ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = changes.intervention_type_id AND ht_int.validation_classification IS NULL
                                           SET ht_int.validation_classification = @classification_id, 
-                                          ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                          ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_int.confirm_status = ", confirm_status, ";
                                           
                                           INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, NULL AS jurisdiction_accepted, NULL AS validation_classification 
@@ -339,7 +350,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_jurisdiction.jurisdiction_id FROM b221_hint_collection JOIN b221_collection_jurisdiction ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_jurisdiction.collection_id) changes 
                                           ON ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = changes.jurisdiction_id AND ht_jur.validation_classification IS NULL
                                           SET ht_jur.validation_classification = @classification_id, 
-                                          ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                          ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_jur.confirm_status = ", confirm_status, ";
                                           
                                           INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, NULL AS date_accepted, NULL AS validation_classification 
@@ -354,7 +366,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_date.`date`, b221_collection_date.date_type_id FROM b221_hint_collection JOIN b221_collection_date ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_date.collection_id) changes 
                                           ON ht_date.hint_id = changes.hint_id AND ht_date.`date` = changes.`date` AND ht_date.date_type_id = changes.date_type_id AND ht_date.validation_classification IS NULL
                                           SET ht_date.validation_classification = @classification_id, 
-                                          ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                          ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_date.confirm_status = ", confirm_status, ";
                                           
                                           INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, NULL AS relevance_accepted, NULL AS validation_classification 
@@ -369,7 +382,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
                                           ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance AND ht_rel.validation_classification IS NULL
                                           SET ht_rel.validation_classification = @classification_id, 
-                                          ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
+                                          ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_rel.confirm_status = ", confirm_status, ";
                                           
                                           INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id , discard_reason_comment , reason_accepted , validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment , NULL AS reason_accepted, NULL AS validation_classification 
@@ -385,7 +399,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
                                           ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment
                                           SET ht_dis.validation_classification = @classification_id,
-                                          ht_dis.reason_accepted  = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+                                          ht_dis.reason_accepted  = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_dis.confirm_status = ", confirm_status, ";")
         
           if(is.freelancer){
             if(!any(is.na(new.hints)) & length(new.hints) != 0){
