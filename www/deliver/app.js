@@ -170,6 +170,10 @@ const buttonsClicks = {
                 input = $('<select />')
                       .attr('id', `column-${d.index}`)
                       .addClass('assessment');
+                      
+                        input.append(
+                          '<option value=""></option>'
+                         )
 
                 window.data_gta[d.name].map(function(d1,i) {
                       let selected = d1 == d.data ? 'selected' : '';
