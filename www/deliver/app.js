@@ -526,3 +526,10 @@ function searchPaneUI() {
     $('#deliver-deliverTable').toggleClass('collapsePanes');
   });
 }
+
+function toggleConflict() {
+  $('#deliver-deliverTable').on('click', '.conflict', function () {
+    $(this).toggleClass('open');
+  });
+}
+

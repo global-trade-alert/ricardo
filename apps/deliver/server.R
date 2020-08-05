@@ -8,13 +8,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   # Pull data ---------------------------------------------------------------
   names <- eventReactive(input$lastDeliverable, {
     print("create table")
-    output <- dlvr_pull_display(last.deliverable = paste0(input$lastDeliverable, " 12:20:13"))
-    output$confirmation.status <- as.character(sample(4, size = nrow(output), replace = TRUE))
-    output <- output %>%
-      mutate(confirmation.status = str_replace(confirmation.status, "1", "confirmed")) %>%
-      mutate(confirmation.status = str_replace(confirmation.status, "2", "updated")) %>%
-      mutate(confirmation.status = str_replace(confirmation.status, "3", "new")) %>%
-      mutate(confirmation.status = str_replace(confirmation.status, "4", "deleted"))
+    output <- dlvr_pull_display(last.deliverable = paste0(input$lastDeliverable, " 00:00:00"))
     output$gta.intervention.type = "GTA intervention type"
     output$original.description = NULL
     output$original.title = NULL
@@ -23,7 +17,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output$intervention.type.name <- gsub(" ; ",",",output$intervention.type.name)
     # output$english.description = "Description"
     output <- output %>%
-      select(confirmation.status,
+      select(confirm.status,
              hint.id,
              users,
              documentation.status,
@@ -124,7 +118,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         # Hide table columns
         list(
           visible = FALSE,
-          targets = c(15:35)
+          targets = c(15:46)
         ),
         # set columns widths
         list(  # Confirmation status
@@ -385,7 +379,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           searchPanes = list(
             show = FALSE
           ),
-          targets = c(1:4,7:34)#,12:22
+          targets = c(1:4,7:46)#,12:22
         )
       ),
       
@@ -393,6 +387,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                             const api = this.api();
                             //$('#hide').css({'display': ''}); //make table visible only after adjustments
                             settings._searchPanes.regenerating = true // allow recalculation of searchPanes
+                            toggleConflict();
       }"),
       
       infoCallback = JS("function(settings, start, end, max, total, pre){
@@ -455,6 +450,28 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                         }"),
       
       rowCallback = JS("function(row, data){
+        if (data[36] == 1) {
+          if (data[25] != null) { var assessment = data[25]; } else {var assessment = ''; }
+          if (data[26] != null) { var types = data[26]; } else {var types = ''; }
+          if (data[27] != null) { var announcement = data[27]; } else {var announcement = ''; }
+          if (data[28] != null) { var implementation = data[28]; } else {var implementation = ''; }
+          if (data[29] != null) { var removal = data[29]; } else {var removal = ''; }
+          if (data[30] != null) { var jurisdiction = data[30]; } else {var jurisdiction = ''; }
+          if (data[31] != null) { var product = data[31]; } else {var product = ''; }
+          if (data[32] != null) { var description = data[32]; } else {var description = ''; }
+          if (data[33] != null) { var title = data[33]; } else {var title = ''; }
+          if (data[34] != null) { var relevance = data[34]; } else {var relevance = ''; }
+          if (data[35] != null) { var url = data[35]; } else {var url = ''; }
+          
+          var conflict = '<div class=\\'conflict\\'><p class=\\'title\\'>Conflict</p><div class=\\'conflict-info\\'>'+assessment+types+announcement+implementation+removal+jurisdiction+product+description+title+relevance+url+'</div>';
+        } else {
+          var conflict = '';
+        }  
+        
+      
+        $(row)
+        .append('<div class=\\'break\\'></div>'+conflict);
+        return row;
       }"),
       
       createdRow = JS("function(row, data, dataIndex, cells){
