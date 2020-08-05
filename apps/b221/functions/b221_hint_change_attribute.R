@@ -30,6 +30,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                      is.intervention=F,
                                      intervention.modifiable=F,
                                      modify.assessment=NULL,
+                                     modify.is.official=NULL,
                                      modify.date.announced=NULL,
                                      modify.date.implemented=NULL,
                                      modify.date.removed=NULL,
@@ -133,6 +134,10 @@ b221_hint_change_attribute<-function(change.id=NULL,
       assessment.name = ifelse(is.null(modify.assessment), assessment.name, modify.assessment)
       return(assessment.name)
     }) %>%
+    mutate_at(.vars = 'is.official', .funs = function(x){
+      is.official = ifelse(is.null(modify.is.official), x, modify.is.official)
+      return(is.official)
+    }) %>%
     mutate_at(.vars = 'discard.reason.comment', .funs = function(x){
       discard.reason.comment = ifelse(is.null(modify.discard.comment), x, modify.discard.comment)
       return(discard.reason.comment)
@@ -170,7 +175,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
       return(removaldate)
     }) %>%
     mutate_at(.vars = 'relevance', .funs = function(x) {
-      relevance = ifelse(!is.null(modify.relevance), modify.relevance, NA_character_)
+      relevance = ifelse(is.null(modify.relevance), x, modify.relevance)
       return(relevance)
     }) %>%
     mutate(hints = hint.id) %>%
@@ -231,18 +236,19 @@ b221_hint_change_attribute<-function(change.id=NULL,
   test_pass.attributes <<- pass.hint.attributes
   
   # validate if we are not feeding empty attributes to b221_process_display/b221_process_collections
-  pass.hint.attributes %>%
-    map(.f = function(x){
-      hint.id = x$hint.id
-      x %>%
-        mutate_at(.vars = c('jurisdiction.id', 'product.group.id', 'intervention.id', 'assessment.id', 'relevance'),
-                  .funs = function(x){
-                    colname = quo_name(enquo(x))
-                    val = unlist(x)
-                    if(length(val) == 1)
-                      if(is.na(val)) stop(paste0("Hint ",hint.id," contains empty attributes in field '", colname, "'"))
-                  })
-    })
+  
+  # pass.hint.attributes %>%
+  #   map(.f = function(x){
+  #     hint.id = x$hint.id
+  #     x %>%
+  #       mutate_at(.vars = c('jurisdiction.id', 'product.group.id', 'intervention.id', 'assessment.id', 'relevance'),
+  #                 .funs = function(x){
+  #                   colname = quo_name(enquo(x))
+  #                   val = unlist(x)
+  #                   if(length(val) == 1)
+  #                     if(is.na(val)) stop(paste0("Hint ",hint.id," contains empty attributes in field '", colname, "'"))
+  #                 })
+  #   })
   
   # run b221_process_display_info or b221_process_collections for each row of pass.hint.attributes
   pass.hint.attributes %>%
@@ -257,7 +263,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
                      'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard.reason', 'discard.reason.comment'))
         test_ht <<- output
         
-        if(output$clicked == 0 & is.na(output$discard.reason)){ stop(paste0('The hint ', output$id, ' is marked as irrelevant, please add the discard reasons!')) }
+        #if(output$clicked == 0 & is.na(output$discard.reason)){ stop(paste0('The hint ', output$id, ' is marked as irrelevant, please add the discard reasons!')) }
         
         print('running b221_process_display_info...')
         b221_process_display_info(is.freelancer = FALSE, is.superuser = is.superuser, user.id = user.id, processed.rows = output, text.modifiable = TRUE)
@@ -266,11 +272,16 @@ b221_hint_change_attribute<-function(change.id=NULL,
         ## hint is part of a collection ----------------------------------
         output <- x
         test_cl <<- output
-        print(paste0('Hint ', x$hint.id, ' is part of a collection...'))
+        print(paste0('Hint ', x$hint.id, ' is part of a collection ', x$collection.id))
         col.star=gta_sql_get_value(paste0("SELECT hint_id FROM b221_collection_star WHERE collection_id = ",unlist(output$collection.id)," ;"))
+        test_col.star <<- col.star
+        if(is.na(col.star) | col.star!=output$hint.id){
+          print("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")
+        }
         
-        if(col.star!=output$hint.id){stop("The hint you are changing is part of a collection but not its star. Make it the star or change the star.")}
-        if(output$relevance == 0 & is.na(output$discard.reason.id)){ stop(paste0('The hint ', output$hint.id, ' is marked as irrelevant, please add the discard reasons!')) }
+        #find collection hints
+        col.hints=gta_sql_get_value(paste0("SELECT hint_id FROM b221_hint_collection WHERE collection_id = ",unlist(output$collection.id)," ;"))
+        test_col.hints <<- col.hints
         
         #add dfs with id and names of the changed attributes
         assessment.list <- gta_sql_get_value(paste0("SELECT DISTINCT bal.assessment_id , bal.assessment_name FROM b221_assessment_list bal WHERE bal.assessment_name = '",paste0(ifelse(is.na(output$assessment.id), 'NULL',output$assessment.id )),"';"))
@@ -297,7 +308,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
         
         print('running bt_find_collection_attributes...')
         attributes = bt_find_collection_attributes(collection.id = output$collection.id, 
-                                                   hints.id = output$hint.id, 
+                                                   hints.id = col.hints, 
                                                    starred.hint.id = col.star, 
                                                    country = ImplementerId, 
                                                    product = ProductId, 
@@ -316,7 +327,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
         b221_process_collections_hints(is.freelancer = F,
                                        is.superuser = is.superuser,
                                        user.id = user.id,
-                                       collection.id = output$collection.id,
+                                       collection.id = col.hints,
                                        hints.id = output$hint.id,
                                        starred.hint.id = attributes$starred.hint.id,
                                        country = attributes$country,
