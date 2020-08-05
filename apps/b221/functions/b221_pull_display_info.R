@@ -4,7 +4,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
   
   if(is.freelancer == T){
     # attach only those urls in the bt_hint_url which are suggested by bastiat OR accepted by editor on the other end (on back feed from editor)
-    pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date,  
+    pull.display = paste0("SELECT GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) ORDER BY jur_list.jurisdiction_name ASC SEPARATOR ' ; ') AS jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date,  
                           MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_title ELSE NULL END) AS english_title,
                           MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_description ELSE NULL END) AS english_description, 
                           MAX(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_title ELSE NULL END) AS original_title,
@@ -42,7 +42,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
   } else {
     #attach only those urls which are non-dormant, i.e. those hints @b221 editor desk & search_id non null & was_accepted null (pending decision) or 1
     # OR bt_hint_state_list.hint_state_name = 'trash bin - entered' in attributed_hints if we want to pull up trash bin too
-    pull.display = paste0("SELECT jur_list.jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date, 
+    pull.display = paste0("SELECT GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) ORDER BY jur_list.jurisdiction_name ASC SEPARATOR ' ; ') AS jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date, 
                           MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_title ELSE NULL END) AS english_title,
                           MAX(CASE WHEN ht_txt.language_id=1 THEN ht_txt.hint_description ELSE NULL END) AS english_description, 
                           MAX(CASE WHEN ht_txt.language_id=2 THEN ht_txt.hint_title ELSE NULL END) AS original_title,
@@ -55,7 +55,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
                           ht_rlvnt.relevance, bt_hint_url.url_type_id,
                           MAX(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date,
                           MAX(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS implementation_date,
-                          MAX(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date
+                          MAX(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date,
                           MAX(IF(bt_discard_reason_list.discard_reason_name = 'other (see comment)',bt_hint_discard_reason.discard_reason_comment,bt_discard_reason_list.discard_reason_name)) AS discard_reason
                           FROM (SELECT DISTINCT(bt_hint_processing.hint_id) FROM bt_hint_processing
                           	  JOIN bt_hint_log ON bt_hint_log.hint_id = bt_hint_processing.hint_id
