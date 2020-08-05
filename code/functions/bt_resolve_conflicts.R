@@ -1,16 +1,16 @@
-library(pool)
-library(gtasql)
-library(gtalibrary)
-library(tidyverse)
-library(plyr)
-gta_setwd()
-
-gta_sql_pool_open(db.title="ricardodev",
-                  db.host = gta_pwd("ricardodev")$host,
-                  db.name = "dlvr_app_extension_dev",
-                  db.user = gta_pwd("ricardodev")$user,
-                  db.password = gta_pwd("ricardodev")$password,
-                  table.prefix = "")
+# library(pool)
+# library(gtasql)
+# library(gtalibrary)
+# library(tidyverse)
+# library(plyr)
+# gta_setwd()
+# 
+# gta_sql_pool_open(db.title="ricardodev",
+#                   db.host = gta_pwd("ricardodev")$host,
+#                   db.name = "dlvr_app_extension_dev",
+#                   db.user = gta_pwd("ricardodev")$user,
+#                   db.password = gta_pwd("ricardodev")$password,
+#                   table.prefix = "")
 
 
 
