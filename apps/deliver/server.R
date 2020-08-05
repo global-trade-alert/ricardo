@@ -124,7 +124,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         # Hide table columns
         list(
           visible = FALSE,
-          targets = c(15:34)
+          targets = c(15:35)
         ),
         # set columns widths
         list(  # Confirmation status
