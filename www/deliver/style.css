@@ -173,6 +173,7 @@ label {
 	border: 1px solid #dadada;
 	margin-bottom: 5px;
 	position: relative;
+	flex-wrap:wrap;
 }
 
 #deliver-deliverTable table tr.edited {
@@ -196,6 +197,47 @@ label {
   left: 5px;
   font-size: 0.8em;
 }
+
+#deliver-deliverTable table .break {
+	display: flex;
+	flex-basis: 100;
+	height:0;
+}
+
+#deliver-deliverTable table .conflict {
+	flex-basis:100%;
+	background-color: #ffcf20;
+	border-top: 1px solid #d59911;
+	cursor: pointer;
+	max-height: 20px;
+	align-items: center;
+	transition: all 0.2s ease-out;
+}
+
+#deliver-deliverTable table .conflict.open {
+	flex-basis:100%;
+	background-color: #ffcf20;
+	border-top: 1px solid #d59911;
+	cursor: pointer;
+	max-height: 200px;
+	align-items: center;
+	transition: all 0.2s ease-out;
+}
+
+#deliver-deliverTable table .conflict-info {
+	padding-left:calc(10px + 0.1vw);
+	padding-bottom:calc(10px + 0.1vw);
+}
+
+
+
+#deliver-deliverTable table .conflict p.title {
+	font-weight: 600;
+	padding-left: calc(10px + 0.1vw);
+	color: #573e06;
+}
+
+
 
 #deliver-deliverTable table thead {
 	float:left;
