@@ -55,6 +55,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     #            'Initial assessment' = assessment_unique,
     #            discard_reason = discard_reason))
     
+    runjs('$("body").addClass("initial");')
+    
     session$sendCustomMessage('data_gta', shiny:::toJSON(list(Products = products_unique,
                                                               Instruments = instruments_unique,
                                                               Jurisdiction = jurisdiction_unique,
@@ -309,24 +311,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           export_div.appendChild(img);
                           referenceNode.appendChild(export_div);
                           
-                          searchPaneUI();
                           
                                                                                     
-                          let pagination = $('#DataTables_Table_0_paginate');
+                          let pagination = $('.dataTables_paginate.paging_simple_numbers');
                           pagination.appendTo('.dtsp-panesContainer .dtsp-titleRow');
                           
-                          // let  input = $('<input />')
-                          //     .attr('type', 'text')
-                          //     .attr('id', `deliver-lastDeliverable`)
-                          //     .addClass('datepicker');
-                          // let input = $('#deliver-lastDeliverable');
-                          // input.appendTo('.dtsp-panesContainer .dtsp-titleRow');
-                          
-                          // $('#deliver-lastDeliverable').bsDatepicker({ format: 'yyyy-mm-dd' });
-                          // Shiny.bindAll();
-                          // $('#deliver-lastDeliverable').each(function(){
-                          //   $(this).bsDatepicker('setDate', '2020-05-20');
-                          // });
+                          if ($('body').hasClass('initial')) {
+                            searchPaneUI();
+                            $('body').removeClass('initial');
+                          } 
                          
                    }"),
                  drawCallback = JS("function(settings){
@@ -379,7 +372,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
           searchPanes = list(
             show = FALSE
           ),
-          targets = c(1:4,7:46)#,12:22
+          targets = c(2:4,7:46)#,12:22
         )
       ),
       
@@ -537,8 +530,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     
     b221_hint_change_attribute(change.id=change.id,
                                user.id = user$id, 
-                               is.superuser=F,
-                               is.intervention=F,
+                               is.superuser=ifelse(1 %in% user$group, TRUE, FALSE),
+                               is.intervention=ifelse(unique(changedData$isIntervention)==1, TRUE, FALSE),
                                intervention.modifiable=T,
                                modify.assessment=switch("assessment.name" %in% changedData$name, changedData$dataNew[changedData$name=="assessment.name"], NULL),
                                modify.is.official=switch("is.official" %in% changedData$name, changedData$dataNew[changedData$name=="is.official"], NULL),

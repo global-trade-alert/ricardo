@@ -362,21 +362,25 @@ const buttonsClicks = {
       if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
         $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
         console.log('changed data');
-        changedData.push({index: row.index, dataNew: data.find(x => x.index === index).data, dataOld: row.data.replace(/(\r\n|\n|\r)/gm, ""), hintId: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 1).data()});
+        changedData.push({index: row.index, dataNew: data.find(x => x.index === index).data, dataOld: row.data.replace(/(\r\n|\n|\r)/gm, ""), hintId: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 1).data(), isIntervention: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 24).data()});
       }
        console.log(changedData);
     });
-    Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
+    if (changedData.length > 0) {
+      print("has changes");
+      Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
+      
+      $(`tr#${id}`).removeClass(currentStatus);
+      $(`tr#${id}`).addClass('edited');
+      $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
+      data.map(function(d){
+          $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
+      })
+      this.redrawDataTable();
+      this.updateSearchPanes();
+      this.rowAttachEvents(currentStatus, id);
+    }
 
-    $(`tr#${id}`).removeClass(currentStatus);
-    $(`tr#${id}`).addClass('edited');
-    $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
-    data.map(function(d){
-        $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), d.index).data(d.data)
-    })
-    this.redrawDataTable();
-    this.updateSearchPanes();
-    this.rowAttachEvents(currentStatus, id);
 },
   getRowData: function(id){
     let columns = this.getColumnsNames();
