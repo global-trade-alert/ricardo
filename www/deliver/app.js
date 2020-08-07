@@ -302,12 +302,17 @@ const buttonsClicks = {
     $(`tr#${id}`).append(div_overlay);
     
     $('#save-dupl').on('click', function(){
+      var starredHint = $(this).closest('tr').attr('id');
       let rows = [];
+      let duplicates = [];
       $('.remove-row').each(function() { //duplicates-remove:checked
+        console.log($(this).closest('tr').attr('id'));
         rows.push($(this).closest('tr').attr('id'));
+        duplicates.push({starred: starredHint, duplicate: $(this).closest('tr').attr('id')});
       });
       that.stopDuplicatesMode();
       rows.forEach(d => that.removeRow(d));
+      Shiny.setInputValue("deliver-duplicateRows", JSON.stringify(duplicates), {priority: "event"});
     });
     $('#cancel-dupl').on('click', function(){
       that.stopDuplicatesMode();
@@ -361,10 +366,8 @@ const buttonsClicks = {
       let index = row.index;
       if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
         $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
-        console.log('changed data');
         changedData.push({index: row.index, dataNew: data.find(x => x.index === index).data, dataOld: row.data.replace(/(\r\n|\n|\r)/gm, ""), hintId: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 1).data(), isIntervention: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 24).data()});
       }
-       console.log(changedData);
     });
     if (changedData.length > 0) {
       print("has changes");
