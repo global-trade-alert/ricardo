@@ -56,6 +56,8 @@ $( document ).ready(function() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('save-cols is loaded')
       let colnames = await buttonsClicks.getAllColumnsNames();
+      colnames = colnames.filter(d => /^(entry id|initial assessment|products|documentation status|jurisdiction|gta intervention type|announcement date|implementation date|removal date|source|instruments)$/gi.test(d.name)); //pre-filter all columns
+      
       colnames.forEach(function(d, i) {
         let checked = /confirmation|users|description/gi.test(d.name) ? false : true; //untick some cols initially
         let input = $('<input />')
@@ -371,6 +373,10 @@ const buttonsClicks = {
       print("has changes");
       Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
       
+      //convert to confirmed
+      $(`tr#${id}`).removeClass(currentStatus).addClass('confirmed').find('.status-label').text('confirmed');
+      $(`tr#${id}`).find('.accept').remove();
+      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
       $(`tr#${id}`).removeClass(currentStatus);
       $(`tr#${id}`).addClass('edited');
       $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
@@ -518,7 +524,7 @@ const buttonsClicks = {
         data = $('#DataTables_Table_0').DataTable().rows({ filter: 'applied'}).data().toArray();
     $('.col-export').each(function(){ 
         if ($(this).is(':checked'))
-          columns.push({ index: $(this).attr('id').match(/\d+/gi)[0]}) //name: $(this).siblings('label').html() 
+          columns.push({ index: $(this).attr('id').match(/\d+/gi)[0], name: $(this).siblings('label').html() })
     });
     /*data.forEach(function(d,i){
       let row = {};
@@ -531,6 +537,7 @@ const buttonsClicks = {
       output.push(row)
     })
     console.log(output)*/
+    console.log(columns)
     Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(columns), {priority: "event"});
   }
 };
