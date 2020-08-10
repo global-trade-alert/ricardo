@@ -4,6 +4,10 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
   hints.id = unique(hints.id)
   hints.id=hints.id[!is.na(hints.id)]
   
+  if(relevance==1){
+    discard=NA
+    discard.comment=NA
+    }
   pull.intervention.attributes = sprintf(paste0("SELECT gta_ids.hint_id, ht_ass.assessment_id, ht_int.apparent_intervention_id AS intervention_id, 
                                                   prod_grp.product_group_id, ht_jur.jurisdiction_id, ht_rlvnt.relevance, bt_hint_date.`date`, bt_hint_date.date_type_id, ht_dis.discard_reason_id, ht_dis.discard_reason_comment 
                                                   FROM (SELECT bt_hint_log.hint_id FROM bt_hint_log WHERE bt_hint_log.hint_id IN (%s) AND bt_hint_log.gta_id IS NOT NULL) gta_ids 
@@ -45,7 +49,7 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
                           JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id 
                           JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id 
                           JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
-                          JOIN b221_collection_discard_reasons cltn_dis ON cltn_dis.collection_id = cltn_log.collection_id
+                          LEFT JOIN b221_collection_discard_reasons cltn_dis ON cltn_dis.collection_id = cltn_log.collection_id
                           LEFT JOIN b221_collection_date col_date ON col_date.collection_id = cltn_log.collection_id LEFT JOIN bt_date_type_list ON col_date.date_type_id = bt_date_type_list.date_type_id;")
     collectionStats <- gta_sql_get_value(query)
     collectionStats <<- collectionStats
@@ -57,7 +61,7 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
         setdiff(union(assessment, collectionStats$assessment.id),intersect(assessment, collectionStats$assessment.id)),
         setdiff(union(product, collectionStats$product.group.id),intersect(product, collectionStats$product.group.id)),
         setdiff(union(discard, collectionStats$discard.reason.id),intersect(discard, collectionStats$discard.reason.id)),
-        setdiff(union(discard, collectionStats$discard.reason.comment),intersect(discard.comment, collectionStats$discard.reason.comment)),
+        setdiff(union(discard.comment, collectionStats$discard.reason.comment),intersect(discard.comment, collectionStats$discard.reason.comment)),
         setdiff(union(as.character(announcement.date), as.character(na.omit(collectionStats$announcement.date))), intersect(as.character(announcement.date), as.character(na.omit(collectionStats$announcement.date)))),
         setdiff(union(as.character(implementation.date), as.character(na.omit(collectionStats$implementation.date))), intersect(as.character(implementation.date), as.character(na.omit(collectionStats$implementation.date)))),
         setdiff(union(as.character(removal.date), as.character(na.omit(collectionStats$removal.date))), intersect(as.character(removal.date), as.character(na.omit(collectionStats$removal.date))))
