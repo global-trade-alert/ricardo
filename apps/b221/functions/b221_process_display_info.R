@@ -210,11 +210,10 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           
                           INSERT INTO bt_hint_url(hint_id, url_id, url_type_id, classification_id, url_accepted, validation_classification)
                           SELECT changes_w_url_type.hint_id, bt_url_log.url_id, changes_w_url_type.url_type_id, @classification_id AS classification_id, NULL AS url_accepted, NULL AS validation_classification
-                          FROM (SELECT DISTINCT changes.hint_id, changes.url, changes.in_collection, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
+                          FROM (SELECT DISTINCT changes.hint_id, changes.url, (CASE WHEN changes.is_official = 1 THEN (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'official') ELSE (SELECT url_type_id FROM bt_url_type_list WHERE url_type_name = 'news') END) AS url_type_id
                           FROM b221_temp_changes_data_",user.id," changes) changes_w_url_type
                           JOIN bt_url_log ON changes_w_url_type.url = bt_url_log.url
-                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id AND ht_url.validation_classification IS NULL)
-                          AND changes_w_url_type.in_collection = 0;
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_url ht_url WHERE ht_url.hint_id = changes_w_url_type.hint_id AND ht_url.url_id = bt_url_log.url_id AND ht_url.url_type_id = changes_w_url_type.url_type_id AND ht_url.validation_classification IS NULL);
                           
                           INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
                           SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, changes.relevance, NULL as relevance_probability, NULL as relevance_accepted, NULL as validation_classification
@@ -227,21 +226,8 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           NULL AS reason_accepted, NULL AS validation_classification
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN bt_discard_reason_list dis_list ON changes.discard_reason = dis_list.discard_reason_name 
-                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason dis_hint WHERE dis_hint.hint_id = changes.hint_id AND dis_hint.discard_reason_id = dis_list.discard_reason_id AND dis_hint.discard_reason_comment COLLATE utf8mb4_general_ci <=> changes.discard_reason_comment AND dis_hint.validation_classification IS NULL)
-                          AND changes.in_collection = 0;
-                          
-                          DELETE bt_hint_discard_reason
-                          FROM (SELECT * FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes
-                          LEFT JOIN bt_hint_discard_reason ON changes.hint_id = bt_hint_discard_reason.hint_id
-                          WHERE 1 = 1;
-                          
-                          INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_classification )
-                        	SELECT DISTINCT changes.hint_id, @classification_id as classification_id,
-                        	bdr.discard_reason_id, changes.discard_reason_comment, 
-                        	NULL AS reason_accepted, NULL AS validation_classification
-                        	FROM b221_temp_changes_data_",user.id," AS changes
-                        	JOIN bt_discard_reason_list bdr ON changes.discard_reason = bdr.discard_reason_name
-                        	WHERE changes.in_collection = 0;
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason dis_hint WHERE dis_hint.hint_id = changes.hint_id AND dis_hint.discard_reason_id = dis_list.discard_reason_id AND dis_hint.discard_reason_comment <=> changes.discard_reason_comment AND dis_hint.validation_classification IS NULL)
+                          AND changes.in_collection = 0 AND changes.relevance = 0;
                           
                           UPDATE bt_hint_log
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id
@@ -430,6 +416,6 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
   }
   
   gta_sql_multiple_queries(push.updates, output.queries = 1, show.time = T, db.connection = 'pool')
-  gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
+  # gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
   
 }
