@@ -250,7 +250,7 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           
                           INSERT INTO b221_hint_comment_log(hint_id, user_id, comment, time_stamp)
                           SELECT DISTINCT changes.hint_id, ",user.id," AS user_id, comment, CONVERT_TZ(NOW(),'UTC','CET') AS time_stamp FROM b221_temp_changes_data_",user.id," changes
-                          WHERE comment IS NOT NULL AND NOT EXISTS (SELECT NULL FROM b221_hint_comment_log cmt_log WHERE cmt_log.hint_id = changes.hint_id AND changes.comment COLLATE utf8mb4_general_ci = cmt_log.comment);
+                          WHERE comment IS NOT NULL AND NOT EXISTS (SELECT NULL FROM b221_hint_comment_log cmt_log WHERE cmt_log.hint_id = changes.hint_id AND changes.comment = cmt_log.comment);
                           
                           INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
                           SELECT DISTINCT changes.hint_id, @classification_id AS classification_id, ass_list.assessment_id, NULL AS assessment_accepted, NULL AS validation_classification
@@ -380,22 +380,23 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           bdr.discard_reason_id, changes.discard_reason_comment, 
                           NULL AS reason_accepted, NULL AS validation_classification
                           FROM b221_temp_changes_data_",user.id," AS changes
-                          JOIN bt_discard_reason_list bdr ON changes.discard_reason COLLATE utf8mb4_general_ci = bdr.discard_reason_name
-                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason bt_dis WHERE bt_dis.hint_id = changes.hint_id AND bt_dis.discard_reason_id = bdr.discard_reason_id AND bt_dis.discard_reason_comment COLLATE utf8mb4_general_ci <=> changes.discard_reason_comment AND bt_dis.validation_classification IS NULL)
-                          AND changes.in_collection = 0;
+                          JOIN bt_discard_reason_list bdr ON changes.discard_reason = bdr.discard_reason_name
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason bt_dis WHERE bt_dis.hint_id = changes.hint_id AND bt_dis.discard_reason_id = bdr.discard_reason_id AND bt_dis.discard_reason_comment <=> changes.discard_reason_comment AND bt_dis.validation_classification IS NULL)
+                          AND changes.in_collection = 0 AND changes.relevance = 0;
                           
                           UPDATE bt_hint_discard_reason bt_dis
-                          JOIN (SELECT DISTINCT hint_id FROM b221_temp_changes_data_",user.id,") changed_hints ON bt_dis.hint_id = changed_hints.hint_id AND bt_dis.validation_classification IS NULL
+                          JOIN (SELECT DISTINCT hint_id, relevance FROM b221_temp_changes_data_",user.id,") changed_hints ON bt_dis.hint_id = changed_hints.hint_id AND bt_dis.validation_classification IS NULL AND changed_hints.relevance = 0
                           JOIN bt_discard_reason_list dis_list ON bt_dis.discard_reason_id = dis_list.discard_reason_id
-                          LEFT JOIN (SELECT DISTINCT hint_id, discard_reason, discard_reason_comment FROM b221_temp_changes_data_",user.id,") changes ON bt_dis.hint_id = changes.hint_id AND bt_dis.discard_reason_comment COLLATE utf8mb4_general_ci <=> changes.discard_reason_comment AND changes.discard_reason COLLATE utf8mb4_general_ci = dis_list.discard_reason_name AND bt_dis.validation_classification IS NULL
+                          LEFT JOIN (SELECT DISTINCT hint_id, discard_reason, discard_reason_comment FROM b221_temp_changes_data_",user.id,") changes ON bt_dis.hint_id = changes.hint_id AND bt_dis.discard_reason_comment <=> changes.discard_reason_comment AND changes.discard_reason = dis_list.discard_reason_name AND bt_dis.validation_classification IS NULL
                           SET bt_dis.validation_classification = @classification_id,
                           bt_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
                           bt_dis.confirm_status = ", confirm_status, ";
                           
                           UPDATE bt_hint_log
-                          JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id
-                          SET bt_hint_log.hint_state_id = (CASE WHEN changes.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
-                          (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+                          JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, is_official, relevance FROM b221_temp_changes_data_",user.id,") changes ON changes.hint_id = bt_hint_log.hint_id
+                          SET bt_hint_log.hint_state_id = (CASE WHEN (changes.is_official = 0 AND changes.relevance = 1) THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'OSC - freelancer desk') 
+                          	  WHEN (changes.is_official = 1 AND changes.relevance = 1) THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'BT - ready for dispatch') 
+                          	  ELSE (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - fully processed') END);")
     
     
     if(text.modifiable == T){
@@ -408,8 +409,8 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                             (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification) AS newest_classification 
                             FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id 
                             AND bt_hint_text.language_id = 1 AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) ht_txt 
-                            WHERE ht_txt.hint_id = changes.hint_id AND ht_txt.hint_description COLLATE utf8mb4_general_ci = changes.hint_description 
-                            AND ht_txt.hint_title COLLATE utf8mb4_general_ci = changes.title);")
+                            WHERE ht_txt.hint_id = changes.hint_id AND ht_txt.hint_description = changes.hint_description 
+                            AND ht_txt.hint_title = changes.title);")
       
     }
     
