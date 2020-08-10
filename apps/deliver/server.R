@@ -610,8 +610,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
    in.collections <- switch(length(unique(collectionData$collection.id))>0, as.numeric(unique(collectionData$hint.id)), NULL)
    nr.collections <- switch(length(unique(collectionData$collection.id))>0, as.numeric(unique(collectionData$collection.id)), NULL)
    
+
+   
    # no hint in collection -> create a new collection with these hints
-   if (is.null(in.collections)) {
+   # multiple collections, but because starred hint not in collection -> create new collection
+   if (is.null(in.collections) | (length(nr.collections)>1 & ! starredHint %in% in.collections) ) {
      
      # Get infos from starred hint to create collection attributes
      starred.info <- paste0("SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, jur_list.jurisdiction_id, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_id, cltn_log.collection_id, cltn_log.collection_name,
@@ -641,6 +644,9 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                               LEFT JOIN bt_hint_state_act as ht_act ON ht_act.hint_id = ht_log.hint_id 
                               GROUP BY ht_log.hint_id;")
      
+     if (is.null(in.collections)) {
+     
+       starred.info <- gta_sql_get_value(starred.info)
      colName <- paste0(starred.info$jurisdiction.name,": ",starred.info$hint.title," ", lubridate::month(starred.info$hint.date),"/",lubridate::year(starred.info$hint.date))
      attributes = bt_find_collection_attributes(new.collection.name = colName, 
                                                 hints.id = c(starredHint, duplicates), 
@@ -657,6 +663,31 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                                 removal.date = starred.info$removal.date)
      
      hintIds <- c(starredHint, duplicates)
+       
+     } else {
+       # FOURTH CASE, MORE THAN ONE COLLETIONS PRESENT, BUT NONE IS STARRED 
+       starred.info <- gta_sql_get_value(starred.info)
+       colName <- paste0(starred.info$jurisdiction.name,": ",starred.info$hint.title," ", lubridate::month(starred.info$hint.date),"/",lubridate::year(starred.info$hint.date))
+       attributes = bt_find_collection_attributes(new.collection.name = colName, 
+                                                  hints.id = c(starredHint, duplicates), 
+                                                  starred.hint.id = starredHints, 
+                                                  country = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$jurisdiction.id)), " ; "))),
+                                                  product = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$product.group.id)), " ; "))),
+                                                  intervention = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$intervention.type)), " ; "))),
+                                                  assessment = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$assessment.id)), " ; "))),
+                                                  relevance = 1, 
+                                                  discard = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$discard.reason.id)), " ; "))),
+                                                  discard.comment = NULL, # still to do
+                                                  announcement.date = starred.info$announcement.date, 
+                                                  implementation.date = starred.info$implementation.date, 
+                                                  removal.date = starred.info$removal.date)
+       
+       hintIds <- unique(c(starredHint, in.collections, duplicates))
+       
+       
+       colName <- paste0(starred.info$jurisdiction.name,": ",starred.info$hint.title," ", lubridate::month(starred.info$hint.date),"/",lubridate::year(starred.info$hint.date))
+     }
+     
                                                      
      # if collection is existing
    } else {
@@ -669,15 +700,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
        
        # More than one collection -> Create new collection from all hints in all collections
      } else {
+       
        # if starred hint in existing collection already -> move all hints from other collections to the starred one
-       if(starredHint %in% in.collections) {
-         
          get.collection <- collectionData$collection.id[collectionData$hint.id == starredHint]
          hintIds <- unique(c(starredHint, in.collections, duplicates))
          
-       } else {
-         # FOURTH CASE, MORE THAN ONE COLLETIONS PRESENT, BUT NONE IS STARRED 
-       }
      }
      
      # get attributes of collection to be adjusted
