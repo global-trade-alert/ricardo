@@ -1,5 +1,5 @@
-b221_process_display_info=function(is.freelancer = NULL, is.superuser = NULL, user.id = NULL, processed.rows = NULL, 
-                                   is.in.collection = NULL, text.modifiable = NULL){
+b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.id = NULL, processed.rows = NULL, 
+                                   is.in.collection = F, text.modifiable = F){
   
   # could be fancier and make sure that new submissions are not identical to previous ones but i have left this aside for now, it would be a where not exists statement which groups the attributes and compares the highest validation_classification with the new submission
   setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate'),
