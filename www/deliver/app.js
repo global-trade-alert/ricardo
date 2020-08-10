@@ -56,6 +56,8 @@ $( document ).ready(function() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('save-cols is loaded')
       let colnames = await buttonsClicks.getAllColumnsNames();
+      colnames = colnames.filter(d => /^(entry id|initial assessment|products|documentation status|jurisdiction|gta intervention type|announcement date|implementation date|removal date|source|instruments)$/gi.test(d.name)); //pre-filter all columns
+      
       colnames.forEach(function(d, i) {
         let checked = /confirmation|users|description/gi.test(d.name) ? false : true; //untick some cols initially
         let input = $('<input />')
@@ -369,10 +371,15 @@ const buttonsClicks = {
         changedData.push({index: row.index, dataNew: data.find(x => x.index === index).data, dataOld: row.data.replace(/(\r\n|\n|\r)/gm, ""), hintId: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 1).data(), isIntervention: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 24).data()});
       }
     });
+
     if (changedData.length > 0) {
       print("has changes");
       Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
       
+      //convert to confirmed
+      $(`tr#${id}`).removeClass(currentStatus).addClass('confirmed').find('.status-label').text('confirmed');
+      $(`tr#${id}`).find('.accept').remove();
+      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
       $(`tr#${id}`).removeClass(currentStatus);
       $(`tr#${id}`).addClass('edited');
       $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
@@ -383,6 +390,7 @@ const buttonsClicks = {
       this.updateSearchPanes();
       this.rowAttachEvents(currentStatus, id);
     }
+
 
 },
   getRowData: function(id){
@@ -473,7 +481,7 @@ const buttonsClicks = {
           OK: function() {
             let selected = $('select#reason').selectize()[0].selectize.getValue(),
             other = $('#prompt-form textarea').val(),
-            reasons = selected.concat(other).filter(d => d != '').join(',');
+            reasons = selected.concat(other).filter(d => d != '').join(';');
             
             if (reasons.length == 0){
               $('#other').addClass( "prompt-error" );
@@ -481,6 +489,12 @@ const buttonsClicks = {
             } else {
               that.convertToDeleted(currentStatus, id);
               $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              Shiny.setInputValue("deliver-discardHint", JSON.stringify({
+                hintId: id, 
+                reasons: selected.concat(other).filter(d => d != ''), 
+                comment: other == "" ? null : other
+                
+              }), {priority: "event"});
               $(this).dialog( "close" );
               that.redrawDataTable();
               that.updateSearchPanes();
@@ -515,7 +529,7 @@ const buttonsClicks = {
         if ($(this).is(':checked'))
           columns.push({ index: $(this).attr('id').match(/\d+/gi)[0], name: $(this).siblings('label').html() })
     });
-    data.forEach(function(d,i){
+    /*data.forEach(function(d,i){
       let row = {};
       d.map(function(d1,i1){
         columns.map(function(d2){
@@ -525,8 +539,9 @@ const buttonsClicks = {
       })
       output.push(row)
     })
-    console.log(output)
-    Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(output), {priority: "event"});
+    console.log(output)*/
+    console.log(columns)
+    Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(columns), {priority: "event"});
   }
 };
 

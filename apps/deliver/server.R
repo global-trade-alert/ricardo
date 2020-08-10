@@ -38,6 +38,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output_test <<- output
   })
   
+  
   observe({
     products_unique <-
       gta_sql_get_value("SELECT DISTINCT product_group_name FROM b221_product_group_list;")
@@ -47,7 +48,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       gta_sql_get_value("SELECT DISTINCT jurisdiction_name FROM gta_jurisdiction_list;")
     assessment_unique <-
       gta_sql_get_value("SELECT DISTINCT assessment_name FROM b221_assessment_list;")
-    discard_reason <- list('reason1', 'reason2', 'reason3', 'reason4', 'reason5', 'reason6')
+    discard_reason <- gta_sql_get_value("SELECT DISTINCT discard_reason_name FROM bt_discard_reason_list;")
     
     # print(list(Products = products_unique,
     #            Instruments = instruments_unique,
@@ -487,27 +488,36 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   ),
   server = F)
   
+  # EXPORT XLSX ----------------------------------------------------------------
   observeEvent(input$saveXlsx, {
-    export <- jsonlite::fromJSON(input$saveXlsx)
+    exportCols <- jsonlite::fromJSON(input$saveXlsx)
+    exportCols <- merge(exportCols, change_attribute_table, by="index", keep.x=T) %>%
+      rename('name_new' = name.x, 'name_old' = name.y)
     
-    print(export)
-    export <- export %>%
-      mutate('Product: medical consumables' = if('Products' %in% names(.)) str_detect(Products, 'medical consumables') else NULL,
-             'Product: Medical equipment' = if('Products' %in% names(.)) str_detect(Products, 'medical equipment.') else NULL,
-             'Product: Medicines or drugs' = if('Products' %in% names(.)) str_detect(Products, 'medicines or drugs') else NULL,
-             'Product: Food' = if('Products' %in% names(.)) str_detect(Products, 'food') else NULL,
-             'Product: Any medical product' = if('Products' %in% names(.)) str_detect(Products, 'uncertain') else NULL,
-             'Product: other' = if('Product' %in% names(.)) str_detect(Products, 'other') else NULL,
-             'Is export barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export barrier') else NULL,
-             'Is import barrier' = if('Instruments' %in% names(.)) str_detect(Instruments, 'import barrier') else NULL,
-             'Domestic subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'domestic subsidy') else NULL,
-             'Export subsidy' = if('Instruments' %in% names(.)) str_detect(Instruments, 'export subsidy') else NULL) %>%
-      select(!any_of(c('Products', 'Instruments')))
-    
-    data_export <<- list("WB data" = export, "Notes" = c('Data as available on CURRENTTIME.'))
-    
+      output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
+      
+      output_xlsx <- output_xlsx %>%
+        mutate(gta.intervention.type = "GTA intervention type") %>%
+        select(exportCols$name_old) %>%
+        mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
+               'Product: Medical equipment' = ifelse(str_detect(`product.group.name`, 'medical equipment'), 'TRUE', 'FALSE'),
+               'Product: Medicines or drugs' = ifelse(str_detect(`product.group.name`, 'medicines or drugs'), 'TRUE', 'FALSE'),
+               'Product: Food' = ifelse(str_detect(`product.group.name`, 'food'), 'TRUE', 'FALSE'),
+               'Product: Any medical product' = ifelse(str_detect(`product.group.name`, 'uncertain'), 'TRUE', 'FALSE'),
+               'Product: other' = ifelse(str_detect(`product.group.name`, 'other'), 'TRUE', 'FALSE'),
+               'Is export barrier' = ifelse(str_detect(`intervention.type.name`, 'export barrier'), 'TRUE', 'FALSE'),
+               'Is import barrier' = ifelse(str_detect(`intervention.type.name`, 'import barrier'), 'TRUE', 'FALSE'),
+               'Domestic subsidy' = ifelse(str_detect(`intervention.type.name`, 'domestic subsidy'), 'TRUE', 'FALSE'),
+               'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE'))
+      
+      setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
+      output_xlsx <- output_xlsx %>%
+        select(!any_of(c('product.group.name', 'intervention.type.name')))
+
+    data_export <<- list("WB data" = output_xlsx, "Notes" = c('Data as available on CURRENTTIME.'))
     runjs("$('#deliver-downloadXlsx')[0].click();
            $('.overlay').click();")
+
   })
   
   output$downloadXlsx <- downloadHandler(
@@ -549,6 +559,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     
   })
   
+  # CONFIRM HINT ---------------------------------------------------------------
   observeEvent(input$confirmHint, {
     confirmedHint <<- jsonlite::fromJSON(input$confirmHint)
     print(confirmedHint)
@@ -572,6 +583,22 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     dlvr_confirm_status(confirm.table=confirmedHint_classifications)
   })
   
+  # DISCARD HINT ---------------------------------------------------------------
+  observeEvent(input$discardHint, {
+    discardedHint <<- jsonlite::fromJSON(input$discardHint)
+    print(discardedHint)
+    change.id = as.numeric(unique(discardedHint$hintId))
+    
+    b221_hint_change_attribute(change.id=change.id,
+                               user.id = user$id,
+                               is.superuser=T,
+                               is.intervention=F,
+                               intervention.modifiable=T,
+                               add.discard.reason = discardedHint$reasons,
+                               modify.discard.comment = discardedHint$comment
+                              )
+    })
+
   observeEvent(input$duplicateRows, {
    print("Duplicate rows")
    duplicateData <- jsonlite::fromJSON(input$duplicateRows)
