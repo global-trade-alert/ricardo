@@ -265,7 +265,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
           select(hint.id, relevance, jurisdiction.id, product.group.id, intervention.id, assessment.id, url.id, is.official, comment, implementationdate, announcementdate, removaldate,
                  hint.title, hint.description, discard.reason.id, discard.reason.comment) %>%
           setnames(c('id','clicked','country','product','intervention','assessment','url','official','comment',
-                     'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard.reason', 'discard.reason.comment'))
+                     'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard_reasons','discard_comment'))
         test_ht <<- output
         
         #if(output$clicked == 0 & is.na(output$discard.reason)){ stop(paste0('The hint ', output$id, ' is marked as irrelevant, please add the discard reasons!')) }
