@@ -41,11 +41,12 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
 
   
   if(is.superuser == T){
-    sql.adjust.conflicts = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
-                              						
-                                  INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                  SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
-                                                               
+    classification.id <- gta_sql_get_value(paste0("SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE();"))
+    classification.id_test <<- classification.id
+       sql.adjust.conflicts = paste0(" SET @classification_id =",classification.id,";
+                                    INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
+                                    SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;                                                              
+                                  
                                   SET @conflict_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_conflict_log' AND table_schema=DATABASE());
                                   				
                                   INSERT INTO bt_conflict_log(conflict_id, conflict_creation)
@@ -235,13 +236,18 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
   } else {
     confirm_status = ifelse(is.null(is.superuser) || is.superuser == FALSE, 0, 1)
+    if(confirm_status == 0){
+      classification.id = 'NULL'
+    } 
     processed.rows$was.modified = 1
     push.updates = paste0("/* EDITOR UPLOAD */
-                          SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
-                          
+                          SET @classification_id = (CASE WHEN ",classification.id," IS NULL THEN (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE()) ELSE ",classification.id," END);
+
                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                          SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
-                          
+                          SELECT classification_id, user_id, hint_state_id, time_stamp FROM (
+                          SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp) bt_cl
+                          WHERE NOT EXISTS (SELECT NULL FROM bt_classification_log WHERE bt_classification_log.classification_id = bt_cl.classification_id);
+                                                  
                           UPDATE b221_temp_changes_data_",user.id," changes
                           LEFT JOIN b221_hint_collection ON b221_hint_collection.hint_id = changes.hint_id 
                           SET changes.in_collection = (CASE WHEN b221_hint_collection.collection_id IS NOT NULL THEN 1 ELSE 0 END);
