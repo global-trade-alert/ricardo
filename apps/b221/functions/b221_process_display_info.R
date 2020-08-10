@@ -1,5 +1,5 @@
-b221_process_display_info=function(is.freelancer = NULL, is.superuser = NULL, user.id = NULL, processed.rows = NULL, 
-                                   is.in.collection = NULL, text.modifiable = NULL){
+b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.id = NULL, processed.rows = NULL, 
+                                   is.in.collection = F, text.modifiable = F){
   
   # could be fancier and make sure that new submissions are not identical to previous ones but i have left this aside for now, it would be a where not exists statement which groups the attributes and compares the highest validation_classification with the new submission
   setnames(processed.rows, c('id','clicked','country','product','intervention','assessment','url','official','comment','implementationdate','announcementdate','removaldate'),
@@ -41,12 +41,12 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = NULL, us
 
   
   if(is.superuser == T){
-    sql.adjust.conflicts = paste("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
+    sql.adjust.conflicts = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
                               						
                                   INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                   SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
                                                                
-                                  SET @conflict_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_conflict_log');
+                                  SET @conflict_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_conflict_log' AND table_schema=DATABASE());
                                   				
                                   INSERT INTO bt_conflict_log(conflict_id, conflict_creation)
                                   SELECT @conflict_id AS conflict_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS conflict_creation;

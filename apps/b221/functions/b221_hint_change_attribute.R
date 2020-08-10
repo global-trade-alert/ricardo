@@ -38,6 +38,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                      modify.title=NULL,
                                      modify.description=NULL,
                                      modify.discard.comment=NULL,
+                                     add.comment=NULL,
                                      add.instrument=NULL,
                                      remove.instrument=NULL,
                                      add.product=NULL,
@@ -67,7 +68,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
   pull.hint.attributes = sprintf(paste0("	SELECT DISTINCT change_ids.hint_id, ht_ass.assessment_id, ht_int.apparent_intervention_id AS intervention_id, 
                                         	prod_grp.product_group_id, ht_jur.jurisdiction_id, ht_rlvnt.relevance, bt_hint_date.`date`, bt_hint_date.date_type_id,
                                         	bt_hint_url.url_id, bt_hint_url.url_type_id, bt_hint_text.hint_title, bt_hint_text.hint_description ,
-                                        	bt_hint_discard_reason.discard_reason_id, bt_hint_discard_reason.discard_reason_comment, b221_hint_comment_log.comment FROM 
+                                        	bt_hint_discard_reason.discard_reason_id, bt_hint_discard_reason.discard_reason_comment FROM 
                                         	(SELECT bt_hint_log.hint_id FROM bt_hint_log WHERE bt_hint_log.hint_id IN (%s)) change_ids 
                                         	LEFT JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON ht_ass.hint_id = change_ids.hint_id AND ht_ass.assessment_accepted = 1
                                         	LEFT JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = change_ids.hint_id AND ht_int.intervention_accepted = 1
@@ -77,8 +78,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                         	LEFT JOIN (SELECT bt_hint_date.hint_id, bt_hint_date.`date`, bt_hint_date.date_type_id, bt_hint_date.date_accepted FROM bt_hint_date JOIN (SELECT bt_hint_date.hint_id, MAX(bt_hint_date.validation_classification) AS newest_classification FROM bt_hint_date GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_date.hint_id AND newest_classification.newest_classification <=> bt_hint_date.validation_classification) bt_hint_date ON bt_hint_date.hint_id = change_ids.hint_id AND bt_hint_date.date_accepted = 1
                                         	LEFT JOIN (SELECT bt_hint_url.hint_id, bt_hint_url.url_id , bt_hint_url.url_type_id , bt_hint_url.url_accepted FROM bt_hint_url JOIN (SELECT bt_hint_url.hint_id, MAX(bt_hint_url.validation_classification ) AS newest_classification FROM bt_hint_url GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_url.hint_id AND newest_classification.newest_classification <=> bt_hint_url.validation_classification) bt_hint_url ON bt_hint_url.hint_id = change_ids.hint_id AND bt_hint_url.url_accepted = 1
                                         	LEFT JOIN (SELECT bt_hint_text.hint_id, bt_hint_text.hint_title , bt_hint_text.hint_description , bt_hint_text.description_accepted FROM bt_hint_text JOIN (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification ) AS newest_classification FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) bt_hint_text ON bt_hint_text.hint_id = change_ids.hint_id AND bt_hint_text.description_accepted = 1
-                                        	LEFT JOIN (SELECT bt_hint_discard_reason.hint_id, bt_hint_discard_reason.discard_reason_id, bt_hint_discard_reason.discard_reason_comment, bt_hint_discard_reason.reason_accepted FROM bt_hint_discard_reason JOIN (SELECT bt_hint_discard_reason.hint_id, MAX(bt_hint_discard_reason.validation_classification ) AS newest_classification FROM bt_hint_discard_reason GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_discard_reason.hint_id AND newest_classification.newest_classification <=> bt_hint_discard_reason.validation_classification) bt_hint_discard_reason ON bt_hint_discard_reason.hint_id = change_ids.hint_id AND bt_hint_discard_reason.reason_accepted = 1
-                                        	LEFT JOIN b221_hint_comment_log ON change_ids.hint_id = b221_hint_comment_log.hint_id;"),ifelse(paste0(change.id, collapse = ',')=='',"NULL",paste0(change.id, collapse = ',')))
+                                        	LEFT JOIN (SELECT bt_hint_discard_reason.hint_id, bt_hint_discard_reason.discard_reason_id, bt_hint_discard_reason.discard_reason_comment, bt_hint_discard_reason.reason_accepted FROM bt_hint_discard_reason JOIN (SELECT bt_hint_discard_reason.hint_id, MAX(bt_hint_discard_reason.validation_classification ) AS newest_classification FROM bt_hint_discard_reason GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_discard_reason.hint_id AND newest_classification.newest_classification <=> bt_hint_discard_reason.validation_classification) bt_hint_discard_reason ON bt_hint_discard_reason.hint_id = change_ids.hint_id AND bt_hint_discard_reason.reason_accepted = 1;"),ifelse(paste0(change.id, collapse = ',')=='',"NULL",paste0(change.id, collapse = ',')))
   pull.hint.attributes = gta_sql_get_value(pull.hint.attributes)
   
   #pull.hint.attributes = merge(pull.hint.attributes, col.id, by = 'hint.id')
@@ -105,6 +105,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
       mapvalues(unlist(x), date.type$date.type.id, date.type$date.type.name, warn_missing = F)
     }) %>%
     mutate(is.official = NA_character_,
+           comment = NA_character_,
            announcementdate = ifelse(date.type.id == 'announcement', date, NA_character_),
            implementationdate = ifelse(date.type.id == 'implementation', date, NA_character_),
            removaldate = ifelse(date.type.id == 'remove', date, NA_character_)) %>%
@@ -141,6 +142,10 @@ b221_hint_change_attribute<-function(change.id=NULL,
     mutate_at(.vars = 'discard.reason.comment', .funs = function(x){
       discard.reason.comment = ifelse(is.null(modify.discard.comment), x, modify.discard.comment)
       return(discard.reason.comment)
+    }) %>%
+    mutate_at(.vars = 'comment', .funs = function(x){
+      comment = ifelse(is.null(add.comment), x, add.comment)
+      return(comment)
     }) %>%
     mutate_at(.vars = 'intervention.id', .funs = function(x) {
       intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
@@ -260,7 +265,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
           select(hint.id, relevance, jurisdiction.id, product.group.id, intervention.id, assessment.id, url.id, is.official, comment, implementationdate, announcementdate, removaldate,
                  hint.title, hint.description, discard.reason.id, discard.reason.comment) %>%
           setnames(c('id','clicked','country','product','intervention','assessment','url','official','comment',
-                     'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard.reason', 'discard.reason.comment'))
+                     'implementationdate','announcementdate','removaldate', 'title', 'hint.description', 'discard_reasons','discard_comment'))
         test_ht <<- output
         
         #if(output$clicked == 0 & is.na(output$discard.reason)){ stop(paste0('The hint ', output$id, ' is marked as irrelevant, please add the discard reasons!')) }
@@ -327,7 +332,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
         b221_process_collections_hints(is.freelancer = F,
                                        is.superuser = is.superuser,
                                        user.id = user.id,
-                                       collection.id = col.hints,
+                                       collection.id = output$collection.id,
                                        hints.id = output$hint.id,
                                        starred.hint.id = attributes$starred.hint.id,
                                        country = attributes$country,
