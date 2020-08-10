@@ -1,4 +1,4 @@
-b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NULL, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
+b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = F, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
                                         product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, announcement.date = NULL, implementation.date = NULL, removal.date = NULL, discard = NULL, discard.comment = NULL, collection.unchanged = NULL, empty.attributes = NULL){
   
   if(is.null(is.freelancer) | length(is.freelancer)!= 1 | !is.logical(is.freelancer) | is.na(is.freelancer)) stop('is.freelancer must be false if you are an editor, or true if you are a freelancer, no other value permitted')
@@ -366,7 +366,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NUL
                                         ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment AND ht_dis.validation_classification IS NULL
                                         SET ht_dis.validation_classification = @classification_id, 
                                         ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
-                                        ht_dis.confirm_status = ", confirm_status, ";;")
+                                        ht_dis.confirm_status = ", confirm_status, ";")
       
       if(is.freelancer){
         if(!any(is.na(new.hints)) & length(new.hints) != 0){
