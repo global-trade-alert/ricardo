@@ -1266,7 +1266,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   singleHints <- eventReactive(input$loadSingleHints, {
     print("SingleHintRefresh refresh")
     print(user$id)
-    singleHintOutput <- get_single_hints_infos(user.id = user$id)
+    ht_val = as.numeric(gsub("leadsID_| ","",input$loadSingleHints))
+    
+    initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",ht_val,");"))))
+    singleHintOutput <- get_single_hints_infos(user.id = user$id, jurisdiction.names = initialJurisdictions)
     # singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) stri_trans_general(x, "Any-ascii")))
     singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) gsub("<.*?>","",iconv(x, "", "ASCII", "byte"))))
     singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
@@ -1291,10 +1294,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     # removing active hint
     singleHintOutput=subset(singleHintOutput, ! hint.id %in% as.numeric(input$loadCollections))
     
-    ht_val = as.numeric(gsub("leadsID_| ","",input$loadSingleHints))
     
     ### SORTING FOR RELEVANCE
-    initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",ht_val,");"))))
     initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",ht_val,");"))))
     initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",ht_val,");"))))
     initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",ht_val,");"))))

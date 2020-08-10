@@ -588,7 +588,147 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                add.discard.reason = discardedHint$reasons,
                                modify.discard.comment = discardedHint$comment
                               )
+    })
 
+  observeEvent(input$duplicateRows, {
+   print("Duplicate rows")
+   duplicateData <- jsonlite::fromJSON(input$duplicateRows)
+   starredHint <- as.numeric(unique(duplicateData$starred))
+   duplicates <- as.numeric(unique(duplicateData$duplicate))
+   
+   # Check which hints are in collection
+   collectionData <- gta_sql_multiple_queries(paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE collection_id IN (SELECT DISTINCT collection_id FROM b221_hint_collection WHERE hint_id IN (",paste0(c(starredHint, duplicates), collapse=", "),"));"),output.queries = 1)
+   in.collections <- switch(length(unique(collectionData$collection.id))>0, as.numeric(unique(collectionData$hint.id)), NULL)
+   nr.collections <- switch(length(unique(collectionData$collection.id))>0, as.numeric(unique(collectionData$collection.id)), NULL)
+   
+   # no hint in collection -> create a new collection with these hints
+   if (is.null(in.collections)) {
+     
+     # Get infos from starred hint to create collection attributes
+     starred.info <- paste0("SELECT ht_log.hint_id, ht_log.hint_state_id, ht_log.acting_agency, ht_log.hint_date, jur_list.jurisdiction_name, jur_list.jurisdiction_id, ht_txt.hint_title, ht_txt.hint_description, ass_list.assessment_id, cltn_log.collection_id, cltn_log.collection_name,
+                              GROUP_CONCAT(DISTINCT int_list.intervention_type_id SEPARATOR ' ; ')  AS intervention_type, 
+                              GROUP_CONCAT(DISTINCT prod_list.product_group_id SEPARATOR ' ; ')  AS product_group_id,
+                              GROUP_CONCAT(DISTINCT discard_list.discard_reason_id SEPARATOR ' ; ')  AS discard_reason_id,
+                              GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
+                              GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='news', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS news,
+                              GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='consultancy', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS consultancy,
+                              GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='others', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS others,
+                              (CASE WHEN ht_log.gta_id IS NOT NULL THEN 1 ELSE 0 END) AS is_intervention,
+                              ht_act.state_act_id,
+                              MAX(IF(bt_date_type_list.date_type_name='announcement', bt_hint_date.date, NULL )) AS announcement_date,
+                              MAX(IF(bt_date_type_list.date_type_name='implementation', bt_hint_date.date, NULL )) AS implementation_date,
+                              MAX(IF(bt_date_type_list.date_type_name='removal', bt_hint_date.date, NULL )) AS removal_date
+                              FROM (SELECT ",starredHint," AS hint_id) my_hint
+                              JOIN bt_hint_log ht_log ON my_hint.hint_id = ht_log.hint_id
+                              LEFT JOIN (SELECT bt_hint_url.hint_id, bt_hint_url.url_id, bt_hint_url.url_type_id FROM bt_hint_url JOIN (SELECT bt_hint_url.hint_id, MAX(bt_hint_url.classification_id) AS newest_proposition, MAX(bt_hint_url.validation_classification) AS newest_validation FROM bt_hint_url WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_url.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) <=> IF(newest_classification.newest_validation IS NOT NULL,bt_hint_url.validation_classification,bt_hint_url.classification_id) AND (IF(newest_classification.newest_validation IS NOT NULL,bt_hint_url.url_accepted,1)=1 OR IF(newest_classification.newest_validation IS NOT NULL,bt_hint_url.url_accepted,NULL) IS NULL)) ht_url ON ht_url.hint_id = ht_log.hint_id JOIN bt_url_log ON ht_url.url_id = bt_url_log.url_id JOIN bt_url_type_list ON bt_url_type_list.url_type_id = ht_url.url_type_id
+                              LEFT JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.classification_id) AS newest_proposition, MAX(bt_hint_jurisdiction.validation_classification) AS newest_validation FROM bt_hint_jurisdiction WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) = IF(newest_classification.newest_validation IS NOT NULL,bt_hint_jurisdiction.validation_classification,bt_hint_jurisdiction.classification_id)) ht_jur ON ht_log.hint_id = ht_jur.hint_id AND (ht_jur.jurisdiction_accepted = 1 OR ht_jur.jurisdiction_accepted IS NULL) LEFT JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = ht_jur.jurisdiction_id
+                              LEFT JOIN (SELECT bt_hint_text.hint_id, bt_hint_text.hint_description, bt_hint_text.description_accepted, bt_hint_text.hint_title FROM bt_hint_text JOIN (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.classification_id) AS newest_proposition, MAX(bt_hint_text.validation_classification) AS newest_validation FROM bt_hint_text WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) = IF(newest_classification.newest_validation IS NOT NULL,bt_hint_text.validation_classification,bt_hint_text.classification_id)) ht_txt ON ht_txt.hint_id = ht_log.hint_id AND (ht_txt.description_accepted = 1 OR ht_txt.description_accepted IS NULL) 
+                              LEFT JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.classification_id) AS newest_proposition, MAX(b221_hint_assessment.validation_classification) AS newest_validation FROM b221_hint_assessment WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) = IF(newest_classification.newest_validation IS NOT NULL,b221_hint_assessment.validation_classification,b221_hint_assessment.classification_id)) ht_ass ON ht_ass.hint_id = ht_log.hint_id AND (ht_ass.assessment_accepted = 1 OR ht_ass.assessment_accepted IS NULL) LEFT JOIN b221_assessment_list ass_list ON ass_list.assessment_id = ht_ass.assessment_id
+                              LEFT JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.classification_id) AS newest_proposition, MAX(b221_hint_intervention.validation_classification) AS newest_validation FROM b221_hint_intervention WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) = IF(newest_classification.newest_validation IS NOT NULL,b221_hint_intervention.validation_classification,b221_hint_intervention.classification_id)) ht_int ON ht_int.hint_id = ht_log.hint_id AND (ht_int.intervention_accepted = 1 OR ht_int.intervention_accepted IS NULL) LEFT JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = ht_int.apparent_intervention_id
+                              LEFT JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.classification_id) AS newest_proposition, MAX(b221_hint_product_group.validation_classification) AS newest_validation FROM b221_hint_product_group WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) = IF(newest_classification.newest_validation IS NOT NULL,b221_hint_product_group.validation_classification,b221_hint_product_group.classification_id)) ht_prod_grp ON ht_prod_grp.hint_id = ht_log.hint_id AND (ht_prod_grp.product_group_assessment = 1 OR ht_prod_grp.product_group_assessment IS NULL) LEFT JOIN b221_product_group_list prod_list ON prod_list.product_group_id = ht_prod_grp.product_group_id
+                              LEFT JOIN (SELECT bt_hint_discard_reason.hint_id, bt_hint_discard_reason.discard_reason_id, bt_hint_discard_reason.reason_accepted FROM bt_hint_discard_reason JOIN (SELECT bt_hint_discard_reason.hint_id, MAX(bt_hint_discard_reason.classification_id) AS newest_proposition, MAX(bt_hint_discard_reason.validation_classification) AS newest_validation FROM bt_hint_discard_reason WHERE hint_id = ",starredHint," GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_discard_reason.hint_id AND IF(newest_classification.newest_validation IS NOT NULL,newest_classification.newest_validation,newest_classification.newest_proposition) = IF(newest_classification.newest_validation IS NOT NULL,bt_hint_discard_reason.validation_classification,bt_hint_discard_reason.classification_id)) ht_discard ON ht_discard.hint_id = ht_log.hint_id AND (ht_discard.reason_accepted = 1 OR ht_discard.reason_accepted IS NULL) LEFT JOIN bt_hint_discard_reason discard_list ON discard_list.discard_reason_id = ht_discard.discard_reason_id
+                              LEFT JOIN (SELECT bt_hint_date.hint_id, bt_hint_date.`date`, bt_hint_date.date_type_id, bt_hint_date.date_accepted, bt_hint_date.confirm_status, bt_hint_date.validation_classification FROM bt_hint_date JOIN (SELECT bt_hint_date.hint_id, MAX(bt_hint_date.validation_classification) AS newest_classification FROM bt_hint_date GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_date.hint_id AND newest_classification.newest_classification <=> bt_hint_date.validation_classification) bt_hint_date ON bt_hint_date.hint_id = ht_log.hint_id AND (bt_hint_date.date_accepted = 1 OR bt_hint_date.date_accepted IS NULL) LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.date_type_id
+                              LEFT JOIN b221_hint_collection ht_cltn ON ht_cltn.hint_id = ht_log.hint_id LEFT JOIN b221_collection_log cltn_log ON cltn_log.collection_id = ht_cltn.collection_id
+                              LEFT JOIN bt_hint_state_act as ht_act ON ht_act.hint_id = ht_log.hint_id 
+                              GROUP BY ht_log.hint_id;")
+     
+     colName <- paste0(starred.info$jurisdiction.name,": ",starred.info$hint.title," ", lubridate::month(starred.info$hint.date),"/",lubridate::year(starred.info$hint.date))
+     attributes = bt_find_collection_attributes(new.collection.name = colName, 
+                                                hints.id = c(starredHint, duplicates), 
+                                                starred.hint.id = starredHints, 
+                                                country = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$jurisdiction.id)), " ; "))),
+                                                product = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$product.group.id)), " ; "))),
+                                                intervention = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$intervention.type)), " ; "))),
+                                                assessment = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$assessment.id)), " ; "))),
+                                                relevance = 1, 
+                                                discard = as.numeric(unlist(strsplit(na.omit(as.character(starred.info$discard.reason.id)), " ; "))),
+                                                discard.comment = NULL, # still to do
+                                                announcement.date = starred.info$announcement.date, 
+                                                implementation.date = starred.info$implementation.date, 
+                                                removal.date = starred.info$removal.date)
+     
+     hintIds <- c(starredHint, duplicates)
+                                                     
+     # if collection is existing
+   } else {
+     
+     # Only one existing collection -> add remaining hints to that collection
+       if (length(nr.collections)==1) {
+       
+        get.collection <- nr.collections
+        hintIds <- unique(c(starredHint, in.collections, duplicates))
+       
+       # More than one collection -> Create new collection from all hints in all collections
+     } else {
+       # if starred hint in existing collection already -> move all hints from other collections to the starred one
+       if(starredHint %in% in.collections) {
+         
+         get.collection <- collectionData$collection.id[collectionData$hint.id == starredHint]
+         hintIds <- unique(c(starredHint, in.collections, duplicates))
+         
+       } else {
+         # FOURTH CASE, MORE THAN ONE COLLETIONS PRESENT, BUT NONE IS STARRED 
+       }
+     }
+     
+     # get attributes of collection to be adjusted
+     colattributes <- paste0("SELECT cltn_log.collection_id, cltn_log.collection_name, 
+                              GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_id) SEPARATOR ' ; ') AS jurisdiction_name,
+                              GROUP_CONCAT(DISTINCT(ass_list.assessment_id) SEPARATOR ' ; ') AS assessment_name,
+                              GROUP_CONCAT(DISTINCT(int_list.intervention_type_id) SEPARATOR ' ; ') AS intervention_type_name,
+                              GROUP_CONCAT(DISTINCT(prod_grp_list.product_group_id) SEPARATOR ' ; ') AS product_group_name,
+                              cltn_rel.relevance, cltn_star.hint_id AS starred_hint,
+                              MAX(IF(bt_date_type_list.date_type_name='announcement', col_date.date, NULL )) AS announcement_date,
+                              MAX(IF(bt_date_type_list.date_type_name='implementation', col_date.date, NULL )) AS implementation_date,
+                              MAX(IF(bt_date_type_list.date_type_name='removal', col_date.date, NULL )) AS removal_date
+                              FROM b221_collection_log cltn_log
+                              JOIN b221_collection_jurisdiction cltn_jur ON cltn_jur.collection_id = cltn_log.collection_id AND cltn_log.collection_id = ",get.collection," JOIN gta_jurisdiction_list jur_list ON jur_list.jurisdiction_id = cltn_jur.jurisdiction_id
+                              LEFT JOIN b221_collection_star cltn_star ON cltn_star.collection_id = cltn_log.collection_id
+                              JOIN b221_collection_assessment cltn_ass ON cltn_ass.collection_id = cltn_log.collection_id JOIN b221_assessment_list ass_list ON cltn_ass.assessment_id = ass_list.assessment_id
+                              JOIN b221_collection_intervention cltn_int ON cltn_int.collection_id = cltn_log.collection_id JOIN b221_intervention_type_list int_list ON int_list.intervention_type_id = cltn_int.intervention_type_id
+                              JOIN b221_collection_product_group cltn_prod ON cltn_prod.collection_id = cltn_log.collection_id JOIN b221_product_group_list prod_grp_list ON prod_grp_list.product_group_id = cltn_prod.product_group_id
+                              JOIN b221_collection_relevance cltn_rel ON cltn_rel.collection_id = cltn_log.collection_id
+                              LEFT JOIN b221_collection_date col_date ON col_date.collection_id = cltn_log.collection_id LEFT JOIN bt_date_type_list ON col_date.date_type_id = bt_date_type_list.date_type_id
+                              GROUP BY cltn_log.collection_id;")
+     
+     colattributes <- gta_sql_get_value(colattributes)
+     
+     attributes = bt_find_collection_attributes(collection.id = nr.collections, 
+                                                hints.id = hintIds, 
+                                                starred.hint.id = starredHint, 
+                                                country = as.numeric(unlist(strsplit(na.omit(as.character(colattributes$jurisdiction.name)), " ; "))), 
+                                                product = as.numeric(unlist(strsplit(na.omit(as.character(colattributes$product.group.name)), " ; "))), 
+                                                intervention = as.numeric(unlist(strsplit(na.omit(as.character(colattributes$intervention.type.name)), " ; "))), 
+                                                assessment = as.numeric(unlist(strsplit(na.omit(as.character(colattributes$assessment.name)), " ; "))), 
+                                                relevance = 1, 
+                                                discard = NULL, # still to do
+                                                discard.comment = NULL, # still to do
+                                                announcement.date = colattributes$announcement.date, 
+                                                implementation.date = colattributes$implementation.date, 
+                                                removal.date = colattributes$removal.date)
+     
+     colName <- colattributes$collection.name
+     
+   }
+   
+   collection.save =  b221_process_collections_hints(is.freelancer = F,
+                                                     user.id = user$id,
+                                                     new.collection.name = colName,
+                                                     hints.id = hintIds,
+                                                     starred.hint.id = attributes$starred.hint.id,
+                                                     country = attributes$country,
+                                                     product = attributes$product,
+                                                     intervention = attributes$intervention,
+                                                     assessment = attributes$assessment,
+                                                     discard = attributes$discard,
+                                                     discard.comment = attributes$discard.comment,
+                                                     announcement.date = attributes$announcement.date,
+                                                     implementation.date = attributes$implementation.date,
+                                                     removal.date = attributes$removal.date,
+                                                     relevance = 1,
+                                                     collection.unchanged = F,
+                                                     empty.attributes = F)
+   
   })
   
 }
