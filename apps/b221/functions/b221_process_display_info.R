@@ -45,92 +45,92 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
     classification.id_test <<- classification.id
        sql.adjust.conflicts = paste0(" SET @classification_id =",classification.id,";
                                     INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                    SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
-                                                                 
-                                    SET @conflict_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_conflict_log' AND table_schema=DATABASE());
-                                    				
-                                    INSERT INTO bt_conflict_log(conflict_id, conflict_creation)
-                                    SELECT @conflict_id AS conflict_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS conflict_creation;
-                                    
-                                    INSERT INTO bt_conflict_text(conflict_id, hint_id, conflict_title, conflict_description, conflict_status, resolution_classification)
-                                    SELECT DISTINCT @conflict_id AS conflict_id, ht_txt.hint_id, ht_txt.hint_title AS conflict_title, ht_txt.hint_description AS conflict_description, 1 AS conflict_status, NULL AS resolution_classification
-                                    FROM b221_temp_changes_data_",user.id," changes
-                                    JOIN (SELECT bt_hint_text.hint_id, bt_hint_text.hint_description, bt_hint_text.language_id, bt_hint_text.description_accepted, bt_hint_text.hint_title FROM bt_hint_text JOIN (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification) AS newest_classification FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) ht_txt ON ht_txt.hint_id = changes.hint_id
-                                    WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_text WHERE ht_txt.hint_id = bt_conflict_text.hint_id AND ht_txt.hint_description = bt_conflict_text.conflict_description);
-                                    
-                                    INSERT INTO bt_conflict_relevance(conflict_id, hint_id, relevance, conflict_status, resolution_classification)
-                                    SELECT DISTINCT @conflict_id AS conflict_id, ht_rlvnt.hint_id, ht_rlvnt.relevance, 1 AS conflict_status, NULL AS resolution_classification
-                                    FROM b221_temp_changes_data_",user.id," changes
-                                    JOIN (SELECT bt_hint_relevance.hint_id, bt_hint_relevance.relevance, bt_hint_relevance.relevance_accepted FROM bt_hint_relevance JOIN (SELECT bt_hint_relevance.hint_id, MAX(bt_hint_relevance.validation_classification) AS newest_classification FROM bt_hint_relevance GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_relevance.hint_id AND newest_classification.newest_classification <=> bt_hint_relevance.validation_classification) ht_rlvnt ON ht_rlvnt.hint_id = changes.hint_id 
-                                    WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_relevance WHERE ht_rlvnt.hint_id = bt_conflict_relevance.hint_id AND ht_rlvnt.relevance = bt_conflict_relevance.relevance);
-                                    
-                                    INSERT INTO bt_conflict_assessment(conflict_id, hint_id, conflict_assessment_id, conflict_status, resolution_classification)
-                                    SELECT DISTINCT @conflict_id AS conflict_id, ht_ass.hint_id, ht_ass.assessment_id AS conflict_assessment_id, 1 AS conflict_status, NULL AS resolution_classification
-                                    FROM b221_temp_changes_data_",user.id," changes
-                                    JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON changes.hint_id = ht_ass.hint_id
-                                    WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_assessment WHERE ht_ass.hint_id = bt_conflict_assessment.hint_id AND ht_ass.assessment_id = bt_conflict_assessment.conflict_assessment_id);
-                                    
-                                    INSERT INTO bt_conflict_jurisdiction(conflict_id, hint_id, conflict_jurisdiction_id, conflict_status, resolution_classification)
-                                    SELECT DISTINCT @conflict_id AS conflict_id, ht_jur.hint_id, ht_jur.jurisdiction_id AS conflict_jurisdiction_id, 1 AS conflict_status, NULL AS resolution_classification
-                                    FROM b221_temp_changes_data_",user.id," changes 
-                                    JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_jur.jurisdiction_id) ORDER BY ht_jur.jurisdiction_id ASC) AS new_values
-                                    FROM b221_temp_changes_data_",user.id," changes
-                                    JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = changes.hint_id
-                                    GROUP BY changes.hint_id) new_jur ON changes.hint_id = new_jur.hint_id
-                                    JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = changes.hint_id
-                                    WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_jurisdiction.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_jurisdiction.conflict_jurisdiction_id) ORDER BY bt_conflict_jurisdiction.conflict_jurisdiction_id ASC) AS existing_values FROM bt_conflict_jurisdiction GROUP BY bt_conflict_jurisdiction.conflict_id, bt_conflict_jurisdiction.hint_id) existing_jur WHERE new_jur.hint_id = existing_jur.hint_id AND new_jur.new_values = existing_jur.existing_values);
-                                    
-                                    INSERT INTO bt_conflict_product_group(conflict_id, hint_id, conflict_product_group_id, conflict_status, resolution_classification)
-                                    SELECT DISTINCT @conflict_id AS conflict_id, ht_prod.hint_id, ht_prod.product_group_id AS conflict_product_group_id, 1 AS conflict_status, NULL AS resolution_classification
-                                    FROM b221_temp_changes_data_",user.id," changes 
-                                    JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_prod.product_group_id) ORDER BY ht_prod.product_group_id ASC) AS new_values
-                                    FROM b221_temp_changes_data_",user.id," changes
-                                    JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) ht_prod ON ht_prod.hint_id = changes.hint_id
-                                    GROUP BY changes.hint_id) new_prod ON changes.hint_id = new_prod.hint_id
-                                    JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) ht_prod ON ht_prod.hint_id = changes.hint_id
-                                    WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_product_group.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_product_group.conflict_product_group_id) ORDER BY bt_conflict_product_group.conflict_product_group_id ASC) AS existing_values FROM bt_conflict_product_group GROUP BY bt_conflict_product_group.conflict_id, bt_conflict_product_group.hint_id) existing_prod WHERE new_prod.hint_id = existing_prod.hint_id AND new_prod.new_values = existing_prod.existing_values);
-                                    
-                                    INSERT INTO bt_conflict_intervention(conflict_id, hint_id, conflict_intervention_id, conflict_status, resolution_classification)
-                                    SELECT DISTINCT @conflict_id AS conflict_id, ht_int.hint_id, ht_int.intervention_type_id AS conflict_intervention_id, 1 AS conflict_status, NULL AS resolution_classification
-                                    FROM b221_temp_changes_data_",user.id," changes 
-                                    JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_int.intervention_type_id) ORDER BY ht_int.intervention_type_id ASC) AS new_values
-                                    FROM b221_temp_changes_data_",user.id," changes
-                                    JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id AS intervention_type_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = changes.hint_id
-                                    GROUP BY changes.hint_id) new_int ON changes.hint_id = new_int.hint_id
-                                    JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id AS intervention_type_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = changes.hint_id
-                                    WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_intervention.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_intervention.conflict_intervention_id) ORDER BY bt_conflict_intervention.conflict_intervention_id ASC) AS existing_values FROM bt_conflict_intervention GROUP BY bt_conflict_intervention.conflict_id, bt_conflict_intervention.hint_id) existing_int WHERE new_int.hint_id = existing_int.hint_id AND new_int.new_values = existing_int.existing_values);
-                                    
-                                    UPDATE bt_conflict_assessment ht_ass
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_ass.hint_id = changes.hint_id
-                                    SET ht_ass.resolution_classification = @classification_id, ht_ass.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_date ht_date
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_date.hint_id = changes.hint_id
-                                    SET ht_date.resolution_classification = @classification_id, ht_date.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_intervention ht_int
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_int.hint_id = changes.hint_id
-                                    SET ht_int.resolution_classification = @classification_id, ht_int.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_jurisdiction ht_jur
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_jur.hint_id = changes.hint_id
-                                    SET ht_jur.resolution_classification = @classification_id, ht_jur.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_product_group ht_prod
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_prod.hint_id = changes.hint_id
-                                    SET ht_prod.resolution_classification = @classification_id, ht_prod.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_relevance ht_rel
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_rel.hint_id = changes.hint_id
-                                    SET ht_rel.resolution_classification = @classification_id, ht_rel.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_text ht_txt
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_txt.hint_id = changes.hint_id
-                                    SET ht_txt.resolution_classification = @classification_id, ht_txt.conflict_status = 2;
-                                    
-                                    UPDATE bt_conflict_url ht_url
-                                    JOIN b221_temp_changes_data_",user.id," changes ON ht_url.hint_id = changes.hint_id
-                                    SET ht_url.resolution_classification = @classification_id, ht_url.conflict_status = 2;")
+                                    SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;                                                              
+                                  
+                                  SET @conflict_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_conflict_log' AND table_schema=DATABASE());
+                                  				
+                                  INSERT INTO bt_conflict_log(conflict_id, conflict_creation)
+                                  SELECT @conflict_id AS conflict_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS conflict_creation;
+                                  
+                                  INSERT INTO bt_conflict_text(conflict_id, hint_id, conflict_title, conflict_description, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_txt.hint_id, ht_txt.hint_title AS conflict_title, ht_txt.hint_description AS conflict_description, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM b221_temp_changes_data_",user.id," changes
+                                  JOIN (SELECT bt_hint_text.hint_id, bt_hint_text.hint_description, bt_hint_text.language_id, bt_hint_text.description_accepted, bt_hint_text.hint_title FROM bt_hint_text JOIN (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification) AS newest_classification FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) ht_txt ON ht_txt.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_text WHERE ht_txt.hint_id = bt_conflict_text.hint_id AND ht_txt.hint_description = bt_conflict_text.conflict_description);
+                                  
+                                  INSERT INTO bt_conflict_relevance(conflict_id, hint_id, relevance, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_rlvnt.hint_id, ht_rlvnt.relevance, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM b221_temp_changes_data_",user.id," changes
+                                  JOIN (SELECT bt_hint_relevance.hint_id, bt_hint_relevance.relevance, bt_hint_relevance.relevance_accepted FROM bt_hint_relevance JOIN (SELECT bt_hint_relevance.hint_id, MAX(bt_hint_relevance.validation_classification) AS newest_classification FROM bt_hint_relevance GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_relevance.hint_id AND newest_classification.newest_classification <=> bt_hint_relevance.validation_classification) ht_rlvnt ON ht_rlvnt.hint_id = changes.hint_id 
+                                  WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_relevance WHERE ht_rlvnt.hint_id = bt_conflict_relevance.hint_id AND ht_rlvnt.relevance = bt_conflict_relevance.relevance);
+                                  
+                                  INSERT INTO bt_conflict_assessment(conflict_id, hint_id, conflict_assessment_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_ass.hint_id, ht_ass.assessment_id AS conflict_assessment_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM b221_temp_changes_data_",user.id," changes
+                                  JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON changes.hint_id = ht_ass.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_assessment WHERE ht_ass.hint_id = bt_conflict_assessment.hint_id AND ht_ass.assessment_id = bt_conflict_assessment.conflict_assessment_id);
+                                  
+                                  INSERT INTO bt_conflict_jurisdiction(conflict_id, hint_id, conflict_jurisdiction_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_jur.hint_id, ht_jur.jurisdiction_id AS conflict_jurisdiction_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM b221_temp_changes_data_",user.id," changes 
+                                  JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_jur.jurisdiction_id) ORDER BY ht_jur.jurisdiction_id ASC) AS new_values
+                                  FROM b221_temp_changes_data_",user.id," changes
+                                  JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = changes.hint_id
+                                  GROUP BY changes.hint_id) new_jur ON changes.hint_id = new_jur.hint_id
+                                  JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_jurisdiction.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_jurisdiction.conflict_jurisdiction_id) ORDER BY bt_conflict_jurisdiction.conflict_jurisdiction_id ASC) AS existing_values FROM bt_conflict_jurisdiction GROUP BY bt_conflict_jurisdiction.conflict_id, bt_conflict_jurisdiction.hint_id) existing_jur WHERE new_jur.hint_id = existing_jur.hint_id AND new_jur.new_values = existing_jur.existing_values);
+                                  
+                                  INSERT INTO bt_conflict_product_group(conflict_id, hint_id, conflict_product_group_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_prod.hint_id, ht_prod.product_group_id AS conflict_product_group_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM b221_temp_changes_data_",user.id," changes 
+                                  JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_prod.product_group_id) ORDER BY ht_prod.product_group_id ASC) AS new_values
+                                  FROM b221_temp_changes_data_",user.id," changes
+                                  JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) ht_prod ON ht_prod.hint_id = changes.hint_id
+                                  GROUP BY changes.hint_id) new_prod ON changes.hint_id = new_prod.hint_id
+                                  JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) ht_prod ON ht_prod.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_product_group.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_product_group.conflict_product_group_id) ORDER BY bt_conflict_product_group.conflict_product_group_id ASC) AS existing_values FROM bt_conflict_product_group GROUP BY bt_conflict_product_group.conflict_id, bt_conflict_product_group.hint_id) existing_prod WHERE new_prod.hint_id = existing_prod.hint_id AND new_prod.new_values = existing_prod.existing_values);
+                                  
+                                  INSERT INTO bt_conflict_intervention(conflict_id, hint_id, conflict_intervention_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_int.hint_id, ht_int.intervention_type_id AS conflict_intervention_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM b221_temp_changes_data_",user.id," changes 
+                                  JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_int.intervention_type_id) ORDER BY ht_int.intervention_type_id ASC) AS new_values
+                                  FROM b221_temp_changes_data_",user.id," changes
+                                  JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id AS intervention_type_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = changes.hint_id
+                                  GROUP BY changes.hint_id) new_int ON changes.hint_id = new_int.hint_id
+                                  JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id AS intervention_type_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_intervention.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_intervention.conflict_intervention_id) ORDER BY bt_conflict_intervention.conflict_intervention_id ASC) AS existing_values FROM bt_conflict_intervention GROUP BY bt_conflict_intervention.conflict_id, bt_conflict_intervention.hint_id) existing_int WHERE new_int.hint_id = existing_int.hint_id AND new_int.new_values = existing_int.existing_values);
+                                  
+                                  UPDATE bt_conflict_assessment ht_ass
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_ass.hint_id = changes.hint_id
+                                  SET ht_ass.resolution_classification = @classification_id, ht_ass.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_date ht_date
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_date.hint_id = changes.hint_id
+                                  SET ht_date.resolution_classification = @classification_id, ht_date.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_intervention ht_int
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_int.hint_id = changes.hint_id
+                                  SET ht_int.resolution_classification = @classification_id, ht_int.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_jurisdiction ht_jur
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_jur.hint_id = changes.hint_id
+                                  SET ht_jur.resolution_classification = @classification_id, ht_jur.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_product_group ht_prod
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_prod.hint_id = changes.hint_id
+                                  SET ht_prod.resolution_classification = @classification_id, ht_prod.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_relevance ht_rel
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_rel.hint_id = changes.hint_id
+                                  SET ht_rel.resolution_classification = @classification_id, ht_rel.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_text ht_txt
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_txt.hint_id = changes.hint_id
+                                  SET ht_txt.resolution_classification = @classification_id, ht_txt.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_url ht_url
+                                  JOIN b221_temp_changes_data_",user.id," changes ON ht_url.hint_id = changes.hint_id
+                                  SET ht_url.resolution_classification = @classification_id, ht_url.conflict_status = 2;")
     
     adjust.conflicts=gta_sql_multiple_queries(sql.adjust.conflicts, output.queries = 1, show.time = T)
     
