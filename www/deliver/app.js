@@ -373,7 +373,6 @@ const buttonsClicks = {
     });
 
     if (changedData.length > 0) {
-
       Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
       
       //convert to confirmed
