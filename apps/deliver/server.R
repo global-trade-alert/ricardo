@@ -494,6 +494,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     exportCols <- merge(exportCols, change_attribute_table, by="index", keep.x=T) %>%
       rename('name_new' = name.x, 'name_old' = name.y)
 
+
     subset_prod = NULL
     subset_instr = NULL
     if(exportCols %>% filter(name_old == 'product.group.name') %>% nrow() > 0) {
@@ -506,7 +507,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     subset = c(subset_prod, subset_instr)
     
       output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
-
+      output_xlsx <- output_xlsx %>%
+        filter(relevance == 1)
       output_xlsx <- output_xlsx %>%
         mutate(gta.intervention.type = "GTA intervention type") %>%
         mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
@@ -615,7 +617,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                is.intervention=F,
                                intervention.modifiable=T,
                                add.discard.reason = discardedHint$reasons,
-                               modify.discard.comment = discardedHint$comment
+                               modify.discard.comment = discardedHint$comment,
+                               modify.relevance = 0
                               )
     })
 
