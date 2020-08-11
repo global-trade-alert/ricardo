@@ -549,6 +549,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     if ("intervention.type.name" %in% changedData$name) { instrument <- changedData[changedData$name == "intervention.type.name",] }
     if ("product.group.name" %in% changedData$name) { product <- changedData[changedData$name == "product.group.name",] }
     
+    # Prevent feeding empty attributes to b221_hint_change_attribute
+    changedData <- changedData %>%
+      mutate_at(.vars = 'dataNew', .funs = function(x){
+        if (x == '') {
+          x = NULL
+        }
+        return(x)
+      })
+    
     b221_hint_change_attribute(change.id=change.id,
                                user.id = user$id, 
                                is.superuser=ifelse(1 %in% user$group, TRUE, FALSE),
