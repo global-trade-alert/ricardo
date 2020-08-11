@@ -1,4 +1,4 @@
-b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NULL, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
+b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = F, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
                                         product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, announcement.date = NULL, implementation.date = NULL, removal.date = NULL, discard = NULL, discard.comment = NULL, collection.unchanged = NULL, empty.attributes = NULL){
   
   if(is.null(is.freelancer) | length(is.freelancer)!= 1 | !is.logical(is.freelancer) | is.na(is.freelancer)) stop('is.freelancer must be false if you are an editor, or true if you are a freelancer, no other value permitted')
@@ -35,6 +35,8 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NUL
           val.cltn.dis<<-val.cltn.dis
         }
         date.vals = gsub('\\)\\(','\\),\\(',gsub(' ','',paste(val.rem.dates,val.impl.dates,val.ann.dates)))
+        
+        val.cltn.int <<- val.cltn.int
         
         update.collection.info = paste0("DELETE b221_collection_intervention, b221_collection_product_group, b221_collection_relevance, b221_collection_jurisdiction, b221_collection_assessment, b221_collection_date, b221_collection_discard_reasons
                                           FROM (SELECT * FROM b221_collection_log WHERE b221_collection_log.collection_id = ",collection.id,") cltn_log
@@ -138,7 +140,9 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NUL
     }
     
     if(is.superuser == T){
-      sql.adjust.conflicts = paste("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
+      classification.id <- gta_sql_get_value(paste0("SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE();"))
+      classification.id_test <<- classification.id
+      sql.adjust.conflicts = paste("SET @classification_id =",classification.id,";
                               						
                                   INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                   SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
@@ -239,10 +243,16 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NUL
     if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
     
     if(collection.unchanged==F & is.null(new.collection.name)){
-      update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
+      if(confirm_status == 0){
+        classification.id = 'NULL'
+      } 
+      update.collection.hints  = paste0("SET @classification_id = (CASE WHEN ",classification.id," IS NULL THEN (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE()) ELSE ",classification.id," END);
+      
                                         INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                        SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
-                                        
+                                        SELECT classification_id, user_id, hint_state_id, time_stamp FROM (
+                                        SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp) bt_cl
+                                        WHERE NOT EXISTS (SELECT NULL FROM bt_classification_log WHERE bt_classification_log.classification_id = bt_cl.classification_id);
+                                     
                                         INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
                                         SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id , NULL AS assessment_accepted, NULL AS validation_classification 
                                         FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
@@ -356,7 +366,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NUL
                                         ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment AND ht_dis.validation_classification IS NULL
                                         SET ht_dis.validation_classification = @classification_id, 
                                         ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
-                                        ht_dis.confirm_status = ", confirm_status, ";;")
+                                        ht_dis.confirm_status = ", confirm_status, ";")
       
       if(is.freelancer){
         if(!any(is.na(new.hints)) & length(new.hints) != 0){
@@ -380,10 +390,16 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = NUL
       
       if(!any(is.na(new.hints)) & length(new.hints) != 0){
         #editor reassigned hints
-        update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
-                                          INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                          SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
-                                          
+        if(confirm_status == 0){
+          classification.id = 'NULL'
+        } 
+        update.collection.hints  = paste0("SET @classification_id = (CASE WHEN ",classification.id," IS NULL THEN (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE()) ELSE ",classification.id," END);
+        
+                                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
+                                           SELECT classification_id, user_id, hint_state_id, time_stamp FROM (
+                                           SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp) bt_cl
+                                           WHERE NOT EXISTS (SELECT NULL FROM bt_classification_log WHERE bt_classification_log.classification_id = bt_cl.classification_id);
+                                       
                                           INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
                                           SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id , NULL AS assessment_accepted, NULL AS validation_classification 
                                           FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
