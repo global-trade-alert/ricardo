@@ -1343,18 +1343,6 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
 
     singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
     
-    if(length(initialJurisdictions)>0){
-      
-      top.rows=max(nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T))),
-                   min(500,
-                       200 + nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T)))))
-      
-    } else {
-      top.rows=500
-    }
-    
-    singleHintOutput=singleHintOutput[1:top.rows,]
-    
     singleHintOutput$order=NULL
     singleHintOutput$date.numeric=NULL
     
