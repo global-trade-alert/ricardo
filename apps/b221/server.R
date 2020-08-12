@@ -383,6 +383,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     print("removingUI")
     hintId <- as.numeric(gsub("leadsID_","", input$collectionAdd[1]))
     currenthintId <<- hintId
+    gtaHint <- FALSE
     
     if (input$collectionAdd[3]=="TRUE") {
       collectionId <- as.numeric(gsub("collection_","", input$collectionAdd[2]))
@@ -479,8 +480,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       locked <- ifelse(any((maxHint %in% c(3:7,9)) & prm$freelancer == 1) | gtaHint, " locked","")
       lockHint <- ifelse((any(maxHint %in% c(3:7,9)) & prm$freelancer == 1) | gtaHint, yes = lockHint(TRUE), no = lockHint(FALSE))
-      
-      
+
     } else {
       
       initialPlaceholder <- "Enter new Collection Name"
@@ -549,7 +549,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       
       locked = ""
       lockHint <- lockHint(FALSE)
-      
+
       # Update hint.container reactiveVal
       hint.container$hint.ids <- c(hintId)
     }
@@ -648,6 +648,11 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       }
     }
     
+    if (gtaHint) {
+      runjs(paste0("$('#collectionValues').addClass('includes-gtahint');"))
+    }
+    
+    
   })
   
   observeEvent(input$saveCollection, {
@@ -726,6 +731,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(colDiscardComm)
     print(colRelevance)
     
+    # check if intervention in collectionHints
+    gtaHints <- paste0("SELECT gta_id FROM bt_hint_log WHERE hint_id IN (",paste0(colHints, collapse=", "),");")
+    gtaHints <- gta_sql_get_value(gtaHints)
     
     if (any(nchar(colName)==0,
             nchar(colImplementer)==0,
@@ -741,7 +749,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
             length(colImplementer)==0,
             length(colType)==0, 
             length(colProduct)==0, 
-            length(colAssessment)==0)) {
+            length(colAssessment)==0) 
+        & all(is.na(gtaHints))) {
       showNotification("Please fill out all necessary Values", duration = 3)
     } else {
       
@@ -1516,6 +1525,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         
         runjs(paste0("$('.initialValues').addClass('locked')"))
         runjs(paste0("$('#discardHintCollection-popup').addClass('hide')"))
+        runjs(paste0("$('#collectionValues').addClass('includes-gtahint');"))
         lockHint <- lockHint(TRUE)
         
       }
@@ -1635,10 +1645,12 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       lockHint <- lockHint(TRUE)
       runjs(paste0("$('.initialValues').addClass('locked')"))
       runjs(paste0("$('#discardHintCollection-popup').addClass('hide')"))
+      runjs(paste0("$('#collectionValues').addClass('includes-gtahint');"))
     } else {
       lockHint <- lockHint(FALSE)
       runjs(paste0("$('.initialValues').removeClass('locked')"))
       runjs(paste0("$('#discardHintCollection-popup').removeClass('hide')"))
+      runjs(paste0("$('#collectionValues').removeClass('includes-gtahint');"))
     }
   
     
