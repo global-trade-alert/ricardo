@@ -312,6 +312,20 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           export_div.appendChild(img);
                           referenceNode.appendChild(export_div);
                           
+                          // Add switch-deleted button to bottom of search panes
+                          let switch_div = document.createElement('div');
+                          switch_div.innerHTML = `<p>Add/remove deleted hints</p>\
+                                                  <label class=\"toggle-deleted\" for=\"toggle-deleted-input\">\
+                                                  <input type=\"checkbox\" checked=\"checked\" id=\"toggle-deleted-input\"\
+                                                    onclick=\'buttonsClicks[\"switchDeleted\"]();\'>\
+                                                  <span class=\"control\"></span>\
+                                                </label>`;
+                          Object.assign(switch_div, {
+                            className: 'search-pane-switch-deleted',
+                            title: 'add/remove deleted hints'
+                          });
+                          referenceNode.appendChild(switch_div);
+                          
                           
                                                                                     
                           let pagination = $('.dataTables_paginate.paging_simple_numbers');
