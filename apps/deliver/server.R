@@ -9,7 +9,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   names <- eventReactive(input$lastDeliverable, {
     print("create table")
     output <- dlvr_pull_display(last.deliverable = paste0(input$lastDeliverable, " 00:00:00"))
-    output$gta.intervention.type = "GTA intervention type"
+    output_test1 <<- output
     output$original.description = NULL
     output$original.title = NULL
     output$users = "Users"
@@ -240,7 +240,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         list(targets = 5,
              render = JS("function (data, type, row){
                             if (type === 'sp') {
-                              return data != null ? data.split(',') : '';
+                              return data != null ? data.split(' ; ') : '';
                               }
                             return data;
                }"),
@@ -524,7 +524,6 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       output_xlsx <- output_xlsx %>%
         filter(relevance == 1)
       output_xlsx <- output_xlsx %>%
-        mutate(gta.intervention.type = "GTA intervention type") %>%
         mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
                'Product: Medical equipment' = ifelse(str_detect(`product.group.name`, 'medical equipment'), 'TRUE', 'FALSE'),
                'Product: Medicines or drugs' = ifelse(str_detect(`product.group.name`, 'medicines or drugs'), 'TRUE', 'FALSE'),

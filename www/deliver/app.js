@@ -550,23 +550,11 @@ const buttonsClicks = {
    const that = this;
    let state = $('.toggle-deleted').find('input').is(':checked');
    if (state == true){
-     console.log('all')
-     $('.dtsp-clearAll').click(); // clear all
-/*     $('#DataTables_Table_0').DataTable()
-          .column( 0 )
-          .search('', regex = false)
-          .draw(true)*/
+     $('#DataTables_Table_1').find('.selected').each((d,i) => $(i).find('td').click()) // deselect selected
    } else {
-     // I typically avoid doing it this way, but the commented code would
-     // initially hide deleted rows and they will appear again once discarded
-     console.log('without deleted')
      $('#DataTables_Table_1').find('.dtsp-name')
                               .filter((i,val) => $(val).text() != 'deleted')
                               .each((d,i) => $(i).click());
-/*     $('#DataTables_Table_0').DataTable()
-          .column( 0 )
-          .search('c|new', true, false, true)
-          .draw(true)*/
    }
   }
 };
