@@ -539,11 +539,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
       output_xlsx <- output_xlsx %>%
         select(!any_of(c('Products', 'Instruments')))
-
     data_export <<- list("WB data" = output_xlsx, "Notes" = c('Data as available on CURRENTTIME.'))
     runjs("$('#deliver-downloadXlsx')[0].click();
            $('.overlay').click();")
-
+    
   })
   
   output$downloadXlsx <- downloadHandler(
