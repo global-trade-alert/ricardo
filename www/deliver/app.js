@@ -333,15 +333,19 @@ const buttonsClicks = {
       }
     })
   },
-  convertToConfirmed: function(className, id){
-    $(`tr#${id}`).removeClass(className).addClass('confirmed').find('.status-label').text('confirmed');
+  convertToConfirmed: function(className, id){ //<div class=\"status-label ${data}\" alt=\\'${data}\\'>${status}</div>
+    $(`tr#${id}`).removeClass(className).addClass('confirmed');
+    $(`tr#${id}`).find('.status-label').removeClass(className).addClass('confirmed').attr('alt', 'confirmed');
+    $(`tr#${id}`).find('.status-label').html('<span class="material-icons">check</span>');
     $(`tr#${id}`).find('.accept').remove();
     $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
     this.rowAttachEvents('confirmed', id);
     Shiny.setInputValue("deliver-confirmHint", JSON.stringify(id), {priority: "event"});
   },
   convertToDeleted: function(className, id){
-    $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');
+    $(`tr#${id}`).removeClass(className).addClass('deleted');
+    $(`tr#${id}`).find('.status-label').removeClass(className).addClass('deleted').attr('alt', 'deleted');
+    $(`tr#${id}`).find('.status-label').html('<span class="material-icons">delete</span>');
     $(`tr#${id}`).find('.accept').remove();
     $(`tr#${id}`).find('.restore').attr('style', 'display: ');
     $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'deleted';
@@ -541,6 +545,17 @@ const buttonsClicks = {
     console.log(output)*/
     console.log(columns)
     Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(columns), {priority: "event"});
+  },
+  switchDeleted: function(){
+   const that = this;
+   let state = $('.toggle-deleted').find('input').is(':checked');
+   if (state == true){
+     $('#DataTables_Table_1').find('.selected').each((d,i) => $(i).find('td').click()) // deselect selected
+   } else {
+     $('#DataTables_Table_1').find('.dtsp-name')
+                              .filter((i,val) => $(val).text() != 'deleted')
+                              .each((d,i) => $(i).click());
+   }
   }
 };
 

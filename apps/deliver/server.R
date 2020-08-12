@@ -9,7 +9,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   names <- eventReactive(input$lastDeliverable, {
     print("create table")
     output <- dlvr_pull_display(last.deliverable = paste0(input$lastDeliverable, " 00:00:00"))
-    output$gta.intervention.type = "GTA intervention type"
+    output_test1 <<- output
     output$original.description = NULL
     output$original.title = NULL
     output$users = "Users"
@@ -240,7 +240,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         list(targets = 5,
              render = JS("function (data, type, row){
                             if (type === 'sp') {
-                              return data != null ? data.split(',') : '';
+                              return data != null ? data.split(' ; ') : '';
                               }
                             return data;
                }"),
@@ -311,6 +311,20 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                           })
                           export_div.appendChild(img);
                           referenceNode.appendChild(export_div);
+                          
+                          // Add switch-deleted button to bottom of search panes
+                          let switch_div = document.createElement('div');
+                          switch_div.innerHTML = `<p>Add/remove deleted hints</p>\
+                                                  <label class=\"toggle-deleted\" for=\"toggle-deleted-input\">\
+                                                  <input type=\"checkbox\" checked=\"checked\" id=\"toggle-deleted-input\"\
+                                                    onclick=\'buttonsClicks[\"switchDeleted\"]();\'>\
+                                                  <span class=\"control\"></span>\
+                                                </label>`;
+                          Object.assign(switch_div, {
+                            className: 'search-pane-switch-deleted',
+                            title: 'add/remove deleted hints'
+                          });
+                          referenceNode.appendChild(switch_div);
                           
                           
                                                                                     
@@ -493,8 +507,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     exportCols <- jsonlite::fromJSON(input$saveXlsx)
     exportCols <- merge(exportCols, change_attribute_table, by="index", keep.x=T) %>%
       rename('name_new' = name.x, 'name_old' = name.y)
-    
-    
+
+
     subset_prod = NULL
     subset_instr = NULL
     if(exportCols %>% filter(name_old == 'product.group.name') %>% nrow() > 0) {
@@ -506,27 +520,25 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     }
     subset = c(subset_prod, subset_instr)
     
-    output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
-    output_xlsx <- output_xlsx %>%
-      filter(relevance == 1)
-    output_xlsx <- output_xlsx %>%
-      mutate(gta.intervention.type = "GTA intervention type") %>%
-      mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
-             'Product: Medical equipment' = ifelse(str_detect(`product.group.name`, 'medical equipment'), 'TRUE', 'FALSE'),
-             'Product: Medicines or drugs' = ifelse(str_detect(`product.group.name`, 'medicines or drugs'), 'TRUE', 'FALSE'),
-             'Product: Food' = ifelse(str_detect(`product.group.name`, 'food'), 'TRUE', 'FALSE'),
-             'Product: Any medical product' = ifelse(str_detect(`product.group.name`, 'uncertain'), 'TRUE', 'FALSE'),
-             'Product: other' = ifelse(str_detect(`product.group.name`, 'other'), 'TRUE', 'FALSE'),
-             'Is export barrier' = ifelse(str_detect(`intervention.type.name`, 'export barrier'), 'TRUE', 'FALSE'),
-             'Is import barrier' = ifelse(str_detect(`intervention.type.name`, 'import barrier'), 'TRUE', 'FALSE'),
-             'Domestic subsidy' = ifelse(str_detect(`intervention.type.name`, 'domestic subsidy'), 'TRUE', 'FALSE'),
-             'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE')) %>%
-      select(c(exportCols$name_old, subset))
-    
-    setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
-    output_xlsx <- output_xlsx %>%
-      select(!any_of(c('Products', 'Instruments')))
-    
+      output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
+      output_xlsx <- output_xlsx %>%
+        filter(relevance == 1)
+      output_xlsx <- output_xlsx %>%
+        mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
+               'Product: Medical equipment' = ifelse(str_detect(`product.group.name`, 'medical equipment'), 'TRUE', 'FALSE'),
+               'Product: Medicines or drugs' = ifelse(str_detect(`product.group.name`, 'medicines or drugs'), 'TRUE', 'FALSE'),
+               'Product: Food' = ifelse(str_detect(`product.group.name`, 'food'), 'TRUE', 'FALSE'),
+               'Product: Any medical product' = ifelse(str_detect(`product.group.name`, 'uncertain'), 'TRUE', 'FALSE'),
+               'Product: other' = ifelse(str_detect(`product.group.name`, 'other'), 'TRUE', 'FALSE'),
+               'Is export barrier' = ifelse(str_detect(`intervention.type.name`, 'export barrier'), 'TRUE', 'FALSE'),
+               'Is import barrier' = ifelse(str_detect(`intervention.type.name`, 'import barrier'), 'TRUE', 'FALSE'),
+               'Domestic subsidy' = ifelse(str_detect(`intervention.type.name`, 'domestic subsidy'), 'TRUE', 'FALSE'),
+               'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE')) %>%
+        select(c(exportCols$name_old, subset))
+      
+      setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
+      output_xlsx <- output_xlsx %>%
+        select(!any_of(c('Products', 'Instruments')))
     data_export <<- list("WB data" = output_xlsx, "Notes" = c('Data as available on CURRENTTIME.'))
     runjs("$('#deliver-downloadXlsx')[0].click();
            $('.overlay').click();")
@@ -550,6 +562,15 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     if ("jurisdiction.name" %in% changedData$name) { jurisdiction <- changedData[changedData$name == "jurisdiction.name",] }
     if ("intervention.type.name" %in% changedData$name) { instrument <- changedData[changedData$name == "intervention.type.name",] }
     if ("product.group.name" %in% changedData$name) { product <- changedData[changedData$name == "product.group.name",] }
+    
+    # Prevent feeding empty attributes to b221_hint_change_attribute
+    changedData <- changedData %>%
+      mutate_at(.vars = 'dataNew', .funs = function(x){
+        if (x == '') {
+          x = NULL
+        }
+        return(x)
+      })
     
     b221_hint_change_attribute(change.id=change.id,
                                user.id = user$id, 

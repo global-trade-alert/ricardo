@@ -1211,3 +1211,64 @@ td.addPadding {
 	color:#FFFFFF;
 	white-space: nowrap;
 }
+
+/* style switch-deleted button */
+.search-pane-switch-deleted {
+  margin: 0px 15px 0px 15px;
+}
+
+.search-pane-switch-deleted p {
+  color: white;
+  margin: 0 0 0 0;
+}
+
+.toggle-deleted {
+  display: block;
+  position: relative;
+  padding-left: 100px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.toggle-deleted input {
+  display: none;  
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+.toggle-deleted input:checked ~ .control {
+  background-color: dodgerblue;
+}
+.toggle-deleted input:checked ~ .control:after {
+  left: 35px;
+}
+.toggle-deleted .control {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 50px;
+  border-radius: 25px;
+  background-color: darkgray;
+  -webkit-transition: background-color 0.15s ease-in;
+  transition: background-color 0.15s ease-in;
+}
+.toggle-deleted .control:after {
+  content: "";
+  position: absolute;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+  border-radius: 25px;
+  background: white;
+  -webkit-transition: left 0.15s ease-in;
+  transition: left 0.15s ease-in;
+}
+
