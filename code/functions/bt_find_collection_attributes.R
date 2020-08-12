@@ -19,7 +19,7 @@ bt_find_collection_attributes=function(new.collection.name = NULL, collection.id
   # if there are interventions in the collection, these supercede the provided attributes
   if(nrow(pull.intervention.attributes)>0){
     intervention = na.omit(unique(pull.intervention.attributes$intervention.id))
-    product = na.omit(unique(pull.intervention.attributes$product.group.id))
+    product = ifelse(all(is.na(unique(pull.intervention.attributes$product.group.id)))==F, na.omit(unique(pull.intervention.attributes$product.group.id)),1)
     country = na.omit(unique(pull.intervention.attributes$jurisdiction.id))
     announcement.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 1)$date))
     implementation.date = na.omit(min(subset(pull.intervention.attributes, date.type.id == 2)$date))

@@ -22,11 +22,11 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = F, 
         val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
         val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
         val.ann.dates = ifelse(!is.na(announcement.date[1]),paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
-        if (length(discard)>0) {
+        if (length(discard)>0 & is.na(discard)==F) {
           if(length(discard.comment)==0){
             val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
           }  else {
-            if (discard.comment == '') {
+            if (discard.comment == '' || is.na(discard.comment)) {
               val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
             } else {
               val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
@@ -75,11 +75,11 @@ b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = F, 
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if (length(discard)>0) {
+        if (length(discard)>0 & is.na(discard)==F) {
           if(length(discard.comment)==0){
             val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
           }  else {
-            if (discard.comment == '') {
+            if (is.na(discard.comment) || discard.comment == '') {
               val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
             } else {
               val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')

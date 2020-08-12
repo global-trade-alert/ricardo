@@ -494,30 +494,43 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     exportCols <- merge(exportCols, change_attribute_table, by="index", keep.x=T) %>%
       rename('name_new' = name.x, 'name_old' = name.y)
     
-      output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
-      
-      output_xlsx <- output_xlsx %>%
-        mutate(gta.intervention.type = "GTA intervention type") %>%
-        select(exportCols$name_old) %>%
-        mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
-               'Product: Medical equipment' = ifelse(str_detect(`product.group.name`, 'medical equipment'), 'TRUE', 'FALSE'),
-               'Product: Medicines or drugs' = ifelse(str_detect(`product.group.name`, 'medicines or drugs'), 'TRUE', 'FALSE'),
-               'Product: Food' = ifelse(str_detect(`product.group.name`, 'food'), 'TRUE', 'FALSE'),
-               'Product: Any medical product' = ifelse(str_detect(`product.group.name`, 'uncertain'), 'TRUE', 'FALSE'),
-               'Product: other' = ifelse(str_detect(`product.group.name`, 'other'), 'TRUE', 'FALSE'),
-               'Is export barrier' = ifelse(str_detect(`intervention.type.name`, 'export barrier'), 'TRUE', 'FALSE'),
-               'Is import barrier' = ifelse(str_detect(`intervention.type.name`, 'import barrier'), 'TRUE', 'FALSE'),
-               'Domestic subsidy' = ifelse(str_detect(`intervention.type.name`, 'domestic subsidy'), 'TRUE', 'FALSE'),
-               'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE'))
-      
-      setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
-      output_xlsx <- output_xlsx %>%
-        select(!any_of(c('product.group.name', 'intervention.type.name')))
-
+    
+    subset_prod = NULL
+    subset_instr = NULL
+    if(exportCols %>% filter(name_old == 'product.group.name') %>% nrow() > 0) {
+      subset_prod = c('Product: medical consumables', 'Product: Medical equipment', 'Product: Medicines or drugs',
+                      'Product: Food', 'Product: Any medical product', 'Product: other')
+    }
+    if(exportCols %>% filter(name_old == 'intervention.type.name') %>% nrow() > 0) {
+      subset_instr = c('Is export barrier', 'Is import barrier', 'Domestic subsidy', 'Export subsidy')
+    }
+    subset = c(subset_prod, subset_instr)
+    
+    output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
+    output_xlsx <- output_xlsx %>%
+      filter(relevance == 1)
+    output_xlsx <- output_xlsx %>%
+      mutate(gta.intervention.type = "GTA intervention type") %>%
+      mutate('Product: medical consumables' = ifelse(str_detect(`product.group.name`, 'medical consumables'), 'TRUE', 'FALSE'),
+             'Product: Medical equipment' = ifelse(str_detect(`product.group.name`, 'medical equipment'), 'TRUE', 'FALSE'),
+             'Product: Medicines or drugs' = ifelse(str_detect(`product.group.name`, 'medicines or drugs'), 'TRUE', 'FALSE'),
+             'Product: Food' = ifelse(str_detect(`product.group.name`, 'food'), 'TRUE', 'FALSE'),
+             'Product: Any medical product' = ifelse(str_detect(`product.group.name`, 'uncertain'), 'TRUE', 'FALSE'),
+             'Product: other' = ifelse(str_detect(`product.group.name`, 'other'), 'TRUE', 'FALSE'),
+             'Is export barrier' = ifelse(str_detect(`intervention.type.name`, 'export barrier'), 'TRUE', 'FALSE'),
+             'Is import barrier' = ifelse(str_detect(`intervention.type.name`, 'import barrier'), 'TRUE', 'FALSE'),
+             'Domestic subsidy' = ifelse(str_detect(`intervention.type.name`, 'domestic subsidy'), 'TRUE', 'FALSE'),
+             'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE')) %>%
+      select(c(exportCols$name_old, subset))
+    
+    setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
+    output_xlsx <- output_xlsx %>%
+      select(!any_of(c('Products', 'Instruments')))
+    
     data_export <<- list("WB data" = output_xlsx, "Notes" = c('Data as available on CURRENTTIME.'))
     runjs("$('#deliver-downloadXlsx')[0].click();
            $('.overlay').click();")
-
+    
   })
   
   output$downloadXlsx <- downloadHandler(
@@ -595,7 +608,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                is.intervention=F,
                                intervention.modifiable=T,
                                add.discard.reason = discardedHint$reasons,
-                               modify.discard.comment = discardedHint$comment
+                               modify.discard.comment = discardedHint$comment,
+                               modify.relevance = 0
                               )
     })
 
