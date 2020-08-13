@@ -1,6 +1,3 @@
-
-
-
 ## HINT level
 b221_hint_change_attribute<-function(change.id=NULL,
                                      is.intervention=F,
@@ -175,7 +172,7 @@ b221_collection_add_hint<-function(add.id=NULL,
   
 }
 
-## remove collection via it's ID
+## remove collection via its ID
 b221_collection_remove<-function(remove.collection.id=NULL){
   
   

@@ -173,6 +173,7 @@ label {
 	border: 1px solid #dadada;
 	margin-bottom: 5px;
 	position: relative;
+	flex-wrap:wrap;
 }
 
 #deliver-deliverTable table tr.edited {
@@ -196,6 +197,47 @@ label {
   left: 5px;
   font-size: 0.8em;
 }
+
+#deliver-deliverTable table .break {
+	display: flex;
+	flex-basis: 100;
+	height:0;
+}
+
+#deliver-deliverTable table .conflict {
+	flex-basis:100%;
+	background-color: #ffcf20;
+	border-top: 1px solid #d59911;
+	cursor: pointer;
+	max-height: 20px;
+	align-items: center;
+	transition: all 0.2s ease-out;
+}
+
+#deliver-deliverTable table .conflict.open {
+	flex-basis:100%;
+	background-color: #ffcf20;
+	border-top: 1px solid #d59911;
+	cursor: pointer;
+	max-height: 200px;
+	align-items: center;
+	transition: all 0.2s ease-out;
+}
+
+#deliver-deliverTable table .conflict-info {
+	padding-left:calc(10px + 0.1vw);
+	padding-bottom:calc(10px + 0.1vw);
+}
+
+
+
+#deliver-deliverTable table .conflict p.title {
+	font-weight: 600;
+	padding-left: calc(10px + 0.1vw);
+	color: #573e06;
+}
+
+
 
 #deliver-deliverTable table thead {
 	float:left;
@@ -278,6 +320,7 @@ label {
 #deliver-deliverTable table .entry-id,
 #deliver-deliverTable table .users,
 #deliver-deliverTable table .assessment,
+#deliver-deliverTable table .is-official,
 #deliver-deliverTable table .announcement-date,
 #deliver-deliverTable table .removal-date,
 #deliver-deliverTable table .implementation-date {
@@ -856,11 +899,13 @@ input#cancel-dupl{
 	bottom:0;
 	padding:calc(10px + 1vw);
 	border-radius: 0px;
+	max-height:320px;
+	height:50vh;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer {
 	transition: all 0.5s ease-out;
-	width: calc(100% - 20px - 1vw);
+	width: calc(100% - 150px - 1vw);
 	right:calc(10px + 0.5vw);
 	bottom:calc(10px + 0.5vw);
 	background-color:rgba(25, 44, 64, 0.8);
@@ -873,6 +918,37 @@ input#cancel-dupl{
 	overflow:visible;
 	border-radius: 5px;
 	margin:0;
+	max-height:50px;
+	height:100%;
+}
+
+#deliver-lastDeliverable {
+	background-color:rgba(25, 44, 64, 0.8);
+	border:none;
+	-webkit-backdrop-filter: blur(10px) saturate(250%) contrast(120%);
+	backdrop-filter: blur(10px) saturate(250%) contrast(120%);
+	padding: calc(5px + 0.2vw);
+	position: fixed;
+	color:#FFFFFF;
+	width: calc(130px - 1vw) !important;
+	left:calc(10px + 0.5vw);
+	bottom:calc(10px + 0.5vw);
+	border-radius: 5px;
+	display: flex;
+	align-items: center;
+	height:50px;
+}
+
+#deliver-lastDeliverable label {
+	display:none;
+}
+
+#deliver-lastDeliverable input.form-control {
+	height:30px !important;
+	background-color: transparent;
+	color: #FFFFFF;
+	border:none;
+	font-weight: 400;
 }
 
 .deliver #deliver-deliverTable .dtsp-panesContainer div.dtsp-searchPanes {
@@ -891,7 +967,7 @@ input#cancel-dupl{
 }
 
 .deliver #deliver-deliverTable.collapsePanes div.dtsp-searchPanes {
-	max-height:500px;
+	max-height:100%;
 	transition:all 0.5s ease-out;
 	opacity:1;
 	visibility:visible;
@@ -903,7 +979,7 @@ input#cancel-dupl{
   display: block;
   float: left;
   max-width: 100% !important;
-	height: 30vh;
+  height: 30vh;
   max-height: 250px;
 }
 
@@ -1135,3 +1211,64 @@ td.addPadding {
 	color:#FFFFFF;
 	white-space: nowrap;
 }
+
+/* style switch-deleted button */
+.search-pane-switch-deleted {
+  margin: 0px 15px 0px 15px;
+}
+
+.search-pane-switch-deleted p {
+  color: white;
+  margin: 0 0 0 0;
+}
+
+.toggle-deleted {
+  display: block;
+  position: relative;
+  padding-left: 100px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+.toggle-deleted input {
+  display: none;  
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+.toggle-deleted input:checked ~ .control {
+  background-color: dodgerblue;
+}
+.toggle-deleted input:checked ~ .control:after {
+  left: 35px;
+}
+.toggle-deleted .control {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 20px;
+  width: 50px;
+  border-radius: 25px;
+  background-color: darkgray;
+  -webkit-transition: background-color 0.15s ease-in;
+  transition: background-color 0.15s ease-in;
+}
+.toggle-deleted .control:after {
+  content: "";
+  position: absolute;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+  border-radius: 25px;
+  background: white;
+  -webkit-transition: left 0.15s ease-in;
+  transition: left 0.15s ease-in;
+}
+

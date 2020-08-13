@@ -383,6 +383,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
     print("removingUI")
     hintId <- as.numeric(gsub("leadsID_","", input$collectionAdd[1]))
     currenthintId <<- hintId
+    gtaHint <- FALSE
     
     if (input$collectionAdd[3]=="TRUE") {
       collectionId <- as.numeric(gsub("collection_","", input$collectionAdd[2]))
@@ -479,8 +480,7 @@ b221server <- function(input, output, session, user, app, prm, ...) {
       
       locked <- ifelse(any((maxHint %in% c(3:7,9)) & prm$freelancer == 1) | gtaHint, " locked","")
       lockHint <- ifelse((any(maxHint %in% c(3:7,9)) & prm$freelancer == 1) | gtaHint, yes = lockHint(TRUE), no = lockHint(FALSE))
-      
-      
+
     } else {
       
       initialPlaceholder <- "Enter new Collection Name"
@@ -549,7 +549,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       
       locked = ""
       lockHint <- lockHint(FALSE)
-      
+
       # Update hint.container reactiveVal
       hint.container$hint.ids <- c(hintId)
     }
@@ -648,6 +648,11 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       }
     }
     
+    if (gtaHint) {
+      runjs(paste0("$('#collectionValues').addClass('includes-gtahint');"))
+    }
+    
+    
   })
   
   observeEvent(input$saveCollection, {
@@ -726,6 +731,9 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     print(colDiscardComm)
     print(colRelevance)
     
+    # check if intervention in collectionHints
+    gtaHints <- paste0("SELECT gta_id FROM bt_hint_log WHERE hint_id IN (",paste0(colHints, collapse=", "),");")
+    gtaHints <- gta_sql_get_value(gtaHints)
     
     if (any(nchar(colName)==0,
             nchar(colImplementer)==0,
@@ -741,7 +749,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
             length(colImplementer)==0,
             length(colType)==0, 
             length(colProduct)==0, 
-            length(colAssessment)==0)) {
+            length(colAssessment)==0) 
+        & all(is.na(gtaHints))) {
       showNotification("Please fill out all necessary Values", duration = 3)
     } else {
       
@@ -1266,7 +1275,10 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
   singleHints <- eventReactive(input$loadSingleHints, {
     print("SingleHintRefresh refresh")
     print(user$id)
-    singleHintOutput <- get_single_hints_infos(user.id = user$id)
+    ht_val = as.numeric(gsub("leadsID_| ","",input$loadSingleHints))
+    
+    initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",ht_val,");"))))
+    singleHintOutput <- get_single_hints_infos(user.id = user$id, jurisdiction.names = initialJurisdictions)
     # singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) stri_trans_general(x, "Any-ascii")))
     singleHintOutput = cbind(singleHintOutput[,1:4],lapply(singleHintOutput[,5:length(singleHintOutput)], function(x) gsub("<.*?>","",iconv(x, "", "ASCII", "byte"))))
     singleHintOutput$hint.title <- paste(singleHintOutput$hint.id, singleHintOutput$hint.title, sep=" - ")
@@ -1291,10 +1303,8 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     # removing active hint
     singleHintOutput=subset(singleHintOutput, ! hint.id %in% as.numeric(input$loadCollections))
     
-    ht_val = as.numeric(gsub("leadsID_| ","",input$loadSingleHints))
     
     ### SORTING FOR RELEVANCE
-    initialJurisdictions <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT jurisdiction_name FROM gta_jurisdiction_list WHERE jurisdiction_id IN (SELECT jurisdiction_id FROM bt_hint_jurisdiction WHERE hint_id = ",ht_val,");"))))
     initialProduct <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT product_group_name FROM b221_product_group_list WHERE product_group_id IN (SELECT product_group_id FROM b221_hint_product_group WHERE hint_id = ",ht_val,");"))))
     initialType <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT intervention_type_name FROM b221_intervention_type_list WHERE intervention_type_id IN (SELECT apparent_intervention_id FROM b221_hint_intervention WHERE hint_id = ",ht_val,");"))))
     initialAssessment <- unique(gta_sql_get_value(sqlInterpolate(pool, paste0("SELECT assessment_name FROM b221_assessment_list WHERE assessment_id IN (SELECT assessment_id FROM b221_hint_assessment WHERE hint_id = ",ht_val,");"))))
@@ -1341,18 +1351,6 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     
 
     singleHintOutput=singleHintOutput[order(singleHintOutput$order, decreasing = T),]
-    
-    if(length(initialJurisdictions)>0){
-      
-      top.rows=max(nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T))),
-                   min(500,
-                       200 + nrow(subset(singleHintOutput, grepl(initialJurisdictions, jurisdiction.name, ignore.case = T)))))
-      
-    } else {
-      top.rows=500
-    }
-    
-    singleHintOutput=singleHintOutput[1:top.rows,]
     
     singleHintOutput$order=NULL
     singleHintOutput$date.numeric=NULL
@@ -1527,6 +1525,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
         
         runjs(paste0("$('.initialValues').addClass('locked')"))
         runjs(paste0("$('#discardHintCollection-popup').addClass('hide')"))
+        runjs(paste0("$('#collectionValues').addClass('includes-gtahint');"))
         lockHint <- lockHint(TRUE)
         
       }
@@ -1646,10 +1645,12 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
       lockHint <- lockHint(TRUE)
       runjs(paste0("$('.initialValues').addClass('locked')"))
       runjs(paste0("$('#discardHintCollection-popup').addClass('hide')"))
+      runjs(paste0("$('#collectionValues').addClass('includes-gtahint');"))
     } else {
       lockHint <- lockHint(FALSE)
       runjs(paste0("$('.initialValues').removeClass('locked')"))
       runjs(paste0("$('#discardHintCollection-popup').removeClass('hide')"))
+      runjs(paste0("$('#collectionValues').removeClass('includes-gtahint');"))
     }
   
     
