@@ -237,6 +237,13 @@ label {
 	color: #573e06;
 }
 
+#deliver-deliverTable table .conflict-info > div {
+	width: 100%;
+    display: block;
+    margin-bottom: 10px;
+    float: left;
+    max-width: 100%;
+}
 
 
 #deliver-deliverTable table thead {
