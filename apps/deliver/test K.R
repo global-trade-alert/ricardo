@@ -1,4 +1,3 @@
-
-gtalibrary::gta_setwd()
-path <<- "0 dev/ricardo-lg/"
-load(file.path(paste0(path,"apps/deliver/data/GTA-COVID data.Rdata")))
+rm(list = ls())
+source("https://raw.githubusercontent.com/global-trade-alert/ricardo/master/code/functions/bt_export_main_db.R")
+bt_export_main_db("ricardomain")
