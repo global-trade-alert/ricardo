@@ -613,6 +613,7 @@ tr.deleted .status-column {
 .editMode .editMode-header h1, .saveMode .saveMode-header h1 {
 	display:flex;
 	flex:1;
+	color:#FFFFFF;
 }
 
 .editMode .editMode-header #save-edit {
@@ -670,6 +671,11 @@ tr.deleted .status-column {
   margin-top: 1px;
   text-align: center;
   font-size: 0.7em;
+  padding:calc(10px + 1vw);
+}
+
+.save-cols div.inputs label {
+	color:#FFFFFF;
 }
 
 .canvas .form-grid > div {
@@ -1184,12 +1190,13 @@ td.addPadding {
     width: 3em;
     height: 100%;
     margin-left: 5px;
-    cursor: pointer;
+	cursor: pointer;
+	margin-right:10px;
 }
 
 .saveMode {
 	width: 90vw;
-  height: 30vh;
+  height: auto;
   position: fixed;
   top: 30vh;
   left: 30vw;
@@ -1221,21 +1228,26 @@ td.addPadding {
 
 /* style switch-deleted button */
 .search-pane-switch-deleted {
-  margin: 0px 15px 0px 15px;
+  margin: 0px 15px 0px 0px;
+  display: flex;
+  align-self: center;
 }
 
 .search-pane-switch-deleted p {
   color: white;
   margin: 0 0 0 0;
+  position:relative;
+  float:left;
 }
 
 .toggle-deleted {
   display: block;
   position: relative;
-  padding-left: 100px;
-  margin-bottom: 12px;
+  margin-right: 12px;
   cursor: pointer;
   font-size: 12px;
+  width:40px;
+  float:left;
   -webkit-user-select: none;
      -moz-user-select: none;
       -ms-user-select: none;
@@ -1254,14 +1266,14 @@ td.addPadding {
   background-color: dodgerblue;
 }
 .toggle-deleted input:checked ~ .control:after {
-  left: 35px;
+  left: 20px;
 }
 .toggle-deleted .control {
   position: absolute;
-  top: 0;
+  top: -3px;
   left: 0;
   height: 20px;
-  width: 50px;
+  width: 40px;
   border-radius: 25px;
   background-color: darkgray;
   -webkit-transition: background-color 0.15s ease-in;
