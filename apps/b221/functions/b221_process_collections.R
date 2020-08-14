@@ -1,11 +1,11 @@
-b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
-                                        product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, discard = NULL, discard.comment = NULL, announcement.date = NULL, implementation.date = NULL, removal.date = NULL, 
-                                        collection.unchanged = NULL, empty.attributes = NULL){
+b221_process_collections_hints=function(is.freelancer = NULL, is.superuser = F, user.id = NULL, new.collection.name = NULL, collection.id = NULL, hints.id = NULL, starred.hint.id = NULL, country = NULL,
+                                        product = NULL, intervention = NULL, assessment = NULL, relevance = NULL, announcement.date = NULL, implementation.date = NULL, removal.date = NULL, discard = NULL, discard.comment = NULL, collection.unchanged = NULL, empty.attributes = NULL){
   
   if(is.null(is.freelancer) | length(is.freelancer)!= 1 | !is.logical(is.freelancer) | is.na(is.freelancer)) stop('is.freelancer must be false if you are an editor, or true if you are a freelancer, no other value permitted')
   if(is.null(hints.id) | length(hints.id)< 1) stop('hints.id must be numeric or NA and at least length 1, expected is a vector')
   if(!xor(is.null(new.collection.name), is.null(collection.id))) stop('either collection.id or new.collection.name must be a provided, not both, not neither')
   if(!is.numeric(collection.id) & !is.character(new.collection.name)) stop('collection.id or new.collection.name must be numeric or character respectively (only one can be provided)')
+  confirm_status = ifelse(is.null(is.superuser) || is.superuser == FALSE, 0, 1)
   
   hints.id = unique(hints.id)
   hints.id=hints.id[!is.na(hints.id)]
@@ -14,30 +14,31 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
     if(collection.unchanged==F){
       if(is.null(new.collection.name)){
         
-        
         val.cltn.int = paste0("(",collection.id,",",intervention,")", collapse = ',')
         val.cltn.prod = paste0("(",collection.id,",",product,")", collapse = ',')
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if (length(discard)>0) {
+        val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
+        val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
+        val.ann.dates = ifelse(!is.na(announcement.date[1]),paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
+        if (length(discard)>0 & is.na(discard)==F) {
           if(length(discard.comment)==0){
+            val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
+          }  else {
+            if (discard.comment == '' || is.na(discard.comment)) {
               val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
-            }  else {
-              if (discard.comment == '') {
-                val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
-              } else {
-                val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
-              }
+            } else {
+              val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
             }
+          }
+          val.cltn.dis<<-val.cltn.dis
         }
-        val.rem.dates = ifelse(!is.na(removal.date[1]) & ! removal.date[1] == -Inf, paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
-        val.impl.dates = ifelse(!is.na(implementation.date[1]) & ! implementation.date[1] == -Inf, paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
-        val.ann.dates = ifelse(!is.na(announcement.date[1]) & ! announcement.date[1] == -Inf, paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
         date.vals = gsub('\\)\\(','\\),\\(',gsub(' ','',paste(val.rem.dates,val.impl.dates,val.ann.dates)))
         
-        update.collection.info = paste0("DELETE b221_collection_intervention, b221_collection_product_group, b221_collection_relevance, b221_collection_jurisdiction, b221_collection_assessment, 
-                                          b221_collection_discard_reasons, b221_collection_date
+        val.cltn.int <<- val.cltn.int
+        
+        update.collection.info = paste0("DELETE b221_collection_intervention, b221_collection_product_group, b221_collection_relevance, b221_collection_jurisdiction, b221_collection_assessment, b221_collection_date, b221_collection_discard_reasons
                                           FROM (SELECT * FROM b221_collection_log WHERE b221_collection_log.collection_id = ",collection.id,") cltn_log
                                           LEFT JOIN b221_collection_intervention ON cltn_log.collection_id = b221_collection_intervention.collection_id
                                           LEFT JOIN b221_collection_product_group ON cltn_log.collection_id = b221_collection_product_group.collection_id
@@ -56,10 +57,10 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
                                           INSERT INTO b221_collection_product_group VALUES ",val.cltn.prod,";
                                           INSERT INTO b221_collection_relevance VALUES ",val.cltn.rel,";
                                           INSERT INTO b221_collection_jurisdiction VALUES ",val.cltn.cty,";
-                                          INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";
-                                          ",if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
+                                          INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";",
+                                        if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
                                         )
-        if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) { update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";") }
+        if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";")
         
       } else {
         
@@ -74,33 +75,34 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         val.cltn.rel = paste0("(",collection.id,",",relevance,")")[1]
         val.cltn.cty = paste0("(",collection.id,",",country,")", collapse = ',')
         val.cltn.ass = paste0("(",collection.id,",",assessment,")")[1]
-        if (length(discard)>0) {
+        if (length(discard)>0 & is.na(discard)==F) {
           if(length(discard.comment)==0){
             val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
           }  else {
-            if (discard.comment == '') {
+            if (is.na(discard.comment) || discard.comment == '') {
               val.cltn.dis = paste0("(",collection.id,",",discard,",NULL)", collapse = ',')
             } else {
               val.cltn.dis = paste0("(",collection.id,",",discard,",","'",discard.comment,"')", collapse = ',')
             }
           }
         }
-        val.rem.dates = ifelse(!is.na(removal.date[1]) & ! removal.date[1] == -Inf, paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
-        val.impl.dates = ifelse(!is.na(implementation.date[1]) & ! implementation.date[1] == -Inf, paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
-        val.ann.dates = ifelse(!is.na(announcement.date[1]) & ! announcement.date[1] == -Inf, paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
+        val.rem.dates = ifelse(!is.na(removal.date[1]),paste0("(",collection.id,",3,'",removal.date[1],"')", collapse = ','),'')
+        val.impl.dates = ifelse(!is.na(implementation.date[1]),paste0("(",collection.id,",2,'",implementation.date[1],"')", collapse = ','),'')
+        val.ann.dates = ifelse(!is.na(announcement.date[1]),paste0("(",collection.id,",1,'",announcement.date[1],"')", collapse = ','),'')
         date.vals = gsub('\\)\\(','\\),\\(',gsub(' ','',paste(val.rem.dates,val.impl.dates,val.ann.dates)))
         
         update.collection.info = paste0("INSERT INTO b221_collection_intervention VALUES ",val.cltn.int,";
                                          INSERT INTO b221_collection_product_group VALUES ",val.cltn.prod,";
                                          INSERT INTO b221_collection_relevance VALUES ",val.cltn.rel,";
                                          INSERT INTO b221_collection_jurisdiction VALUES ",val.cltn.cty,";
-                                         INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";
-                                         ",if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
+                                         INSERT INTO b221_collection_assessment VALUES ",val.cltn.ass,";",
+                                        if (relevance == 0) { paste0("INSERT INTO b221_collection_discard_reasons VALUES ",val.cltn.dis,";")}
                                         )
         if(any(c(val.rem.dates,val.impl.dates,val.ann.dates)!='')) update.collection.info = paste(update.collection.info, "INSERT INTO b221_collection_date VALUES ",date.vals,";")
         
       }
       gta_sql_multiple_queries(update.collection.info, output.queries = 1)
+      
     }
     
     original.hints = gta_sql_get_value(paste0("SELECT hint_id FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,";"))
@@ -137,418 +139,380 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
       gta_sql_get_value(paste0("DELETE FROM b221_collection_star WHERE b221_collection_star.collection_id = ",collection.id,";"))
     }
     
-    # 2 cases: cascading effect is neccessary if there is a change to the collection & it's not a new collection of course! (if freelancer, then send all hints back to state 2/8, can only change collection info when it has max state 2)
-    # 2nd case: reassign new hint's collection + values
-    # original.hints = 1:3
-    # hints.id = 1:3
-    if(7 == 1){
-      new.hints = unique(hints.id[!hints.id %in% original.hints])
+    if(is.superuser == T){
+      classification.id <- gta_sql_get_value(paste0("SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE();"))
+      classification.id_test <<- classification.id
+      sql.adjust.conflicts = paste("SET @classification_id =",classification.id,";
+                              						
+                                  INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
+                                  SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
+                                                               
+                                  SET @conflict_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_conflict_log' AND table_schema=DATABASE());
+                                  				
+                                  INSERT INTO bt_conflict_log(conflict_id, conflict_creation)
+                                  SELECT @conflict_id AS conflict_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS conflict_creation;
+                                  
+                                  INSERT INTO bt_conflict_text(conflict_id, hint_id, conflict_title, conflict_description, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_txt.hint_id, ht_txt.hint_title AS conflict_title, ht_txt.hint_description AS conflict_description, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes
+                                  JOIN (SELECT bt_hint_text.hint_id, bt_hint_text.hint_description, bt_hint_text.language_id, bt_hint_text.description_accepted, bt_hint_text.hint_title FROM bt_hint_text JOIN (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification) AS newest_classification FROM bt_hint_text GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_text.hint_id AND newest_classification.newest_classification <=> bt_hint_text.validation_classification) ht_txt ON ht_txt.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_text WHERE ht_txt.hint_id = bt_conflict_text.hint_id AND ht_txt.hint_description = bt_conflict_text.conflict_description);
+                                  
+                                  INSERT INTO bt_conflict_relevance(conflict_id, hint_id, relevance, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_rlvnt.hint_id, ht_rlvnt.relevance, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes
+                                  JOIN (SELECT bt_hint_relevance.hint_id, bt_hint_relevance.relevance, bt_hint_relevance.relevance_accepted FROM bt_hint_relevance JOIN (SELECT bt_hint_relevance.hint_id, MAX(bt_hint_relevance.validation_classification) AS newest_classification FROM bt_hint_relevance GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_relevance.hint_id AND newest_classification.newest_classification <=> bt_hint_relevance.validation_classification) ht_rlvnt ON ht_rlvnt.hint_id = changes.hint_id 
+                                  WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_relevance WHERE ht_rlvnt.hint_id = bt_conflict_relevance.hint_id AND ht_rlvnt.relevance = bt_conflict_relevance.relevance);
+                                  
+                                  INSERT INTO bt_conflict_assessment(conflict_id, hint_id, conflict_assessment_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_ass.hint_id, ht_ass.assessment_id AS conflict_assessment_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes
+                                  JOIN (SELECT b221_hint_assessment.hint_id, b221_hint_assessment.assessment_id, b221_hint_assessment.assessment_accepted FROM b221_hint_assessment JOIN (SELECT b221_hint_assessment.hint_id, MAX(b221_hint_assessment.validation_classification) AS newest_classification FROM b221_hint_assessment GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_assessment.hint_id AND newest_classification.newest_classification <=> b221_hint_assessment.validation_classification) ht_ass ON changes.hint_id = ht_ass.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_assessment WHERE ht_ass.hint_id = bt_conflict_assessment.hint_id AND ht_ass.assessment_id = bt_conflict_assessment.conflict_assessment_id);
+                                  
+                                  INSERT INTO bt_conflict_jurisdiction(conflict_id, hint_id, conflict_jurisdiction_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_jur.hint_id, ht_jur.jurisdiction_id AS conflict_jurisdiction_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes 
+                                  JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_jur.jurisdiction_id) ORDER BY ht_jur.jurisdiction_id ASC) AS new_values
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes
+                                  JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = changes.hint_id
+                                  GROUP BY changes.hint_id) new_jur ON changes.hint_id = new_jur.hint_id
+                                  JOIN (SELECT bt_hint_jurisdiction.hint_id, bt_hint_jurisdiction.jurisdiction_id, bt_hint_jurisdiction.jurisdiction_accepted FROM bt_hint_jurisdiction JOIN (SELECT bt_hint_jurisdiction.hint_id, MAX(bt_hint_jurisdiction.validation_classification) AS newest_classification FROM bt_hint_jurisdiction GROUP BY hint_id) newest_classification ON newest_classification.hint_id = bt_hint_jurisdiction.hint_id AND newest_classification.newest_classification <=> bt_hint_jurisdiction.validation_classification) ht_jur ON ht_jur.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_jurisdiction.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_jurisdiction.conflict_jurisdiction_id) ORDER BY bt_conflict_jurisdiction.conflict_jurisdiction_id ASC) AS existing_values FROM bt_conflict_jurisdiction GROUP BY bt_conflict_jurisdiction.conflict_id, bt_conflict_jurisdiction.hint_id) existing_jur WHERE new_jur.hint_id = existing_jur.hint_id AND new_jur.new_values = existing_jur.existing_values);
+                                  
+                                  INSERT INTO bt_conflict_product_group(conflict_id, hint_id, conflict_product_group_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_prod.hint_id, ht_prod.product_group_id AS conflict_product_group_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes 
+                                  JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_prod.product_group_id) ORDER BY ht_prod.product_group_id ASC) AS new_values
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes
+                                  JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) ht_prod ON ht_prod.hint_id = changes.hint_id
+                                  GROUP BY changes.hint_id) new_prod ON changes.hint_id = new_prod.hint_id
+                                  JOIN (SELECT b221_hint_product_group.hint_id, b221_hint_product_group.product_group_id, b221_hint_product_group.product_group_assessment FROM b221_hint_product_group JOIN (SELECT b221_hint_product_group.hint_id, MAX(b221_hint_product_group.validation_classification) AS newest_classification FROM b221_hint_product_group GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_product_group.hint_id AND newest_classification.newest_classification <=> b221_hint_product_group.validation_classification) ht_prod ON ht_prod.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_product_group.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_product_group.conflict_product_group_id) ORDER BY bt_conflict_product_group.conflict_product_group_id ASC) AS existing_values FROM bt_conflict_product_group GROUP BY bt_conflict_product_group.conflict_id, bt_conflict_product_group.hint_id) existing_prod WHERE new_prod.hint_id = existing_prod.hint_id AND new_prod.new_values = existing_prod.existing_values);
+                                  
+                                  INSERT INTO bt_conflict_intervention(conflict_id, hint_id, conflict_intervention_id, conflict_status, resolution_classification)
+                                  SELECT DISTINCT @conflict_id AS conflict_id, ht_int.hint_id, ht_int.intervention_type_id AS conflict_intervention_id, 1 AS conflict_status, NULL AS resolution_classification
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes 
+                                  JOIN (SELECT changes.hint_id, GROUP_CONCAT(DISTINCT(ht_int.intervention_type_id) ORDER BY ht_int.intervention_type_id ASC) AS new_values
+                                  FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes
+                                  JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id AS intervention_type_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = changes.hint_id
+                                  GROUP BY changes.hint_id) new_int ON changes.hint_id = new_int.hint_id
+                                  JOIN (SELECT b221_hint_intervention.hint_id, b221_hint_intervention.apparent_intervention_id AS intervention_type_id, b221_hint_intervention.intervention_accepted FROM b221_hint_intervention JOIN (SELECT b221_hint_intervention.hint_id, MAX(b221_hint_intervention.validation_classification) AS newest_classification FROM b221_hint_intervention GROUP BY hint_id) newest_classification ON newest_classification.hint_id = b221_hint_intervention.hint_id AND newest_classification.newest_classification <=> b221_hint_intervention.validation_classification) ht_int ON ht_int.hint_id = changes.hint_id
+                                  WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_conflict_intervention.hint_id, GROUP_CONCAT(DISTINCT(bt_conflict_intervention.conflict_intervention_id) ORDER BY bt_conflict_intervention.conflict_intervention_id ASC) AS existing_values FROM bt_conflict_intervention GROUP BY bt_conflict_intervention.conflict_id, bt_conflict_intervention.hint_id) existing_int WHERE new_int.hint_id = existing_int.hint_id AND new_int.new_values = existing_int.existing_values);
+                                  
+                                  UPDATE bt_conflict_assessment ht_ass
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_ass.hint_id = changes.hint_id
+                                  SET ht_ass.resolution_classification = @classification_id, ht_ass.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_date ht_date
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_date.hint_id = changes.hint_id
+                                  SET ht_date.resolution_classification = @classification_id, ht_date.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_intervention ht_int
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_int.hint_id = changes.hint_id
+                                  SET ht_int.resolution_classification = @classification_id, ht_int.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_jurisdiction ht_jur
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_jur.hint_id = changes.hint_id
+                                  SET ht_jur.resolution_classification = @classification_id, ht_jur.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_product_group ht_prod
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_prod.hint_id = changes.hint_id
+                                  SET ht_prod.resolution_classification = @classification_id, ht_prod.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_relevance ht_rel
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_rel.hint_id = changes.hint_id
+                                  SET ht_rel.resolution_classification = @classification_id, ht_rel.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_text ht_txt
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_txt.hint_id = changes.hint_id
+                                  SET ht_txt.resolution_classification = @classification_id, ht_txt.conflict_status = 2;
+                                  
+                                  UPDATE bt_conflict_url ht_url
+                                  JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changes ON ht_url.hint_id = changes.hint_id
+                                  SET ht_url.resolution_classification = @classification_id, ht_url.conflict_status = 2;")
       
-      select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
-      if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
-      if(collection.unchanged==F & is.null(new.collection.name)){
-        
-        update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
-                                            INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                            SELECT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
-                                             
-                                            DELETE b221_hint_assessment, b221_hint_product_group, b221_hint_intervention, bt_hint_discard_reasons 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN b221_hint_assessment ON ht_cltn.hint_id = b221_hint_assessment.hint_id
-                                            LEFT JOIN b221_hint_product_group ON ht_cltn.hint_id = b221_hint_product_group.hint_id
-                                            LEFT JOIN b221_hint_intervention ON ht_cltn.hint_id = b221_hint_intervention.hint_id
-                                            LEFT JOIN bt_hint_discard_reasons ON ht_cltn.hint_id = bt_hint_discard_reasons.hint_id
-                                            WHERE 1 = 1;
-                                            
-                                            INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id, NULL AS assessment_accepted, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_assessment cltn_ass ON ht_cltn.collection_id = cltn_ass.collection_id;
-                                            
-                                            INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id, NULL AS product_group_assessment, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_product_group cltn_prod ON ht_cltn.collection_id = cltn_prod.collection_id;
-                                            
-                                            INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id, NULL AS intervention_accepted, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_intervention cltn_int ON ht_cltn.collection_id = cltn_int.collection_id;
-                                            
-                                            INSERT INTO bt_hint_discard_reasons(hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment,
-                                            NULL AS reason_accepted, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_discard_reasons cltn_dis ON ht_cltn.collection_id = cltn_dis.collection_id;
-                                              
-                                            DELETE bt_hint_jurisdiction, bt_hint_relevance, bt_hint_date 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN bt_hint_jurisdiction ON ht_cltn.hint_id = bt_hint_jurisdiction.hint_id
-                                            LEFT JOIN bt_hint_relevance ON ht_cltn.hint_id = bt_hint_relevance.hint_id
-                                            LEFT JOIN bt_hint_date ON ht_cltn.hint_id = bt_hint_date.hint_id
-                                            WHERE 1 = 1;
-                                            
-                                            INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, NULL AS jurisdiction_accepted, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_jurisdiction cltn_jur ON ht_cltn.collection_id = cltn_jur.collection_id;
-                                           
-                                            INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, NULL AS relevance_accepted, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id;
-                                          
-                                            INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, NULL AS date_accepted, NULL AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn 
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_date cltn_date ON ht_cltn.collection_id = cltn_date.collection_id;
-                                          
-                                            UPDATE bt_hint_log
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
-                                            JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
-                                            JOIN bt_hint_log non_gta_ids ON ht_cltn.hint_id = non_gta_ids.hint_id AND non_gta_ids.gta_id IS NULL
-                                            SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
-                                                                (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
-        gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
-        
-        
-      } else {
-        
+      adjust.conflicts=gta_sql_multiple_queries(sql.adjust.conflicts, output.queries = 1, show.time = T)
+      
+    }
+    
+    # on the editor side even if the collection already contains the hint but it was submitted by a freelancer, a confirmation needs to occur
+    if(!is.na(state.2or8.hints)) new.hints = unique(c(state.2or8.hints,hints.id[!hints.id %in% original.hints])) else new.hints = unique(hints.id[!hints.id %in% original.hints])
+    
+    select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
+    if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
+    
+    if(collection.unchanged==F & is.null(new.collection.name)){
+      if(confirm_status == 0){
+        classification.id = 'NULL'
+      } 
+      update.collection.hints  = paste0("SET @classification_id = (CASE WHEN ",classification.id," IS NULL THEN (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE()) ELSE ",classification.id," END);
+      
+                                        INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
+                                        SELECT classification_id, user_id, hint_state_id, time_stamp FROM (
+                                        SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp) bt_cl
+                                        WHERE NOT EXISTS (SELECT NULL FROM bt_classification_log WHERE bt_classification_log.classification_id = bt_cl.classification_id);
+                                     
+                                        INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
+                                        SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id , NULL AS assessment_accepted, NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_assessment cltn_ass ON ht_cltn.collection_id = cltn_ass.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM b221_hint_assessment ht_ass WHERE ht_ass.hint_id = ht_cltn.hint_id AND ht_ass.assessment_id = cltn_ass.assessment_id AND ht_ass.validation_classification IS NULL);
+                                        
+                                        UPDATE b221_hint_assessment ht_ass
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_ass.hint_id = changed_hints.hint_id AND ht_ass.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_assessment.assessment_id FROM b221_hint_collection JOIN b221_collection_assessment ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_assessment.collection_id) changes 
+                                        ON ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = changes.assessment_id AND ht_ass.validation_classification IS NULL
+                                        SET ht_ass.validation_classification = @classification_id,
+                                        ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_ass.confirm_status = ", confirm_status, ";
+                                        
+                                        INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_classification)
+                                        SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id , NULL AS product_group_assessment, NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_product_group cltn_prod ON ht_cltn.collection_id = cltn_prod.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM b221_hint_product_group prod_grp WHERE prod_grp.hint_id = ht_cltn.hint_id AND prod_grp.product_group_id = cltn_prod.product_group_id AND prod_grp.validation_classification IS NULL);
+                                        
+                                        UPDATE b221_hint_product_group prod_grp
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON prod_grp.hint_id = changed_hints.hint_id AND prod_grp.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_product_group.product_group_id FROM b221_hint_collection JOIN b221_collection_product_group ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_product_group.collection_id) changes 
+                                        ON prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = changes.product_group_id AND prod_grp.validation_classification IS NULL
+                                        SET prod_grp.validation_classification = @classification_id,
+                                        prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        prod_grp.confirm_status = ", confirm_status, ";
+                                        
+                                        INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_classification)
+                                        SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id , NULL AS intervention_accepted, NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_intervention cltn_int ON ht_cltn.collection_id = cltn_int.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = ht_cltn.hint_id AND ht_int.apparent_intervention_id = cltn_int.intervention_type_id AND ht_int.validation_classification IS NULL);
+                                        
+                                        UPDATE b221_hint_intervention ht_int 
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_int.hint_id = changed_hints.hint_id AND ht_int.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_intervention.intervention_type_id FROM b221_hint_collection JOIN b221_collection_intervention ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_intervention.collection_id) changes 
+                                        ON ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = changes.intervention_type_id AND ht_int.validation_classification IS NULL
+                                        SET ht_int.validation_classification = @classification_id, 
+                                        ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_int.confirm_status = ", confirm_status, ";
+                                        
+                                        INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_classification)
+                                        SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, NULL AS jurisdiction_accepted, NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_jurisdiction cltn_jur ON ht_cltn.collection_id = cltn_jur.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM bt_hint_jurisdiction ht_jur WHERE ht_jur.hint_id = ht_cltn.hint_id AND cltn_jur.jurisdiction_id = ht_jur.jurisdiction_id AND ht_jur.validation_classification IS NULL);
+                                        
+                                        UPDATE bt_hint_jurisdiction ht_jur 
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_jur.hint_id = changed_hints.hint_id AND ht_jur.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_jurisdiction.jurisdiction_id FROM b221_hint_collection JOIN b221_collection_jurisdiction ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_jurisdiction.collection_id) changes 
+                                        ON ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = changes.jurisdiction_id AND ht_jur.validation_classification IS NULL
+                                        SET ht_jur.validation_classification = @classification_id, 
+                                        ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_jur.confirm_status = ", confirm_status, ";
+                                        
+                                        INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_classification)
+                                        SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, NULL AS date_accepted, NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_date cltn_date ON ht_cltn.collection_id = cltn_date.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = ht_cltn.hint_id AND cltn_date.`date` = ht_date.`date` AND cltn_date.date_type_id = ht_date.date_type_id AND ht_date.validation_classification IS NULL);
+                                        
+                                        UPDATE bt_hint_date ht_date
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_date.hint_id = changed_hints.hint_id AND ht_date.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_date.`date`, b221_collection_date.date_type_id FROM b221_hint_collection JOIN b221_collection_date ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_date.collection_id) changes 
+                                        ON ht_date.hint_id = changes.hint_id AND ht_date.`date` = changes.`date` AND ht_date.date_type_id = changes.date_type_id AND ht_date.validation_classification IS NULL
+                                        SET ht_date.validation_classification = @classification_id, 
+                                        ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_date.confirm_status = ", confirm_status, ";
+                                        
+                                        INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
+                                        SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, NULL AS relevance_accepted, NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM bt_hint_relevance ht_rel WHERE ht_rel.hint_id = ht_cltn.hint_id AND cltn_rel.relevance = ht_rel.relevance AND ht_rel.validation_classification IS NULL);
+                                        
+                                        UPDATE bt_hint_relevance ht_rel
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_rel.hint_id = changed_hints.hint_id AND ht_rel.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
+                                        ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance AND ht_rel.validation_classification IS NULL
+                                        SET ht_rel.validation_classification = @classification_id, 
+                                        ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_rel.confirm_status = ", confirm_status, ";
+                                        
+                                        INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_classification )
+                                        SELECT DISTINCT ht_cltn.hint_id,  @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment, 
+                                        NULL AS reason_accepted , NULL AS validation_classification 
+                                        FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
+                                        JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_discard_reasons cltn_dis ON ht_cltn.collection_id = cltn_dis.collection_id
+                                        WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason ht_dis WHERE ht_dis.hint_id = ht_cltn.hint_id AND cltn_dis.discard_reason_id = ht_dis.discard_reason_id AND cltn_dis.discard_reason_comment <=> ht_dis.discard_reason_comment AND ht_dis.validation_classification IS NULL);
+                                        
+                                        UPDATE bt_hint_discard_reason ht_dis
+                                        JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_dis.hint_id = changed_hints.hint_id AND ht_dis.validation_classification IS NULL
+                                        JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id, b221_collection_discard_reasons.discard_reason_comment FROM 
+                                        b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND 
+                                        b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
+                                        ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment AND ht_dis.validation_classification IS NULL
+                                        SET ht_dis.validation_classification = @classification_id, 
+                                        ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                        ht_dis.confirm_status = ", confirm_status, ";")
+      
+      if(is.freelancer){
         if(!any(is.na(new.hints)) & length(new.hints) != 0){
-          update.collection.hints  = paste0(" SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
-                                          INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                          SELECT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
-                                           
-                                          DELETE b221_hint_assessment, b221_hint_product_group, b221_hint_intervention, bt_hint_discard_reasons 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          LEFT JOIN b221_hint_assessment ON ht_cltn.hint_id = b221_hint_assessment.hint_id
-                                          LEFT JOIN b221_hint_product_group ON ht_cltn.hint_id = b221_hint_product_group.hint_id
-                                          LEFT JOIN b221_hint_intervention ON ht_cltn.hint_id = b221_hint_intervention.hint_id
-                                          LEFT JOIN bt_hint_discard_reasons ON ht_cltn.hint_id = bt_hint_discard_reasons.hint_id
-                                          WHERE 1 = 1;
-                                          
-                                          INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id, NULL AS assessment_accepted, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn 
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_assessment cltn_ass ON ht_cltn.collection_id = cltn_ass.collection_id;
-                                          
-                                          INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id, NULL AS product_group_assessment, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_product_group cltn_prod ON ht_cltn.collection_id = cltn_prod.collection_id;
-                                          
-                                          INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id, NULL AS intervention_accepted, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_intervention cltn_int ON ht_cltn.collection_id = cltn_int.collection_id;
-                                          
-                                          INSERT INTO bt_hint_discard_reasons(hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment, NULL AS reason_accepted, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_discard_reasons cltn_dis ON ht_cltn.collection_id = cltn_dis.collection_id;
-                                            
-                                          DELETE bt_hint_jurisdiction, bt_hint_relevance, bt_hint_date 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          LEFT JOIN bt_hint_jurisdiction ON ht_cltn.hint_id = bt_hint_jurisdiction.hint_id
-                                          LEFT JOIN bt_hint_relevance ON ht_cltn.hint_id = bt_hint_relevance.hint_id
-                                          LEFT JOIN bt_hint_date ON ht_cltn.hint_id = bt_hint_date.hint_id
-                                          WHERE 1 = 1;
-                                          
-                                          INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, NULL AS jurisdiction_accepted, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_jurisdiction cltn_jur ON ht_cltn.collection_id = cltn_jur.collection_id;
-                                         
-                                          INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, NULL AS relevance_accepted, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id;
-                                        
-                                          INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_user)
-                                          SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, NULL AS date_accepted, NULL AS validation_user 
-                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          JOIN b221_collection_date cltn_date ON ht_cltn.collection_id = cltn_date.collection_id;
-                                        
-                                          UPDATE bt_hint_log
-                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id
-                                          JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
-                                          JOIN bt_hint_log non_gta_ids ON ht_cltn.hint_id = non_gta_ids.hint_id AND non_gta_ids.gta_id IS NULL
-                                          SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
-                                                              (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
-          
-          gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
-          
+        update.collection.hints = paste(update.collection.hints, 
+                                        "UPDATE bt_hint_log
+                                        JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
+                                        SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
+                                        																		(SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
         }
+      } else {
+        update.collection.hints = paste(update.collection.hints, 
+                                        "UPDATE bt_hint_log
+                                        JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                        SET bt_hint_log.hint_state_id = ",editor.new.state,";")
       }
+      
+      gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
+      
     } else {
-      # editor side 
       
-      # on the editor side even if the collection already contains the hint but it was submitted by a freelancer, a confirmation needs to occur
-      if(!is.na(state.2or8.hints)) new.hints = unique(c(state.2or8.hints,hints.id[!hints.id %in% original.hints])) else new.hints = unique(hints.id[!hints.id %in% original.hints])
-      
-      select.statement.new.hints = paste0("SELECT ",new.hints[1]," AS hint_id")
-      if(length(new.hints[-1])>0) select.statement.new.hints = paste0(select.statement.new.hints, ' UNION SELECT ' , paste0(new.hints[-1], collapse = ' UNION SELECT '))
-      
-      if(collection.unchanged==F & is.null(new.collection.name)){
-        update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
-                                            INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                            SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
-                                             
-                                            INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id , 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_assessment cltn_ass ON ht_cltn.collection_id = cltn_ass.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM b221_hint_assessment ht_ass WHERE ht_ass.hint_id = ht_cltn.hint_id AND ht_ass.assessment_id = cltn_ass.assessment_id);
-                                            
-                                            UPDATE b221_hint_assessment ht_ass
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_ass.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_assessment.assessment_id FROM b221_hint_collection JOIN b221_collection_assessment ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_assessment.collection_id) changes 
-                                            ON ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = changes.assessment_id
-                                            SET ht_ass.validation_user = ",user.id,",
-                                            	ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id , 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_product_group cltn_prod ON ht_cltn.collection_id = cltn_prod.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM b221_hint_product_group prod_grp WHERE prod_grp.hint_id = ht_cltn.hint_id AND prod_grp.product_group_id = cltn_prod.product_group_id);
-                                           
-                                            UPDATE b221_hint_product_group prod_grp
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON prod_grp.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_product_group.product_group_id FROM b221_hint_collection JOIN b221_collection_product_group ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_product_group.collection_id) changes 
-                                            ON prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = changes.product_group_id
-                                            SET prod_grp.validation_user = ",user.id,",
-                                            	prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id , 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_intervention cltn_int ON ht_cltn.collection_id = cltn_int.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = ht_cltn.hint_id AND cltn_int.intervention_type_id = ht_int.apparent_intervention_id);
-                                            
-                                            UPDATE b221_hint_intervention ht_int 
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_int.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_intervention.intervention_type_id FROM b221_hint_collection JOIN b221_collection_intervention ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_intervention.collection_id) changes 
-                                            ON ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = changes.intervention_type_id
-                                            SET ht_int.validation_user = ",user.id,", 
-                                            	ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_jurisdiction cltn_jur ON ht_cltn.collection_id = cltn_jur.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_jurisdiction ht_jur WHERE ht_jur.hint_id = ht_cltn.hint_id AND cltn_jur.jurisdiction_id = ht_jur.jurisdiction_id);
-                                             
-                                            UPDATE bt_hint_jurisdiction ht_jur 
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_jur.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_jurisdiction.jurisdiction_id FROM b221_hint_collection JOIN b221_collection_jurisdiction ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_jurisdiction.collection_id) changes 
-                                            ON ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = changes.jurisdiction_id
-                                            SET ht_jur.validation_user = ",user.id,", 
-                                            	ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, 1 AS date_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_date cltn_date ON ht_cltn.collection_id = cltn_date.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = ht_cltn.hint_id AND cltn_date.`date` = ht_date.`date` AND cltn_date.date_type_id = ht_date.date_type_id);
-                                            
-                                            UPDATE bt_hint_date ht_date
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_date.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_date.`date`, b221_collection_date.date_type_id FROM b221_hint_collection JOIN b221_collection_date ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_date.collection_id) changes 
-                                            ON ht_date.hint_id = changes.hint_id AND ht_date.`date` = changes.`date` AND ht_date.date_type_id = changes.date_type_id
-                                            SET ht_date.validation_user = ",user.id,", 
-                                            ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, 1 AS relevance_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_relevance ht_rel WHERE ht_rel.hint_id = ht_cltn.hint_id AND cltn_rel.relevance = ht_rel.relevance);
-                                            
-                                            UPDATE bt_hint_relevance ht_rel
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_rel.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
-                                            ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance
-                                            SET ht_rel.validation_user = ",user.id,", 
-                                            	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            	
-                                            INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id, discard_reason_comment, reason_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment, 1 AS reason_accepted , ",user.id," AS validation_user 
-                                            FROM (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_discard_reasons cltn_dis ON ht_cltn.collection_id = cltn_dis.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason ht_dis WHERE ht_dis.hint_id = ht_cltn.hint_id AND cltn_dis.discard_reason_id = ht_dis.discard_reason_id AND ht_dis.discard_reason_comment <=> cltn_dis.discard_reason_comment);
-                                            
-                                            UPDATE bt_hint_discard_reason ht_dis
-                                            JOIN (SELECT * FROM b221_hint_collection WHERE b221_hint_collection.collection_id = ",collection.id,") changed_hints ON ht_dis.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id, b221_collection_discard_reasons.discard_reason_comment FROM 
-                                                        b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
-                                            ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment
-                                            SET ht_dis.validation_user = ",user.id,", 
-                                            	ht_dis.reason_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
+      if(!any(is.na(new.hints)) & length(new.hints) != 0){
+        #editor reassigned hints
+        if(confirm_status == 0){
+          classification.id = 'NULL'
+        } 
+        update.collection.hints  = paste0("SET @classification_id = (CASE WHEN ",classification.id," IS NULL THEN (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE()) ELSE ",classification.id," END);
         
-        if(is.freelancer){
-          if(!any(is.na(new.hints)) & length(new.hints) != 0){
-          update.collection.hints = paste(update.collection.hints, 
-                                          "UPDATE bt_hint_log
-                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                           INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
+                                           SELECT classification_id, user_id, hint_state_id, time_stamp FROM (
+                                           SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp) bt_cl
+                                           WHERE NOT EXISTS (SELECT NULL FROM bt_classification_log WHERE bt_classification_log.classification_id = bt_cl.classification_id);
+                                       
+                                          INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id , NULL AS assessment_accepted, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          JOIN b221_collection_assessment cltn_ass ON ht_cltn.collection_id = cltn_ass.collection_id
+                                          WHERE NOT EXISTS (SELECT NULL FROM b221_hint_assessment ht_ass WHERE ht_ass.hint_id = ht_cltn.hint_id AND ht_ass.assessment_id = cltn_ass.assessment_id AND ht_ass.validation_classification IS NULL);
+                                          
+                                          UPDATE b221_hint_assessment ht_ass
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_ass.hint_id = changed_hints.hint_id AND ht_ass.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_assessment.assessment_id FROM b221_hint_collection JOIN b221_collection_assessment ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_assessment.collection_id) changes 
+                                          ON ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = changes.assessment_id AND ht_ass.validation_classification IS NULL
+                                          SET ht_ass.validation_classification = @classification_id,
+                                          ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_ass.confirm_status = ", confirm_status, ";
+                                          
+                                          INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id , NULL AS product_group_assessment, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          JOIN b221_collection_product_group cltn_prod ON ht_cltn.collection_id = cltn_prod.collection_id
+                                          WHERE NOT EXISTS (SELECT NULL FROM b221_hint_product_group prod_grp WHERE prod_grp.hint_id = ht_cltn.hint_id AND prod_grp.product_group_id = cltn_prod.product_group_id AND prod_grp.validation_classification IS NULL);
+                                          
+                                          UPDATE b221_hint_product_group prod_grp
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON prod_grp.hint_id = changed_hints.hint_id AND prod_grp.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_product_group.product_group_id FROM b221_hint_collection JOIN b221_collection_product_group ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_product_group.collection_id) changes 
+                                          ON prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = changes.product_group_id AND prod_grp.validation_classification IS NULL
+                                          SET prod_grp.validation_classification = @classification_id,
+                                          prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          prod_grp.confirm_status = ", confirm_status, ";
+                                          
+                                          INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id , NULL AS intervention_accepted, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          JOIN b221_collection_intervention cltn_int ON ht_cltn.collection_id = cltn_int.collection_id
+                                          WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = ht_cltn.hint_id AND ht_int.apparent_intervention_id = cltn_int.intervention_type_id AND ht_int.validation_classification IS NULL);
+                                          
+                                          UPDATE b221_hint_intervention ht_int 
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_int.hint_id = changed_hints.hint_id AND ht_int.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_intervention.intervention_type_id FROM b221_hint_collection JOIN b221_collection_intervention ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_intervention.collection_id) changes 
+                                          ON ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = changes.intervention_type_id AND ht_int.validation_classification IS NULL
+                                          SET ht_int.validation_classification = @classification_id, 
+                                          ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_int.confirm_status = ", confirm_status, ";
+                                          
+                                          INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, NULL AS jurisdiction_accepted, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          JOIN b221_collection_jurisdiction cltn_jur ON ht_cltn.collection_id = cltn_jur.collection_id
+                                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_jurisdiction ht_jur WHERE ht_jur.hint_id = ht_cltn.hint_id AND cltn_jur.jurisdiction_id = ht_jur.jurisdiction_id AND ht_jur.validation_classification IS NULL);
+                                          
+                                          UPDATE bt_hint_jurisdiction ht_jur 
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_jur.hint_id = changed_hints.hint_id AND ht_jur.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_jurisdiction.jurisdiction_id FROM b221_hint_collection JOIN b221_collection_jurisdiction ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_jurisdiction.collection_id) changes 
+                                          ON ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = changes.jurisdiction_id AND ht_jur.validation_classification IS NULL
+                                          SET ht_jur.validation_classification = @classification_id, 
+                                          ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_jur.confirm_status = ", confirm_status, ";
+                                          
+                                          INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, NULL AS date_accepted, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          JOIN b221_collection_date cltn_date ON ht_cltn.collection_id = cltn_date.collection_id
+                                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = ht_cltn.hint_id AND cltn_date.`date` = ht_date.`date` AND cltn_date.date_type_id = ht_date.date_type_id AND ht_date.validation_classification IS NULL);
+                                          
+                                          UPDATE bt_hint_date ht_date
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_date.hint_id = changed_hints.hint_id AND ht_date.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_date.`date`, b221_collection_date.date_type_id FROM b221_hint_collection JOIN b221_collection_date ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_date.collection_id) changes 
+                                          ON ht_date.hint_id = changes.hint_id AND ht_date.`date` = changes.`date` AND ht_date.date_type_id = changes.date_type_id AND ht_date.validation_classification IS NULL
+                                          SET ht_date.validation_classification = @classification_id, 
+                                          ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_date.confirm_status = ", confirm_status, ";
+                                          
+                                          INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, NULL AS relevance_accepted, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
                                           JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
-                                          SET bt_hint_log.hint_state_id = (CASE WHEN cltn_rel.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
-                                          																		(SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
-          }
-        } else {
-          update.collection.hints = paste(update.collection.hints, 
-                                          "UPDATE bt_hint_log
-                                          JOIN b221_hint_collection ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                          SET bt_hint_log.hint_state_id = ",editor.new.state,";")
-        }
+                                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_relevance ht_rel WHERE ht_rel.hint_id = ht_cltn.hint_id AND cltn_rel.relevance = ht_rel.relevance AND ht_rel.validation_classification IS NULL);
+                                          
+                                          UPDATE bt_hint_relevance ht_rel
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_rel.hint_id = changed_hints.hint_id AND ht_rel.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
+                                          ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance AND ht_rel.validation_classification IS NULL
+                                          SET ht_rel.validation_classification = @classification_id, 
+                                          ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_rel.confirm_status = ", confirm_status, ";
+                                          
+                                          INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id , discard_reason_comment , reason_accepted , validation_classification)
+                                          SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment , NULL AS reason_accepted, NULL AS validation_classification 
+                                          FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
+                                          JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          JOIN b221_collection_discard_reasons cltn_dis ON ht_cltn.collection_id = cltn_dis.collection_id
+                                          WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason ht_dis WHERE ht_dis.hint_id = ht_cltn.hint_id AND cltn_dis.discard_reason_id = ht_dis.discard_reason_id AND ht_dis.discard_reason_comment <=> cltn_dis.discard_reason_comment AND ht_dis.validation_classification IS NULL);
+                                          
+                                          UPDATE bt_hint_discard_reason ht_dis
+                                          JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_dis.hint_id = changed_hints.hint_id AND ht_dis.validation_classification IS NULL
+                                          JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
+                                          LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id, b221_collection_discard_reasons.discard_reason_comment FROM 
+                                          b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
+                                          ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment
+                                          SET ht_dis.validation_classification = @classification_id,
+                                          ht_dis.reason_accepted  = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END),
+                                          ht_dis.confirm_status = ", confirm_status, ";")
         
-        gta_sql_multiple_queries(update.collection.hints, output.queries = 1)
-      } else {
-        
-        if(!any(is.na(new.hints)) & length(new.hints) != 0){
-          #editor reassigned hints
-          update.collection.hints  = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND TABLE_SCHEMA = DATABASE());
-                                            INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
-                                            SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp;
-                                             
-                                            INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_ass.assessment_id , 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_assessment cltn_ass ON ht_cltn.collection_id = cltn_ass.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM b221_hint_assessment ht_ass WHERE ht_ass.hint_id = ht_cltn.hint_id AND ht_ass.assessment_id = cltn_ass.assessment_id);
-                                            
-                                            UPDATE b221_hint_assessment ht_ass
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_ass.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_assessment.assessment_id FROM b221_hint_collection JOIN b221_collection_assessment ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_assessment.collection_id) changes 
-                                            ON ht_ass.hint_id = changes.hint_id AND ht_ass.assessment_id = changes.assessment_id
-                                            SET ht_ass.validation_user = ",user.id,",
-                                            	ht_ass.assessment_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO b221_hint_product_group(hint_id, classification_id, product_group_id, product_group_assessment, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_prod.product_group_id , 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_product_group cltn_prod ON ht_cltn.collection_id = cltn_prod.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM b221_hint_product_group prod_grp WHERE prod_grp.hint_id = ht_cltn.hint_id AND prod_grp.product_group_id = cltn_prod.product_group_id);
-                                           
-                                            UPDATE b221_hint_product_group prod_grp
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON prod_grp.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_product_group.product_group_id FROM b221_hint_collection JOIN b221_collection_product_group ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_product_group.collection_id) changes 
-                                            ON prod_grp.hint_id = changes.hint_id AND prod_grp.product_group_id = changes.product_group_id
-                                            SET prod_grp.validation_user = ",user.id,",
-                                            	prod_grp.product_group_assessment = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO b221_hint_intervention(hint_id, classification_id, apparent_intervention_id, intervention_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_int.intervention_type_id , 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_intervention cltn_int ON ht_cltn.collection_id = cltn_int.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM b221_hint_intervention ht_int WHERE ht_int.hint_id = ht_cltn.hint_id AND cltn_int.intervention_type_id = ht_int.apparent_intervention_id);
-                                            
-                                            UPDATE b221_hint_intervention ht_int 
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_int.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_intervention.intervention_type_id FROM b221_hint_collection JOIN b221_collection_intervention ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_intervention.collection_id) changes 
-                                            ON ht_int.hint_id = changes.hint_id AND ht_int.apparent_intervention_id = changes.intervention_type_id
-                                            SET ht_int.validation_user = ",user.id,", 
-                                            	ht_int.intervention_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_jurisdiction(hint_id, classification_id, jurisdiction_id, jurisdiction_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_jur.jurisdiction_id, 1 AS assessment_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_jurisdiction cltn_jur ON ht_cltn.collection_id = cltn_jur.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_jurisdiction ht_jur WHERE ht_jur.hint_id = ht_cltn.hint_id AND cltn_jur.jurisdiction_id = ht_jur.jurisdiction_id);
-                                             
-                                            UPDATE bt_hint_jurisdiction ht_jur 
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_jur.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_jurisdiction.jurisdiction_id FROM b221_hint_collection JOIN b221_collection_jurisdiction ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_jurisdiction.collection_id) changes 
-                                            ON ht_jur.hint_id = changes.hint_id AND ht_jur.jurisdiction_id = changes.jurisdiction_id
-                                            SET ht_jur.validation_user = ",user.id,", 
-                                            	ht_jur.jurisdiction_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_date(hint_id, `date`, date_type_id, classification_id, date_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, cltn_date.`date`, cltn_date.date_type_id, @classification_id AS classification_id, 1 AS date_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_date cltn_date ON ht_cltn.collection_id = cltn_date.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_date ht_date WHERE ht_date.hint_id = ht_cltn.hint_id AND cltn_date.`date` = ht_date.`date` AND cltn_date.date_type_id = ht_date.date_type_id);
-                                            
-                                            UPDATE bt_hint_date ht_date
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_date.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_date.`date`, b221_collection_date.date_type_id FROM b221_hint_collection JOIN b221_collection_date ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_date.collection_id) changes 
-                                            ON ht_date.hint_id = changes.hint_id AND ht_date.`date` = changes.`date` AND ht_date.date_type_id = changes.date_type_id
-                                            SET ht_date.validation_user = ",user.id,", 
-                                              ht_date.date_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_relevance(hint_id, classification_id, relevance, relevance_probability, relevance_accepted, validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_rel.relevance, NULL as relevance_probability, 1 AS relevance_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_relevance cltn_rel ON ht_cltn.collection_id = cltn_rel.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_relevance ht_rel WHERE ht_rel.hint_id = ht_cltn.hint_id AND cltn_rel.relevance = ht_rel.relevance);
-                                            
-                                            UPDATE bt_hint_relevance ht_rel
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_rel.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_relevance.relevance FROM b221_hint_collection JOIN b221_collection_relevance ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_relevance.collection_id) changes 
-                                            ON ht_rel.hint_id = changes.hint_id AND ht_rel.relevance = changes.relevance
-                                            SET ht_rel.validation_user = ",user.id,", 
-                                            	ht_rel.relevance_accepted = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);
-                                            
-                                            INSERT INTO bt_hint_discard_reason (hint_id, classification_id, discard_reason_id , discard_reason_comment , reason_accepted , validation_user)
-                                            SELECT DISTINCT ht_cltn.hint_id, @classification_id AS classification_id, cltn_dis.discard_reason_id, cltn_dis.discard_reason_comment , 1 AS reason_accepted, ",user.id," AS validation_user 
-                                            FROM (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) ht_cltn
-                                            JOIN bt_hint_log ON ht_cltn.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            JOIN b221_collection_discard_reasons cltn_dis ON ht_cltn.collection_id = cltn_dis.collection_id
-                                            WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason ht_dis WHERE ht_dis.hint_id = ht_cltn.hint_id AND cltn_dis.discard_reason_id = ht_dis.discard_reason_id AND ht_dis.discard_reason_comment <=> cltn_dis.discard_reason_comment);
-                                            
-                                            UPDATE bt_hint_discard_reason ht_dis
-                                            JOIN (SELECT reassigned_hints.hint_id, ",collection.id," AS collection_id FROM (",select.statement.new.hints,") reassigned_hints) changed_hints ON ht_dis.hint_id = changed_hints.hint_id
-                                            JOIN bt_hint_log ON changed_hints.hint_id = bt_hint_log.hint_id AND bt_hint_log.gta_id IS NULL
-                                            LEFT JOIN (SELECT b221_hint_collection.hint_id, b221_collection_discard_reasons.discard_reason_id, b221_collection_discard_reasons.discard_reason_comment FROM 
-                                                        b221_hint_collection JOIN b221_collection_discard_reasons ON b221_hint_collection.collection_id = ",collection.id," AND b221_hint_collection.collection_id = b221_collection_discard_reasons.collection_id) changes 
-                                            ON ht_dis.hint_id = changes.hint_id AND ht_dis.discard_reason_id = changes.discard_reason_id AND ht_dis.discard_reason_comment <=> changes.discard_reason_comment
-                                            SET ht_dis.validation_user = ",user.id,", 
-                                            	ht_dis.reason_accepted  = (CASE WHEN changes.hint_id IS NOT NULL THEN 1 ELSE 0 END);")
-          
           if(is.freelancer){
             if(!any(is.na(new.hints)) & length(new.hints) != 0){
             update.collection.hints = paste(update.collection.hints, 
@@ -570,7 +534,7 @@ b221_process_collections_hints=function(is.freelancer = NULL, user.id = NULL, ne
         }
         
       }
-    }
+    #}
   } else {
     
     if(!is.null(new.collection.name)){
