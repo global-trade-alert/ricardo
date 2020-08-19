@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> c56875a7822a073bf2ca7d9d6ad0fccab58adba3
 ## HINT level
 b221_hint_change_attribute<-function(change.id=NULL,
                                      is.intervention=F,
