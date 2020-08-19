@@ -5,14 +5,14 @@
 # library(plyr)
 # gta_setwd()
 
-gta_sql_pool_open(db.title="ricardodev",
-                  db.host = gta_pwd("ricardodev")$host,
-                  db.name = "dlvr_app_extension_dev",
-                  db.user = gta_pwd("ricardodev")$user,
-                  db.password = gta_pwd("ricardodev")$password,
-                  table.prefix = "")
+#gta_sql_pool_open(db.title="ricardodev",
+#                  db.host = gta_pwd("ricardodev")$host,
+#                  db.name = "dlvr_app_extension_dev",
+#                  db.user = gta_pwd("ricardodev")$user,
+#                  db.password = gta_pwd("ricardodev")$password,
+#                  table.prefix = "")
 
-gta_sql_pool_close()
+#gta_sql_pool_close()
 
 bt_flush_conflicts=function(user.id = NULL,
                             force.flush = NULL,
