@@ -4,13 +4,15 @@
 # library(tidyverse)
 # library(plyr)
 # gta_setwd()
-# 
-# gta_sql_pool_open(db.title="ricardodev",
-#                   db.host = gta_pwd("ricardodev")$host,
-#                   db.name = "dlvr_app_extension_dev",
-#                   db.user = gta_pwd("ricardodev")$user,
-#                   db.password = gta_pwd("ricardodev")$password,
-#                   table.prefix = "")
+
+#gta_sql_pool_open(db.title="ricardodev",
+#                  db.host = gta_pwd("ricardodev")$host,
+#                  db.name = "dlvr_app_extension_dev",
+#                  db.user = gta_pwd("ricardodev")$user,
+#                  db.password = gta_pwd("ricardodev")$password,
+#                  table.prefix = "")
+
+#gta_sql_pool_close()
 
 bt_flush_conflicts=function(user.id = NULL,
                             force.flush = NULL,
@@ -24,15 +26,15 @@ bt_flush_conflicts=function(user.id = NULL,
     
     new.attributes = paste0("SELECT bt_conflict_date.conflict_id, bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
                             JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
+                            ON bt_conflict_date.conflict_date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
                             
                             SELECT bt_conflict_date.conflict_id, bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
                             JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
+                            ON bt_conflict_date.conflict_date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
                             
                             SELECT bt_conflict_date.conflict_id, bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
                             JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
+                            ON bt_conflict_date.conflict_date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
                             
                             SELECT bt_conflict_assessment.conflict_id, bt_conflict_assessment.hint_id, bt_conflict_assessment.conflict_assessment_id FROM bt_conflict_assessment
                             JOIN (SELECT bt_conflict_assessment.hint_id, MAX(bt_conflict_assessment.conflict_id) AS newest_conflict, bt_conflict_assessment.conflict_status FROM bt_conflict_assessment GROUP BY hint_id) newest_conflict 
@@ -68,7 +70,7 @@ bt_flush_conflicts=function(user.id = NULL,
     # b221_hint_change_attribute() here with the new attributes!
     
     # update the status' 
-    update.conflict.status = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+    update.conflict.status = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
                               						
                                     INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                     SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
@@ -121,17 +123,17 @@ bt_flush_conflicts=function(user.id = NULL,
     
     new.attributes = paste0("SELECT bt_conflict_date.conflict_id, bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
                             JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
+                            ON bt_conflict_date.conflict_date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_date resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 3);
                             
                             SELECT bt_conflict_date.conflict_id, bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
                             JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
+                            ON bt_conflict_date.conflict_date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_date resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 3);
                             
                             SELECT bt_conflict_date.conflict_id, bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
                             JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
+                            ON bt_conflict_date.conflict_date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_date resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 3);
                             
                             SELECT bt_conflict_assessment.conflict_id, bt_conflict_assessment.hint_id, bt_conflict_assessment.conflict_assessment_id FROM bt_conflict_assessment
@@ -175,7 +177,7 @@ bt_flush_conflicts=function(user.id = NULL,
     # b221_hint_change_attribute() here with the new attributes!
     
     # update the status' 
-    update.conflict.status = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+    update.conflict.status = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
                               						
                                     INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                                     SELECT DISTINCT @classification_id AS classification_id, ",user.id," AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
