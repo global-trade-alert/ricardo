@@ -540,7 +540,8 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                'Is export barrier' = ifelse(str_detect(`intervention.type.name`, 'export barrier'), 'TRUE', 'FALSE'),
                'Is import barrier' = ifelse(str_detect(`intervention.type.name`, 'import barrier'), 'TRUE', 'FALSE'),
                'Domestic subsidy' = ifelse(str_detect(`intervention.type.name`, 'domestic subsidy'), 'TRUE', 'FALSE'),
-               'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE')) %>%
+               'Export subsidy' = ifelse(str_detect(`intervention.type.name`, 'export subsidy'), 'TRUE', 'FALSE'),
+               hint.id = ifelse(is.na(gta.id), hint.id, gta.id)) %>%
         select(c(exportCols$name_old, subset))
       
       setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
