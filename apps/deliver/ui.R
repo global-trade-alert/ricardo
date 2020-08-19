@@ -36,7 +36,8 @@ deliverui <- function(id) {
                                            "Save .xslx")),
                       tags$div(class='save-cols')),
              tags$div(style='visibility:hidden;',
-                      downloadButton(ns("downloadXlsx"), "Download"))
+                      downloadButton(ns("downloadXlsx"), "Download")),
+             dateInput(ns('lastDeliverable'),value = lubridate::floor_date(lubridate::today()-1, "week", 5), label="")
              
   )
   )

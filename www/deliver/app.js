@@ -56,6 +56,8 @@ $( document ).ready(function() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('save-cols is loaded')
       let colnames = await buttonsClicks.getAllColumnsNames();
+      colnames = colnames.filter(d => /^(entry id|initial assessment|products|documentation status|jurisdiction|gta intervention type|announcement date|implementation date|removal date|source|instruments)$/gi.test(d.name)); //pre-filter all columns
+      
       colnames.forEach(function(d, i) {
         let checked = /confirmation|users|description/gi.test(d.name) ? false : true; //untick some cols initially
         let input = $('<input />')
@@ -119,7 +121,7 @@ const buttonsClicks = {
         rowData.forEach(function(d,i){
             let label = $("<label>").attr('for', `column-${d.index}`).html(`${d.name}`);
             let input;
-            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|documentation status|assessment/gi)[0].toLowerCase()){
+            switch (d.name.match(/date|description|source|product|instrument|jurisdiction|is official|assessment/gi)[0].toLowerCase()){
               case 'date':
 
                 input = $('<input />')
@@ -148,21 +150,20 @@ const buttonsClicks = {
                         .attr('id', `column-${d.index}`)
                         .addClass('products');
 
-                  window.data_gta[d.name].map(function(d1,i) {
+                  window.data_gta[d.name].sort().map(function(d1,i) {
                           let selected = data.includes(d1) ? 'selected' : '';
                           input.append(
                             `<option ${selected} value="${d1}">${d1}</option>`
                            )
                           })
                 break;
-              case 'documentation status':
-
-                let checked = /^official source/gi.test(d.data) ? true : false;
+              case 'is official':
+                let checked = d.data == 1 ? true : false;
                 input = $('<input />')
                         .attr('type', 'checkbox')
                         .attr('checked', checked)
                         .attr('id', `column-${d.index}`)
-                        .addClass('doc-status');
+                        .addClass('is-official');
 
                 label = $("<label>").attr('for', `column-${d.index}`).html('Is official source?');
                 break;
@@ -171,6 +172,10 @@ const buttonsClicks = {
                 input = $('<select />')
                       .attr('id', `column-${d.index}`)
                       .addClass('assessment');
+                      
+                        input.append(
+                          '<option value=""></option>'
+                         )
 
                 window.data_gta[d.name].map(function(d1,i) {
                       let selected = d1 == d.data ? 'selected' : '';
@@ -210,6 +215,7 @@ const buttonsClicks = {
               valueField: 'text',
               labelField: 'text',
               searchField: 'text',
+              sortField: 'text',
               create: false
             });
 
@@ -217,7 +223,6 @@ const buttonsClicks = {
               maxItems: 1,
               create: false
             });
-
         });
 
       $('.datepicker').bsDatepicker({ format: 'yyyy-mm-dd' });
@@ -228,22 +233,22 @@ const buttonsClicks = {
 
       $('#save-edit').on('click', function(){
         let output= [];
-          $('.canvas div textarea,.datepicker,select.products,select.assessment').each(function(){
+          $('.canvas div textarea,.datepicker,select.products,select.assessment,input.is-official').each(function(){
               let index = $(this).attr('id').match(/[0-9]+$/g)[0];
               let value = "";
               if ($(this).val() != null) {
                 value = typeof($(this).val()) == 'string' ? $(this).val() : $(this).val().join(',');
               }
+              if ($(this)[0].type == 'checkbox'){
+                value = $(this).is(':checked') ? '1' : '0';
+                }
               output.push({ data: value, index: parseInt(index) });
           });
 
-          $('.doc-status').each(function(){ // separate for documentation status
-              let index = $(this).attr('id').match(/[0-9]+$/g)[0];
-              let value = $(this).is(':checked') ? 'Official source' : 'Non-official source';
-              output.push({ data: value, index: parseInt(index) });
-          });
           // console.log(output)
           console.log("BEFORE UPDATE ROW DATA");
+          // console.log(rowData);
+          // console.log(output);
           that.updateRowData(currentStatus, output, id, rowData);
           $('.overlay').click();
           $('#save-edit').remove();
@@ -299,12 +304,17 @@ const buttonsClicks = {
     $(`tr#${id}`).append(div_overlay);
     
     $('#save-dupl').on('click', function(){
+      var starredHint = $(this).closest('tr').attr('id');
       let rows = [];
+      let duplicates = [];
       $('.remove-row').each(function() { //duplicates-remove:checked
+        console.log($(this).closest('tr').attr('id'));
         rows.push($(this).closest('tr').attr('id'));
+        duplicates.push({starred: starredHint, duplicate: $(this).closest('tr').attr('id')});
       });
       that.stopDuplicatesMode();
       rows.forEach(d => that.removeRow(d));
+      Shiny.setInputValue("deliver-duplicateRows", JSON.stringify(duplicates), {priority: "event"});
     });
     $('#cancel-dupl').on('click', function(){
       that.stopDuplicatesMode();
@@ -323,14 +333,19 @@ const buttonsClicks = {
       }
     })
   },
-  convertToConfirmed: function(className, id){
-    $(`tr#${id}`).removeClass(className).addClass('confirmed').find('.status-label').text('confirmed');
+  convertToConfirmed: function(className, id){ //<div class=\"status-label ${data}\" alt=\\'${data}\\'>${status}</div>
+    $(`tr#${id}`).removeClass(className).addClass('confirmed');
+    $(`tr#${id}`).find('.status-label').removeClass(className).addClass('confirmed').attr('alt', 'confirmed');
+    $(`tr#${id}`).find('.status-label').html('<span class="material-icons">check</span>');
     $(`tr#${id}`).find('.accept').remove();
     $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
     this.rowAttachEvents('confirmed', id);
+    Shiny.setInputValue("deliver-confirmHint", JSON.stringify(id), {priority: "event"});
   },
   convertToDeleted: function(className, id){
-    $(`tr#${id}`).removeClass(className).addClass('deleted').find('.status-label').text('deleted');
+    $(`tr#${id}`).removeClass(className).addClass('deleted');
+    $(`tr#${id}`).find('.status-label').removeClass(className).addClass('deleted').attr('alt', 'deleted');
+    $(`tr#${id}`).find('.status-label').html('<span class="material-icons">delete</span>');
     $(`tr#${id}`).find('.accept').remove();
     $(`tr#${id}`).find('.restore').attr('style', 'display: ');
     $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'deleted';
@@ -350,26 +365,24 @@ const buttonsClicks = {
     .filter(d => d.selections.length != 0).map(d => d.s.dt.draw(false)); //redraw searchPanes
   },
   updateRowData: function(currentStatus, data, id, rowData){
-      // console.log('UPDATE ROW DATA');
-      // console.log(rowData)
-      // console.log(currentStatus)
-      // console.log(data)
-      // console.log(merged);
-      console.log("DATA TABLE ROW OUTPUT");
-      console.log($('#DataTables_Table_0').DataTable().cell($(`tr#${id} .description`)));
-      $(`tr#${id} .description`).addClass('TEST');
-      rowData.forEach((row) => {
-        let index = row.index;
-        // console.log(index);
-        console.log("ROW");
-        console.log(row.data.replace(/(\r\n|\n|\r)/gm, ""));
-        console.log(data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, ""));
-        if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
-          console.log("CHANGED");
-          $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
-        }
-      });
+    console.log("DATA TABLE ROW OUTPUT");
+    var changedData = [];
+    console.log(rowData);
+    rowData.forEach((row) => {
+      let index = row.index;
+      if (row.data.replace(/(\r\n|\n|\r)/gm, "") != data.find(x => x.index === index).data.replace(/(\r\n|\n|\r)/gm, "")) {
+        $(`#DataTables_Table_0 tbody tr#${id} td:eq(${row.index})`).addClass('edited');
+        changedData.push({index: row.index, dataNew: data.find(x => x.index === index).data, dataOld: row.data.replace(/(\r\n|\n|\r)/gm, ""), hintId: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 1).data(), isIntervention: $('#DataTables_Table_0').DataTable().cell($(`tr#${id}`), 24).data()});
+      }
+    });
 
+    if (changedData.length > 0) {
+      Shiny.setInputValue("deliver-changeData", JSON.stringify(changedData), {priority: "event"});
+      
+      //convert to confirmed
+      $(`tr#${id}`).removeClass(currentStatus).addClass('confirmed').find('.status-label').text('confirmed');
+      $(`tr#${id}`).find('.accept').remove();
+      $('#DataTables_Table_0').DataTable().row(`tr#${id}`).data()[0] = 'confirmed';
       $(`tr#${id}`).removeClass(currentStatus);
       $(`tr#${id}`).addClass('edited');
       $(`tr#${id}`).append('<div class="edited-icon">Edited</div>');
@@ -379,7 +392,10 @@ const buttonsClicks = {
       this.redrawDataTable();
       this.updateSearchPanes();
       this.rowAttachEvents(currentStatus, id);
-  },
+    }
+
+
+},
   getRowData: function(id){
     let columns = this.getColumnsNames();
     let col_ind = columns.flatMap(d => d.index);
@@ -396,7 +412,7 @@ const buttonsClicks = {
     let output = [];
     
     let filtered_columns = ['Jurisdiction', 'Initial assessment', 'Announcement date', 'Implementation date',
-                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Documentation status'];
+                            'Removal date', 'Description', 'Source', 'Products', 'Instruments', 'Is official?'];
     
     $('#DataTables_Table_0').DataTable().columns().every( function (i) {
       
@@ -468,7 +484,7 @@ const buttonsClicks = {
           OK: function() {
             let selected = $('select#reason').selectize()[0].selectize.getValue(),
             other = $('#prompt-form textarea').val(),
-            reasons = selected.concat(other).filter(d => d != '').join(',');
+            reasons = selected.concat(other).filter(d => d != '').join(';');
             
             if (reasons.length == 0){
               $('#other').addClass( "prompt-error" );
@@ -476,6 +492,12 @@ const buttonsClicks = {
             } else {
               that.convertToDeleted(currentStatus, id);
               $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
+              Shiny.setInputValue("deliver-discardHint", JSON.stringify({
+                hintId: id, 
+                reasons: selected.concat(other).filter(d => d != ''), 
+                comment: other == "" ? null : other
+                
+              }), {priority: "event"});
               $(this).dialog( "close" );
               that.redrawDataTable();
               that.updateSearchPanes();
@@ -510,7 +532,7 @@ const buttonsClicks = {
         if ($(this).is(':checked'))
           columns.push({ index: $(this).attr('id').match(/\d+/gi)[0], name: $(this).siblings('label').html() })
     });
-    data.forEach(function(d,i){
+    /*data.forEach(function(d,i){
       let row = {};
       d.map(function(d1,i1){
         columns.map(function(d2){
@@ -520,8 +542,20 @@ const buttonsClicks = {
       })
       output.push(row)
     })
-    console.log(output)
-    Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(output), {priority: "event"});
+    console.log(output)*/
+    console.log(columns)
+    Shiny.setInputValue('deliver-saveXlsx', JSON.stringify(columns), {priority: "event"});
+  },
+  switchDeleted: function(){
+   const that = this;
+   let state = $('.toggle-deleted').find('input').is(':checked');
+   if (state == true){
+     $('#DataTables_Table_1').find('.selected').each((d,i) => $(i).find('td').click()) // deselect selected
+   } else {
+     $('#DataTables_Table_1').find('.dtsp-name')
+                              .filter((i,val) => $(val).text() != 'deleted')
+                              .each((d,i) => $(i).click());
+   }
   }
 };
 
@@ -532,3 +566,10 @@ function searchPaneUI() {
     $('#deliver-deliverTable').toggleClass('collapsePanes');
   });
 }
+
+function toggleConflict() {
+  $('#deliver-deliverTable').on('click', '.conflict', function () {
+    $(this).toggleClass('open');
+  });
+}
+
