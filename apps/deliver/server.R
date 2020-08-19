@@ -121,7 +121,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         # Hide table columns
         list(
           visible = FALSE,
-          targets = c(15:46)
+          targets = c(15:47)
         ),
         # set columns widths
         list(  # Confirmation status
@@ -228,6 +228,11 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                orthogonal = 'sp'
              )
         ),
+        list(targets = 1,
+             render = JS("function (data, type, row){
+                            let gta_id = row[47];
+                            return gta_id == null ? data : gta_id;
+             }")),
         list(targets = 2,
              render = JS("function (data, type, row){
                             let users = data.split(',').map(d =>`<div class=\"usr-label\">${d}</div>`).join('');
@@ -458,28 +463,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                         }"),
       
       rowCallback = JS("function(row, data){
-        if (data[36] == 1) {
-          if (data[25] != null) { var assessment = data[25]; } else {var assessment = ''; }
-          if (data[26] != null) { var types = data[26]; } else {var types = ''; }
-          if (data[27] != null) { var announcement = data[27]; } else {var announcement = ''; }
-          if (data[28] != null) { var implementation = data[28]; } else {var implementation = ''; }
-          if (data[29] != null) { var removal = data[29]; } else {var removal = ''; }
-          if (data[30] != null) { var jurisdiction = data[30]; } else {var jurisdiction = ''; }
-          if (data[31] != null) { var product = data[31]; } else {var product = ''; }
-          if (data[32] != null) { var description = data[32]; } else {var description = ''; }
-          if (data[33] != null) { var title = data[33]; } else {var title = ''; }
-          if (data[34] != null) { var relevance = data[34]; } else {var relevance = ''; }
-          if (data[35] != null) { var url = data[35]; } else {var url = ''; }
-          
-          var conflict = '<div class=\\'conflict\\'><p class=\\'title\\'>Conflict</p><div class=\\'conflict-info\\'>'+assessment+types+announcement+implementation+removal+jurisdiction+product+description+title+relevance+url+'</div>';
-        } else {
-          var conflict = '';
-        }  
-        
-      
-        $(row)
-        .append('<div class=\\'break\\'></div>'+conflict);
-        return row;
+
       }"),
       
       createdRow = JS("function(row, data, dataIndex, cells){
@@ -494,6 +478,29 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
                                 $(this).on('click', function() { buttonsClicks[$(this).attr('class')](status, id) })
                               })
                         })
+                        
+                  if (data[36] == 1) {
+                    if (data[25] != null) { var assessment = data[25]; } else {var assessment = ''; }
+                    if (data[26] != null) { var types = data[26]; } else {var types = ''; }
+                    if (data[27] != null) { var announcement = data[27]; } else {var announcement = ''; }
+                    if (data[28] != null) { var implementation = data[28]; } else {var implementation = ''; }
+                    if (data[29] != null) { var removal = data[29]; } else {var removal = ''; }
+                    if (data[30] != null) { var jurisdiction = data[30]; } else {var jurisdiction = ''; }
+                    if (data[31] != null) { var product = data[31]; } else {var product = ''; }
+                    if (data[32] != null) { var description = data[32]; } else {var description = ''; }
+                    if (data[33] != null) { var title = data[33]; } else {var title = ''; }
+                    if (data[34] != null) { var relevance = data[34]; } else {var relevance = ''; }
+                    if (data[35] != null) { var url = data[35]; } else {var url = ''; }
+                    
+                    var conflict = '<div class=\\'conflict\\'><p class=\\'title\\'>Conflict</p><div class=\\'conflict-info\\'>'+assessment+types+announcement+implementation+removal+jurisdiction+product+description+title+relevance+url+'</div>';
+                  } else {
+                    var conflict = '';
+                  }  
+                  
+                
+                  $(row)
+                  .append('<div class=\\'break\\'></div>'+conflict);
+                  return row;
       }")
     ),
     class = "row-border compact",
