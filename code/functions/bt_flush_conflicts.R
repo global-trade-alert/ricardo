@@ -3,6 +3,7 @@
 # library(gtalibrary)
 # library(tidyverse)
 # library(plyr)
+# library(data.table)
 # gta_setwd()
 # gta_sql_pool_open(db.title="ricardodev",
 #                   db.host = gta_pwd("ricardodev")$host,
@@ -241,7 +242,6 @@ bt_flush_conflicts=function(user.id = NULL,
                                     SET bt_conflict_url.conflict_status = 2, bt_conflict_url.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_url) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);")
     
-    #update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
   }
   
   
@@ -275,7 +275,7 @@ bt_flush_conflicts=function(user.id = NULL,
   
   # b221_hint_change_attribute() here with the new attributes!
   pass.attributes %>%
-    #filter(hint.id == 28833) %>%
+    #filter(hint.id == 29391) %>%
     mutate(hints = hint.id) %>%
     group_by(hints) %>%
     nest() %>%
@@ -285,10 +285,11 @@ bt_flush_conflicts=function(user.id = NULL,
       b221_hint_change_attribute(change.id = x$hint.id,
                                  user.id = user.id,
                                  is.superuser = is.superuser,
-                                 is.intervention = F,
-                                 intervention.modifiable = F,
+                                 is.intervention = FALSE,
+                                 intervention.modifiable = FALSE,
                                  modify.assessment = switch(!is.na(x$conflict.assessment.name), x$conflict.assessment.name, NULL),
                                  modify.is.official = switch(!is.na(x$conflict.url.type.id), x$conflict.url.type.id, NULL),
+                                 modify.url = switch(!is.na(x$conflict.url), x$conflict.url, NULL),
                                  modify.date.announced = switch(!is.na(x$announcement.conflict.date), x$announcement.conflict.date, NULL),
                                  modify.date.implemented = switch(!is.na(x$implementation.conflict.date), x$implementation.conflict.date, NULL),
                                  modify.date.removed = switch(!is.na(x$removal.conflict.date), x$removal.conflict.date, NULL),
@@ -296,11 +297,11 @@ bt_flush_conflicts=function(user.id = NULL,
                                  modify.title = switch(!is.na(x$conflict.title), x$conflict.title, NULL),
                                  modify.description = switch(!is.na(x$conflict.description), x$conflict.description, NULL),
                                  remove.current.attributes=T,
-                                 add.instrument = switch(!is.na(x$conflict.intervention.name), x$conflict.intervention.name, NULL),
-                                 add.product = switch(!is.na(x$conflict.product.group.name), x$conflict.product.group.name, NULL),
-                                 add.jurisdiction = switch(!is.na(x$conflict.jurisdiction.name), x$conflict.jurisdiction.name, NULL)
+                                 add.instrument = switch(!is.na(x$conflict.intervention.name), unlist(x$conflict.intervention.name), NULL),
+                                 add.product = switch(!is.na(x$conflict.product.group.name), unlist(x$conflict.product.group.name), NULL),
+                                 add.jurisdiction = switch(!is.na(x$conflict.jurisdiction.name), unlist(x$conflict.jurisdiction.name), NULL)
       )
     })
   
-  update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
+  #update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
 }

@@ -11,6 +11,7 @@ b221_hint_change_attribute <- function(change.id=NULL,
                                      modify.relevance=NULL,
                                      modify.title=NULL,
                                      modify.description=NULL,
+                                     modify.url=NULL,
                                      modify.discard.comment=NULL,
                                      add.comment=NULL,
                                      remove.current.attributes=F, # remove all attributes initially when calling from bt_flush_conflicts
@@ -90,6 +91,7 @@ b221_hint_change_attribute <- function(change.id=NULL,
     }) %>%
     mutate_at(.vars = 'url.id', .funs = function(x) {
       url = mapvalues(unlist(x), url.list$url.id, url.list$url, warn_missing = F)
+      url = ifelse(is.null(modify.url), url, modify.url)
       return(unlist(url))
     }) %>%
     mutate(is.official = ifelse(url.type.id == 'official', 1, 0),
