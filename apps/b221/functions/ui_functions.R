@@ -19,7 +19,7 @@ get_single_hints_infos <- function(user.id = NULL, jurisdiction.names = NULL) {
   }
   t1 = Sys.time()
   output = gta_sql_get_value(paste0("SELECT * FROM
-                              (SELECT subset_ht_log.hint_id, subset_ht_log.hint_state_id, subset_ht_log.acting_agency, subset_ht_log.hint_date, jur_list.jurisdiction_name, CONCAT(IF(ht_act.state_act_id IS NULL,'',CONCAT('State act ',ht_act.state_act_id,' - Intervention ',subset_ht_log.gta_id,' - ')),ht_txt.hint_title) AS hint_title, ht_txt.hint_description, ass_list.assessment_name, subset_ht_log.prio_cty, cltn_log.collection_id, cltn_log.collection_name,
+                              (SELECT subset_ht_log.hint_id, subset_ht_log.hint_state_id, subset_ht_log.acting_agency, subset_ht_log.hint_date, jur_list.jurisdiction_name, CONCAT(IF(ht_act.state_act_id IS NULL,'',CONCAT('State act ',ht_act.state_act_id,IF(subset_ht_log.gta_id IS NULL,'',CONCAT(' - Intervention', subset_ht_log.gta_id)),' - ')),ht_txt.hint_title) AS hint_title, ht_txt.hint_description, ass_list.assessment_name, subset_ht_log.prio_cty, cltn_log.collection_id, cltn_log.collection_name,
                               GROUP_CONCAT(DISTINCT int_list.intervention_type_name SEPARATOR ' ; ')  AS intervention_type, 
                               GROUP_CONCAT(DISTINCT prod_list.product_group_name SEPARATOR ' ; ')  AS product_group_name,
                               GROUP_CONCAT(DISTINCT IF(bt_url_type_list.url_type_name='official', bt_url_log.url, NULL ) SEPARATOR ' ; ')  AS official,
