@@ -408,7 +408,7 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
       
       push.updates = paste0(push.updates, 
                            "INSERT INTO bt_hint_text(hint_id, hint_title, hint_description, language_id, classification_id, description_accepted, validation_classification, confirm_status)
-                            SELECT DISTINCT changes.hint_id, changes.title AS hint_title, changes.hint_description AS hint_description, 1 AS language_id, @classification_id AS classification_id, 1 AS description_accepted, @classification_id as validation_classification,",confirm_status," AS confirm_status
+                            SELECT DISTINCT changes.hint_id, IF(changes.title IS NOT NULL,changes.title,'[hint without title]') AS hint_title, changes.hint_description AS hint_description, 1 AS language_id, @classification_id AS classification_id, 1 AS description_accepted, @classification_id as validation_classification,",confirm_status," AS confirm_status
                             FROM b221_temp_changes_data_",user.id," changes
                             WHERE NOT EXISTS (SELECT NULL FROM (SELECT bt_hint_text.hint_id, bt_hint_text.hint_description, bt_hint_text.hint_title FROM bt_hint_text JOIN 
                             (SELECT bt_hint_text.hint_id, MAX(bt_hint_text.validation_classification) AS newest_classification 
