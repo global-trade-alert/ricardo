@@ -1,4 +1,6 @@
-bt_export_main_db=function(to.db = 'ricardodev'){
+bt_export_main_db=function(to.db = 'ricardodev', is.superuser = NULL, user.id = NULL, force.flush = NULL, soft.flush = NULL){
+  
+  if(!is.numeric(user.id) & length(user.id)==1) return('user.id must be provided and of length 1')
   
   library(pool)
   library(gtasql)
@@ -148,7 +150,7 @@ bt_export_main_db=function(to.db = 'ricardodev'){
                               ALTER TABLE bt_base_export ADD hint_id INT;
                               
                               INSERT INTO bt_hint_log (gta_id, registration_date, acting_agency, hint_date, hint_values, user_id, hint_type_id, hint_state_id, upload_id)
-                              SELECT DISTINCT(bt_base_export.intervention_id), DATE(NOW()) registration_date, 'GTA WEBSITE' AS acting_agency, NULL AS hint_date, NULL AS hint_values, 1 AS user_id, 2 AS hint_type_id, 7 AS hint_state_id, NULL AS upload_id
+                              SELECT DISTINCT(bt_base_export.intervention_id), DATE(NOW()) AS registration_date, 'GTA WEBSITE' AS acting_agency, NULL AS hint_date, NULL AS hint_values, 1 AS user_id, 2 AS hint_type_id, 7 AS hint_state_id, NULL AS upload_id
                               FROM bt_base_export 
                               WHERE NOT EXISTS (SELECT NULL FROM bt_hint_log WHERE bt_base_export.intervention_id = bt_hint_log.gta_id);
                               
@@ -173,7 +175,7 @@ bt_export_main_db=function(to.db = 'ricardodev'){
                               FROM bt_base_export 
                               JOIN gta_intervention_type_list int_list ON int_list.intervention_type = bt_base_export.intervention_type;
                               
-                              SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log');
+                              SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
                               						
                               INSERT INTO bt_classification_log(classification_id, user_id, hint_state_id, time_stamp)
                               SELECT DISTINCT @classification_id AS classification_id, 1 AS user_id, (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') AS hint_state_id, CONVERT_TZ(NOW(), 'UTC' , 'CET') AS time_stamp; 
@@ -353,6 +355,8 @@ bt_export_main_db=function(to.db = 'ricardodev'){
   
   gta_sql_get_value("DROP TABLE IF EXISTS bt_product_export;")
   gta_sql_get_value("DROP TABLE IF EXISTS bt_base_export;")
+  
+  bt_flush_conflicts(user.id = user.id, is.superuser = is.superuser, force.flush = force.flush, soft.flush = soft.flush)
   
   gta_sql_pool_close()
   

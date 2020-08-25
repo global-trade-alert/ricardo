@@ -273,7 +273,6 @@ bt_flush_conflicts=function(user.id = NULL,
   
   # b221_hint_change_attribute() here with the new attributes!
   pass.attributes %>%
-    filter(hint.id == 28409) %>%
     mutate(hints = hint.id) %>%
     group_by(hints) %>%
     nest() %>%
