@@ -27,52 +27,52 @@ bt_flush_conflicts=function(user.id = NULL,
     ## this is a hard flush - accepts newest regardless of if altered in the past
     
     new.attributes = paste0("SELECT bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
-                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date WHERE bt_conflict_date.conflict_date_type_id = 1 GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.conflict_date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
+                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
+                            ON bt_conflict_date.conflict_date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND bt_conflict_date.conflict_status = 1;
                             
                             SELECT bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
-                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date WHERE bt_conflict_date.conflict_date_type_id = 2 GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.conflict_date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
+                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
+                            ON bt_conflict_date.conflict_date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND bt_conflict_date.conflict_status = 1;
                             
                             SELECT bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
-                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date WHERE bt_conflict_date.conflict_date_type_id = 3 GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.conflict_date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1;
+                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
+                            ON bt_conflict_date.conflict_date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND bt_conflict_date.conflict_status = 1;
                             
                             SELECT bt_conflict_assessment.hint_id, b221_assessment_list.assessment_name AS conflict_assessment_name FROM bt_conflict_assessment
                            	JOIN b221_assessment_list ON bt_conflict_assessment.conflict_assessment_id <=> b221_assessment_list.assessment_id 
                           	JOIN (SELECT bt_conflict_assessment.hint_id, MAX(bt_conflict_assessment.conflict_id) AS newest_conflict, bt_conflict_assessment.conflict_status FROM bt_conflict_assessment GROUP BY hint_id) newest_conflict 
-                          	ON newest_conflict.hint_id = bt_conflict_assessment.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_assessment.conflict_id AND newest_conflict.conflict_status = 1;
+                          	ON newest_conflict.hint_id = bt_conflict_assessment.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_assessment.conflict_id AND bt_conflict_assessment.conflict_status = 1;
                             
                             SELECT bt_conflict_intervention.hint_id, GROUP_CONCAT(DISTINCT (b221_intervention_type_list.intervention_type_name) SEPARATOR ' , ') AS conflict_intervention_name FROM bt_conflict_intervention
                           	JOIN b221_intervention_type_list ON b221_intervention_type_list.intervention_type_id <=> bt_conflict_intervention.conflict_intervention_id 
                           	JOIN (SELECT bt_conflict_intervention.hint_id, MAX(bt_conflict_intervention.conflict_id) AS newest_conflict, bt_conflict_intervention.conflict_status FROM bt_conflict_intervention GROUP BY hint_id) newest_conflict 
-                          	ON newest_conflict.hint_id = bt_conflict_intervention.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_intervention.conflict_id AND newest_conflict.conflict_status = 1
+                          	ON newest_conflict.hint_id = bt_conflict_intervention.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_intervention.conflict_id AND bt_conflict_intervention.conflict_status = 1
                           	GROUP BY bt_conflict_intervention.hint_id;
                             
                             SELECT bt_conflict_jurisdiction.hint_id, GROUP_CONCAT(DISTINCT (gta_jurisdiction_list.jurisdiction_name) SEPARATOR ' , ') AS conflict_jurisdiction_name FROM bt_conflict_jurisdiction
                             JOIN gta_jurisdiction_list ON gta_jurisdiction_list.jurisdiction_id <=> bt_conflict_jurisdiction.conflict_jurisdiction_id 
                             JOIN (SELECT bt_conflict_jurisdiction.hint_id, MAX(bt_conflict_jurisdiction.conflict_id) AS newest_conflict, bt_conflict_jurisdiction.conflict_status FROM bt_conflict_jurisdiction GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_jurisdiction.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_jurisdiction.conflict_id AND bt_conflict_jurisdiction.conflict_status = 1
                             GROUP BY bt_conflict_jurisdiction.hint_id;
                             
                             SELECT bt_conflict_product_group.hint_id, GROUP_CONCAT(DISTINCT (b221_product_group_list.product_group_name) SEPARATOR ' , ') AS conflict_product_group_name FROM bt_conflict_product_group
                             JOIN b221_product_group_list ON b221_product_group_list.product_group_id <=> bt_conflict_product_group.conflict_product_group_id 
                             JOIN (SELECT bt_conflict_product_group.hint_id, MAX(bt_conflict_product_group.conflict_id) AS newest_conflict, bt_conflict_product_group.conflict_status FROM bt_conflict_product_group GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_product_group.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_product_group.conflict_id AND bt_conflict_product_group.conflict_status = 1
                             GROUP BY bt_conflict_product_group.hint_id;
                             
                             SELECT bt_conflict_relevance.hint_id, bt_conflict_relevance.relevance FROM bt_conflict_relevance
                           	JOIN (SELECT bt_conflict_relevance.hint_id, MAX(bt_conflict_relevance.conflict_id) AS newest_conflict, bt_conflict_relevance.conflict_status FROM bt_conflict_relevance GROUP BY hint_id) newest_conflict 
-                          	ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_relevance.conflict_id AND newest_conflict.conflict_status = 1;
+                          	ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_relevance.conflict_id AND bt_conflict_relevance.conflict_status = 1;
                                                       
                             SELECT bt_conflict_text.hint_id, bt_conflict_text.conflict_description, bt_conflict_text.conflict_title FROM bt_conflict_text
                             JOIN (SELECT bt_conflict_text.hint_id, MAX(bt_conflict_text.conflict_id) AS newest_conflict, bt_conflict_text.conflict_status FROM bt_conflict_text GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_text.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_text.conflict_id AND newest_conflict.conflict_status = 1;
+                            ON newest_conflict.hint_id = bt_conflict_text.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_text.conflict_id AND bt_conflict_text.conflict_status = 1;
                             
                             SELECT bt_conflict_url.hint_id, bt_url_log.url AS conflict_url, bt_conflict_url.conflict_url_type_id FROM bt_conflict_url
                             JOIN bt_url_log ON bt_url_log.url_id <=> bt_conflict_url.conflict_url_id
                             JOIN (SELECT bt_conflict_url.hint_id, MAX(bt_conflict_url.conflict_id) AS newest_conflict, bt_conflict_url.conflict_status FROM bt_conflict_url GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_url.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_url.conflict_id AND newest_conflict.conflict_status = 1;")
+                            ON newest_conflict.hint_id = bt_conflict_url.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_url.conflict_id AND bt_conflict_url.conflict_status = 1;")
     
     
     # update the status' 
@@ -83,45 +83,44 @@ bt_flush_conflicts=function(user.id = NULL,
                                     
                                     UPDATE bt_conflict_date
                                     JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND bt_conflict_date.conflict_status = 1
                                     SET bt_conflict_date.conflict_status = 2, bt_conflict_date.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_assessment
                                     JOIN (SELECT bt_conflict_assessment.hint_id, MAX(bt_conflict_assessment.conflict_id) AS newest_conflict, bt_conflict_assessment.conflict_status FROM bt_conflict_assessment GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_assessment.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_assessment.hint_id AND bt_conflict_assessment.conflict_status = 1
                                     SET bt_conflict_assessment.conflict_status = 2, bt_conflict_assessment.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_intervention
                                     JOIN (SELECT bt_conflict_intervention.hint_id, MAX(bt_conflict_intervention.conflict_id) AS newest_conflict, bt_conflict_intervention.conflict_status FROM bt_conflict_intervention GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_intervention.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_intervention.hint_id AND bt_conflict_intervention.conflict_status = 1
                                     SET bt_conflict_intervention.conflict_status = 2, bt_conflict_intervention.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_jurisdiction
                                     JOIN (SELECT bt_conflict_jurisdiction.hint_id, MAX(bt_conflict_jurisdiction.conflict_id) AS newest_conflict, bt_conflict_jurisdiction.conflict_status FROM bt_conflict_jurisdiction GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND bt_conflict_jurisdiction.conflict_status = 1
                                     SET bt_conflict_jurisdiction.conflict_status = 2, bt_conflict_jurisdiction.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_product_group
                                     JOIN (SELECT bt_conflict_product_group.hint_id, MAX(bt_conflict_product_group.conflict_id) AS newest_conflict, bt_conflict_product_group.conflict_status FROM bt_conflict_product_group GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND bt_conflict_product_group.conflict_status = 1
                                     SET bt_conflict_product_group.conflict_status = 2, bt_conflict_product_group.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_relevance
                                     JOIN (SELECT bt_conflict_relevance.hint_id, MAX(bt_conflict_relevance.conflict_id) AS newest_conflict, bt_conflict_relevance.conflict_status FROM bt_conflict_relevance GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND bt_conflict_relevance.conflict_status = 1
                                     SET bt_conflict_relevance.conflict_status = 2, bt_conflict_relevance.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_text
                                     JOIN (SELECT bt_conflict_text.hint_id, MAX(bt_conflict_text.conflict_id) AS newest_conflict, bt_conflict_text.conflict_status FROM bt_conflict_text GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_text.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_text.hint_id AND bt_conflict_text.conflict_status = 1
                                     SET bt_conflict_text.conflict_status = 2, bt_conflict_text.resolution_classification = @classification_id;
                                     
                                     UPDATE bt_conflict_url
                                     JOIN (SELECT bt_conflict_url.hint_id, MAX(bt_conflict_url.conflict_id) AS newest_conflict, bt_conflict_url.conflict_status FROM bt_conflict_url GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_url.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_url.hint_id AND bt_conflict_url.conflict_status = 1
                                     SET bt_conflict_url.conflict_status = 2, bt_conflict_url.resolution_classification = @classification_id;")
-    
-    #update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
+
   }
   
   if(soft.flush == T){
@@ -129,64 +128,63 @@ bt_flush_conflicts=function(user.id = NULL,
     ## this is a soft flush - accepts newest only if unaltered in the past
     
     new.attributes = paste0("SELECT bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
-                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date WHERE bt_conflict_date.conflict_date_type_id = 1 GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.conflict_date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
+                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
+                            ON bt_conflict_date.conflict_date_type_id = 1 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND bt_conflict_date.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_date resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                             
                             SELECT bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
-                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date WHERE bt_conflict_date.conflict_date_type_id = 2 GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.conflict_date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
+                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
+                            ON bt_conflict_date.conflict_date_type_id = 2 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND bt_conflict_date.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_date resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                             
                             SELECT bt_conflict_date.hint_id, bt_conflict_date.conflict_date, bt_conflict_date.conflict_date_type_id FROM bt_conflict_date
-                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date WHERE bt_conflict_date.conflict_date_type_id = 3 GROUP BY hint_id) newest_conflict 
-                            ON bt_conflict_date.conflict_date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND newest_conflict.conflict_status = 1
+                            JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
+                            ON bt_conflict_date.conflict_date_type_id = 3 AND newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_date.conflict_id AND bt_conflict_date.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_date resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                             
                             SELECT bt_conflict_assessment.hint_id, b221_assessment_list.assessment_name AS conflict_assessment_name FROM bt_conflict_assessment
                             JOIN b221_assessment_list ON bt_conflict_assessment.conflict_assessment_id <=> b221_assessment_list.assessment_id 
                             JOIN (SELECT bt_conflict_assessment.hint_id, MAX(bt_conflict_assessment.conflict_id) AS newest_conflict, bt_conflict_assessment.conflict_status FROM bt_conflict_assessment GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_assessment.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_assessment.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_assessment.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_assessment.conflict_id AND bt_conflict_assessment.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_assessment resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
        
                             SELECT bt_conflict_intervention.hint_id, GROUP_CONCAT(DISTINCT (b221_intervention_type_list.intervention_type_name) SEPARATOR ' , ') AS conflict_intervention_name FROM bt_conflict_intervention
                             JOIN b221_intervention_type_list ON b221_intervention_type_list.intervention_type_id <=> bt_conflict_intervention.conflict_intervention_id 
                             JOIN (SELECT bt_conflict_intervention.hint_id, MAX(bt_conflict_intervention.conflict_id) AS newest_conflict, bt_conflict_intervention.conflict_status FROM bt_conflict_intervention GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_intervention.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_intervention.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_intervention.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_intervention.conflict_id AND bt_conflict_intervention.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_assessment resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2)
                             GROUP BY bt_conflict_intervention.hint_id;   
 
                             SELECT bt_conflict_jurisdiction.hint_id, GROUP_CONCAT(DISTINCT (gta_jurisdiction_list.jurisdiction_name) SEPARATOR ' , ') AS conflict_jurisdiction_name FROM bt_conflict_jurisdiction
                             JOIN gta_jurisdiction_list ON gta_jurisdiction_list.jurisdiction_id <=> bt_conflict_jurisdiction.conflict_jurisdiction_id 
                             JOIN (SELECT bt_conflict_jurisdiction.hint_id, MAX(bt_conflict_jurisdiction.conflict_id) AS newest_conflict, bt_conflict_jurisdiction.conflict_status FROM bt_conflict_jurisdiction GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_jurisdiction.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_jurisdiction.conflict_id AND bt_conflict_jurisdiction.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_jurisdiction resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2)
                             GROUP BY bt_conflict_jurisdiction.hint_id;
 
                             SELECT bt_conflict_product_group.hint_id, GROUP_CONCAT(DISTINCT (b221_product_group_list.product_group_name) SEPARATOR ' , ') AS conflict_product_group_name FROM bt_conflict_product_group
                             JOIN b221_product_group_list ON b221_product_group_list.product_group_id <=> bt_conflict_product_group.conflict_product_group_id 
                             JOIN (SELECT bt_conflict_product_group.hint_id, MAX(bt_conflict_product_group.conflict_id) AS newest_conflict, bt_conflict_product_group.conflict_status FROM bt_conflict_product_group GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_product_group.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_product_group.conflict_id AND bt_conflict_product_group.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_product_group resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2)
                             GROUP BY bt_conflict_product_group.hint_id;
 
                             SELECT bt_conflict_relevance.hint_id, bt_conflict_relevance.relevance FROM bt_conflict_relevance
                             JOIN (SELECT bt_conflict_relevance.hint_id, MAX(bt_conflict_relevance.conflict_id) AS newest_conflict, bt_conflict_relevance.conflict_status FROM bt_conflict_relevance GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_relevance.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_relevance.conflict_id AND bt_conflict_relevance.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_relevance resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                             
                             SELECT bt_conflict_text.hint_id, bt_conflict_text.conflict_description, bt_conflict_text.conflict_title FROM bt_conflict_text
                             JOIN (SELECT bt_conflict_text.hint_id, MAX(bt_conflict_text.conflict_id) AS newest_conflict, bt_conflict_text.conflict_status FROM bt_conflict_text GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_text.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_text.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_text.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_text.conflict_id AND bt_conflict_text.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_text resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                             
                             SELECT bt_conflict_url.hint_id, bt_url_log.url AS conflict_url, bt_conflict_url.conflict_url_type_id FROM bt_conflict_url
                             JOIN bt_url_log ON bt_url_log.url_id <=> bt_conflict_url.conflict_url_id
                             JOIN (SELECT bt_conflict_url.hint_id, MAX(bt_conflict_url.conflict_id) AS newest_conflict, bt_conflict_url.conflict_status FROM bt_conflict_url GROUP BY hint_id) newest_conflict 
-                            ON newest_conflict.hint_id = bt_conflict_url.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_url.conflict_id AND newest_conflict.conflict_status = 1
+                            ON newest_conflict.hint_id = bt_conflict_url.hint_id AND newest_conflict.newest_conflict <=> bt_conflict_url.conflict_id AND bt_conflict_url.conflict_status = 1
                             WHERE NOT EXISTS (SELECT NULL FROM bt_conflict_url resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);")
 
-    # b221_hint_change_attribute() here with the new attributes!
     
     # update the status' 
     update.conflict.status = paste0("SET @classification_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_name='bt_classification_log' AND table_schema=DATABASE());
@@ -196,49 +194,49 @@ bt_flush_conflicts=function(user.id = NULL,
                                     
                                     UPDATE bt_conflict_date
                                     JOIN (SELECT bt_conflict_date.hint_id, MAX(bt_conflict_date.conflict_id) AS newest_conflict, bt_conflict_date.conflict_status FROM bt_conflict_date GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND bt_conflict_date.conflict_status = 1
                                     SET bt_conflict_date.conflict_status = 2, bt_conflict_date.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_date) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_assessment
                                     JOIN (SELECT bt_conflict_assessment.hint_id, MAX(bt_conflict_assessment.conflict_id) AS newest_conflict, bt_conflict_assessment.conflict_status FROM bt_conflict_assessment GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND bt_conflict_assessment.conflict_status = 1
                                     SET bt_conflict_assessment.conflict_status = 2, bt_conflict_assessment.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_assessment) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_intervention
                                     JOIN (SELECT bt_conflict_intervention.hint_id, MAX(bt_conflict_intervention.conflict_id) AS newest_conflict, bt_conflict_intervention.conflict_status FROM bt_conflict_intervention GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_date.hint_id AND bt_conflict_intervention.conflict_status = 1
                                     SET bt_conflict_intervention.conflict_status = 2, bt_conflict_intervention.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_intervention) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_jurisdiction
                                     JOIN (SELECT bt_conflict_jurisdiction.hint_id, MAX(bt_conflict_jurisdiction.conflict_id) AS newest_conflict, bt_conflict_jurisdiction.conflict_status FROM bt_conflict_jurisdiction GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_jurisdiction.hint_id AND bt_conflict_jurisdiction.conflict_status = 1
                                     SET bt_conflict_jurisdiction.conflict_status = 2, bt_conflict_jurisdiction.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_jurisdiction) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_product_group
                                     JOIN (SELECT bt_conflict_product_group.hint_id, MAX(bt_conflict_product_group.conflict_id) AS newest_conflict, bt_conflict_product_group.conflict_status FROM bt_conflict_product_group GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_product_group.hint_id AND bt_conflict_product_group.conflict_status = 1
                                     SET bt_conflict_product_group.conflict_status = 2, bt_conflict_product_group.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_product_group) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_relevance
                                     JOIN (SELECT bt_conflict_relevance.hint_id, MAX(bt_conflict_relevance.conflict_id) AS newest_conflict, bt_conflict_relevance.conflict_status FROM bt_conflict_relevance GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_relevance.hint_id AND bt_conflict_relevance.conflict_status = 1
                                     SET bt_conflict_relevance.conflict_status = 2, bt_conflict_relevance.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_relevance) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_text
                                     JOIN (SELECT bt_conflict_text.hint_id, MAX(bt_conflict_text.conflict_id) AS newest_conflict, bt_conflict_text.conflict_status FROM bt_conflict_text GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_text.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_text.hint_id AND bt_conflict_text.conflict_status = 1
                                     SET bt_conflict_text.conflict_status = 2, bt_conflict_text.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_text) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);
                                     
                                     UPDATE bt_conflict_url
                                     JOIN (SELECT bt_conflict_url.hint_id, MAX(bt_conflict_url.conflict_id) AS newest_conflict, bt_conflict_url.conflict_status FROM bt_conflict_url GROUP BY hint_id) newest_conflict 
-                                    ON newest_conflict.hint_id = bt_conflict_url.hint_id AND newest_conflict.conflict_status = 1
+                                    ON newest_conflict.hint_id = bt_conflict_url.hint_id AND bt_conflict_url.conflict_status = 1
                                     SET bt_conflict_url.conflict_status = 2, bt_conflict_url.resolution_classification = @classification_id
                                     WHERE NOT EXISTS (SELECT NULL FROM (SELECT * FROM bt_conflict_url) AS resolved_conflicts WHERE resolved_conflicts.hint_id = newest_conflict.hint_id AND resolved_conflicts.conflict_status = 2);")
     
@@ -275,7 +273,7 @@ bt_flush_conflicts=function(user.id = NULL,
   
   # b221_hint_change_attribute() here with the new attributes!
   pass.attributes %>%
-    #filter(hint.id == 29391) %>%
+    filter(hint.id == 28409) %>%
     mutate(hints = hint.id) %>%
     group_by(hints) %>%
     nest() %>%
@@ -303,5 +301,5 @@ bt_flush_conflicts=function(user.id = NULL,
       )
     })
   
-  #update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
+  update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
 }

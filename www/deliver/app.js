@@ -56,10 +56,10 @@ $( document ).ready(function() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('save-cols is loaded')
       let colnames = await buttonsClicks.getAllColumnsNames();
-      colnames = colnames.filter(d => /^(entry id|initial assessment|products|documentation status|jurisdiction|gta intervention type|announcement date|implementation date|removal date|source|instruments)$/gi.test(d.name)); //pre-filter all columns
+      colnames = colnames.filter(d => /^(entry id|initial assessment|products|documentation status|jurisdiction|gta intervention type|announcement date|implementation date|removal date|source|description|instruments)$/gi.test(d.name)); //pre-filter all columns
       
       colnames.forEach(function(d, i) {
-        let checked = /confirmation|users|description/gi.test(d.name) ? false : true; //untick some cols initially
+        let checked = /confirmation|users/gi.test(d.name) ? false : true; //untick some cols initially
         let input = $('<input />')
                               .attr('type', 'checkbox')
                               .attr('checked', checked)
