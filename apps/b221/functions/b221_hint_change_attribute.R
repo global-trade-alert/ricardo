@@ -1,30 +1,4 @@
-# library(pool)
-# library(gtasql)
-# library(gtalibrary)
-# library(plyr)
-# library(tidyverse)
-# gta_setwd()
-# 
-# gta_sql_pool_open(db.title="ricardodev",
-#                   db.host = gta_pwd("ricardodev")$host,
-#                   db.name = "dlvr_app_extension_dev",
-#                   db.user = gta_pwd("ricardodev")$user,
-#                   db.password = gta_pwd("ricardodev")$password,
-#                   table.prefix = "")
-# 
-# gta_sql_pool_open(db.title="ricardomainclone",
-#                   db.host = "gta-ricardo-dev.cp7esvs8xwum.eu-west-1.rds.amazonaws.com",
-#                   db.name = 'dlvr_app_extension_dev',
-#                   db.user = 'gtaricardodev',
-#                   db.password = '4rbjDVRote7YLsTqfmWXfbwdf7jVt8VjwXUhgy',
-#                   table.prefix = "")
-# 
-# gta_sql_pool_close()
-# 
-# change.id = 1
-
-
-b221_hint_change_attribute<-function(change.id=NULL,
+b221_hint_change_attribute <- function(change.id=NULL,
                                      user.id=NULL,
                                      is.superuser=NULL,
                                      is.intervention=F,
@@ -37,8 +11,10 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                      modify.relevance=NULL,
                                      modify.title=NULL,
                                      modify.description=NULL,
+                                     modify.url=NULL,
                                      modify.discard.comment=NULL,
                                      add.comment=NULL,
+                                     remove.current.attributes=F, # remove all attributes initially when calling from bt_flush_conflicts
                                      add.instrument=NULL,
                                      remove.instrument=NULL,
                                      add.product=NULL,
@@ -115,6 +91,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
     }) %>%
     mutate_at(.vars = 'url.id', .funs = function(x) {
       url = mapvalues(unlist(x), url.list$url.id, url.list$url, warn_missing = F)
+      url = ifelse(is.null(modify.url), url, modify.url)
       return(unlist(url))
     }) %>%
     mutate(is.official = ifelse(url.type.id == 'official', 1, 0),
@@ -150,16 +127,19 @@ b221_hint_change_attribute<-function(change.id=NULL,
     mutate_at(.vars = 'intervention.id', .funs = function(x) {
       intervention.name = mapvalues(x, intervention.list$intervention.type.id, intervention.list$intervention.type.name, warn_missing = F)
       intervention.name = ifelse(intervention.name %in% remove.instrument, NA_character_, intervention.name)
+      intervention.name = ifelse(remove.current.attributes == TRUE & !is.null(add.instrument), NA_character_, intervention.name)
       return(intervention.name)
     }) %>%
     mutate_at(.vars = 'product.group.id', .funs = function(x) {
       product.name = mapvalues(x, product.list$product.group.id, product.list$product.group.name, warn_missing = F)
       product.name = ifelse(product.name %in% remove.product, NA_character_, product.name)
+      product.name = ifelse(remove.current.attributes == TRUE & !is.null(add.product), NA_character_, product.name)
       return(product.name)
     }) %>%
     mutate_at(.vars = 'jurisdiction.id', .funs = function(x) {
       jurisdiction.name = mapvalues(x, jurisdiction.list$jurisdiction.id, jurisdiction.list$jurisdiction.name, warn_missing = F)
       jurisdiction.name = ifelse(jurisdiction.name %in% remove.jurisdiction, NA_character_, jurisdiction.name)
+      jurisdiction.name = ifelse(remove.current.attributes == TRUE & !is.null(add.jurisdiction), NA_character_, jurisdiction.name)
       return(jurisdiction.name)
     }) %>%
     mutate_at(.vars = 'discard.reason.id', .funs = function(x) {
@@ -333,7 +313,7 @@ b221_hint_change_attribute<-function(change.id=NULL,
                                        is.superuser = is.superuser,
                                        user.id = user.id,
                                        collection.id = output$collection.id,
-                                       hints.id = output$hint.id,
+                                       hints.id = col.hints,
                                        starred.hint.id = attributes$starred.hint.id,
                                        country = attributes$country,
                                        product = attributes$product,

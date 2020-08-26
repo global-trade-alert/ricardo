@@ -513,8 +513,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   observeEvent(input$saveXlsx, {
     exportCols <- jsonlite::fromJSON(input$saveXlsx)
     exportCols <- merge(exportCols, change_attribute_table, by="index", keep.x=T) %>%
-      rename('name_new' = name.x, 'name_old' = name.y)
-
+      dplyr::rename(name_new = name.x, name_old = name.y) %>%
+      arrange(as.numeric(index))
+    
+    exportCols_test <<- exportCols
 
     subset_prod = NULL
     subset_instr = NULL
@@ -525,9 +527,10 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     if(exportCols %>% filter(name_old == 'intervention.type.name') %>% nrow() > 0) {
       subset_instr = c('Is export barrier', 'Is import barrier', 'Domestic subsidy', 'Export subsidy')
     }
-    subset = c(subset_prod, subset_instr)
+    subset = c(subset_instr, subset_prod)
     
       output_xlsx <- dlvr_pull_display(last.deliverable = paste0(lubridate::floor_date(lubridate::now(), "second")))
+      output_xlsx_test <<- output_xlsx
       output_xlsx <- output_xlsx %>%
         filter(relevance == 1)
       output_xlsx <- output_xlsx %>%
@@ -547,7 +550,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
       setnames(output_xlsx, exportCols$name_old, exportCols$name_new)
       output_xlsx <- output_xlsx %>%
         select(!any_of(c('Products', 'Instruments')))
-    data_export <<- list("WB data" = output_xlsx, "Notes" = c('Data as available on CURRENTTIME.'))
+    data_export <<- list("WB data" = output_xlsx, "Notes" = paste0('Data as available on ', lubridate::floor_date(lubridate::now(), "second")))
     runjs("$('#deliver-downloadXlsx')[0].click();
            $('.overlay').click();")
     
@@ -555,7 +558,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
   
   output$downloadXlsx <- downloadHandler(
     filename = function() {
-      paste0("test", ".xlsx")
+      paste0("deliverable - ",lubridate::floor_date(lubridate::now(), "day"), ".xlsx")
     },
     content = function(file) {
       openxlsx::write.xlsx(data_export, file = file)
