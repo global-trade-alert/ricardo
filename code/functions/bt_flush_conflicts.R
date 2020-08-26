@@ -1,19 +1,3 @@
-# library(pool)
-# library(gtasql)
-# library(gtalibrary)
-# library(tidyverse)
-# library(plyr)
-# library(data.table)
-# gta_setwd()
-# gta_sql_pool_open(db.title="ricardodev",
-#                   db.host = gta_pwd("ricardodev")$host,
-#                   db.name = "dlvr_app_extension_dev",
-#                   db.user = gta_pwd("ricardodev")$user,
-#                   db.password = gta_pwd("ricardodev")$password,
-#                   table.prefix = "")
-# 
-# gta_sql_pool_close()
-
 bt_flush_conflicts=function(user.id = NULL,
                             is.superuser = NULL,
                             force.flush = NULL,
@@ -265,11 +249,6 @@ bt_flush_conflicts=function(user.id = NULL,
     arrange(hint.id)
   
   pass.attributes.test <<- pass.attributes
-  
-  # check duplicates - has only testing purposes
-  check <<- pass.attributes %>%
-    group_by(hint.id) %>%
-    filter(n() > 1)
   
   # b221_hint_change_attribute() here with the new attributes!
   pass.attributes %>%
