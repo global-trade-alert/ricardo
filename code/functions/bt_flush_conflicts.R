@@ -226,7 +226,7 @@ bt_flush_conflicts=function(user.id = NULL,
     
   }
   
-  
+  if(soft.flush == T | force.flush ==T){
   new.attributes = gta_sql_multiple_queries(new.attributes, output.queries = 1:10)
   names(new.attributes) = c('announcement','implementation','removal','assessment','intervention','jurisdiction','product','relevance','text','url')
   new.attributes <<- new.attributes
@@ -280,4 +280,5 @@ bt_flush_conflicts=function(user.id = NULL,
     })
   
   update.conflicts = gta_sql_multiple_queries(update.conflict.status, output.queries = 1, show.time = T)
+    }
 }
