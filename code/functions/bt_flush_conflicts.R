@@ -1,5 +1,4 @@
 bt_flush_conflicts=function(user.id = NULL,
-                            is.superuser = NULL,
                             force.flush = NULL,
                             soft.flush = NULL){
   
@@ -260,7 +259,7 @@ bt_flush_conflicts=function(user.id = NULL,
     map(.f = function(x){
       b221_hint_change_attribute(change.id = x$hint.id,
                                  user.id = user.id,
-                                 is.superuser = is.superuser,
+                                 is.superuser = FALSE,
                                  is.intervention = FALSE,
                                  intervention.modifiable = FALSE,
                                  modify.assessment = switch(!is.na(x$conflict.assessment.name), x$conflict.assessment.name, NULL),
