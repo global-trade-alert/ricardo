@@ -1,4 +1,4 @@
-bt_export_main_db=function(to.db = 'ricardodev', user.id = NULL, force.flush = NULL, soft.flush = NULL){
+bt_export_main_db=function(to.db = 'ricardodev', user.id = NULL, force.flush = F, soft.flush = F){
   
   if(!is.numeric(user.id) & length(user.id)==1) return('user.id must be provided and of length 1')
   if(force.flush == T & soft.flush == T) return('force.flush AND soft.flush are not permitted!')
@@ -357,7 +357,7 @@ bt_export_main_db=function(to.db = 'ricardodev', user.id = NULL, force.flush = N
   gta_sql_get_value("DROP TABLE IF EXISTS bt_product_export;")
   gta_sql_get_value("DROP TABLE IF EXISTS bt_base_export;")
   
-  if(force.flush == T | soft.flush == T) bt_flush_conflicts(user.id = user.id, force.flush = force.flush, soft.flush = soft.flush)
+  if(any(c(force.flush,soft.flush)==T)) bt_flush_conflicts(user.id = user.id, force.flush = force.flush, soft.flush = soft.flush)
   
   gta_sql_pool_close()
   
