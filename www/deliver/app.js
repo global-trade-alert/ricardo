@@ -490,11 +490,14 @@ const buttonsClicks = {
               $('#other').addClass( "prompt-error" );
               $('#prompt-form div.selectize-input').addClass( "prompt-error" );
             } else {
+              if (selected.length == 0) { // if discard reason is not given, but there's a discard comment
+                selected = ['other, see comment']
+              }
               that.convertToDeleted(currentStatus, id);
               $(`#toggle-description_${id}`).html() == 'Show less' ? $(`tr#${id}`).find('.more-less')[0].click() : '';
               Shiny.setInputValue("deliver-discardHint", JSON.stringify({
                 hintId: id, 
-                reasons: selected.concat(other).filter(d => d != ''), 
+                reasons: selected.filter(d => d != ''),  //selected.concat(other).filter(d => d != ''), 
                 comment: other == "" ? null : other
                 
               }), {priority: "event"});
