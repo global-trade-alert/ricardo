@@ -145,6 +145,7 @@ b221_hint_change_attribute <- function(change.id=NULL,
     mutate_at(.vars = 'discard.reason.id', .funs = function(x) {
       discard.reason.name = mapvalues(x, discard.reasons.list$discard.reason.id, discard.reasons.list$discard.reason.name, warn_missing = F)
       discard.reason.name = ifelse(discard.reason.name %in% remove.discard.reason, NA_character_, discard.reason.name)
+      discard.reason.name = ifelse(remove.current.attributes == TRUE & !is.null(add.discard.reason), NA_character_, discard.reason.name)
       return(discard.reason.name)
     }) %>%
     mutate_at(.vars = 'announcementdate', .funs = function(x) {

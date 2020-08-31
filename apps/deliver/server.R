@@ -637,6 +637,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     b221_hint_change_attribute(change.id=change.id,
                                user.id = user$id,
                                is.superuser=T,
+                               remove.current.attributes=T, # remove discard reasons initially
                                is.intervention=F,
                                intervention.modifiable=T,
                                add.discard.reason = discardedHint$reasons,
