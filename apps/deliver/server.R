@@ -15,6 +15,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
     output$users = "Users"
     output$product.group.name <- gsub(" ; ",",",output$product.group.name)
     output$intervention.type.name <- gsub(" ; ",",",output$intervention.type.name)
+    output$jurisdiction.name <- gsub(" ; ",",",output$jurisdiction.name)
     # output$english.description = "Description"
     output <- output %>%
       select(confirm.status,
@@ -245,7 +246,7 @@ deliverserver <- function(input, output, session, user, app, prm, ...) {
         list(targets = 5,
              render = JS("function (data, type, row){
                             if (type === 'sp') {
-                              return data != null ? data.split(' ; ') : '';
+                              return data != null ? data.split(',') : '';
                               }
                             return data;
                }"),
