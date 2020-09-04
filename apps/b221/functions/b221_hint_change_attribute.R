@@ -68,7 +68,6 @@ b221_hint_change_attribute <- function(change.id=NULL,
   url.list <- gta_sql_get_value(paste0("SELECT DISTINCT url_id, url FROM bt_url_log WHERE url_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$url.id), 'NULL',pull.hint.attributes$url.id)),collapse=',') ,");"))
   url.type <- gta_sql_get_value(paste0("SELECT DISTINCT url_type_id, url_type_name FROM bt_url_type_list WHERE url_type_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$url.type.id), 'NULL',pull.hint.attributes$url.type.id)),collapse=',') ,");"))
   date.type <- gta_sql_get_value(paste0("SELECT DISTINCT date_type_id, date_type_name FROM bt_date_type_list;"))
-  date.type <<- date.type
   test_pull.attributes <<- pull.hint.attributes
   
   pull.hint.attributes <- pull.hint.attributes %>% 
