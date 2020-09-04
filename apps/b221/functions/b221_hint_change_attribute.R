@@ -36,7 +36,7 @@ b221_hint_change_attribute <- function(change.id=NULL,
     change.id=change.id[!is.na(change.id)]
     if(length(change.id)<1) return("no such intervention id was found")
   }
-  
+  print(modify.date.removed)
   col.id=gta_sql_get_value(paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id IN (",paste0(change.id, collapse=','),");")) #paste0("SELECT DISTINCT hint_id, collection_id FROM b221_hint_collection WHERE hint_id = ",change.id,";")
   test_col.id <<- col.id
   
@@ -67,8 +67,8 @@ b221_hint_change_attribute <- function(change.id=NULL,
   discard.reasons.list <- gta_sql_get_value(paste0("SELECT DISTINCT bdrl.discard_reason_id, bdrl.discard_reason_name FROM bt_discard_reason_list bdrl WHERE bdrl.discard_reason_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$discard.reason.id), 'NULL',pull.hint.attributes$discard.reason.id)),collapse=',') ,");"))
   url.list <- gta_sql_get_value(paste0("SELECT DISTINCT url_id, url FROM bt_url_log WHERE url_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$url.id), 'NULL',pull.hint.attributes$url.id)),collapse=',') ,");"))
   url.type <- gta_sql_get_value(paste0("SELECT DISTINCT url_type_id, url_type_name FROM bt_url_type_list WHERE url_type_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$url.type.id), 'NULL',pull.hint.attributes$url.type.id)),collapse=',') ,");"))
-  date.type <- gta_sql_get_value(paste0("SELECT DISTINCT date_type_id, date_type_name FROM bt_date_type_list WHERE date_type_id IN (", paste0(unique(ifelse(is.na(pull.hint.attributes$date.type.id), 'NULL',pull.hint.attributes$date.type.id)),collapse=',') ,");"))
-  
+  date.type <- gta_sql_get_value(paste0("SELECT DISTINCT date_type_id, date_type_name FROM bt_date_type_list;"))
+  date.type <<- date.type
   test_pull.attributes <<- pull.hint.attributes
   
   pull.hint.attributes <- pull.hint.attributes %>% 
@@ -84,7 +84,7 @@ b221_hint_change_attribute <- function(change.id=NULL,
            comment = NA_character_,
            announcementdate = ifelse(date.type.id == 'announcement', date, NA_character_),
            implementationdate = ifelse(date.type.id == 'implementation', date, NA_character_),
-           removaldate = ifelse(date.type.id == 'remove', date, NA_character_)) %>%
+           removaldate = ifelse(date.type.id == 'removal', date, NA_character_)) %>%
     mutate_at(.vars='url.type.id', .funs = function(x) {
       url.type = mapvalues(unlist(x), url.type$url.type.id, url.type$url.type.name, warn_missing = F)
       return(unlist(url.type))
