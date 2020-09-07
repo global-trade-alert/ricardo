@@ -1332,7 +1332,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$jurisdiction.name), split = ' ; ')), function(x) sum(x %in% initialJurisdictions))) * weight.jur +
     #                                      do.call(rbind, lapply(as.list(strsplit(as.character(singleHintOutput$product.group.name), split = ' ; ')), function(x) sum(x %in% initialProduct))) * weight.product +
     #                                      do.call(rbind, lapply(singleHintOutput$assessment.name, function(x) sum(x %in% initialAssessment))) * weight.assessment+
-    #                                      do.call(rbind, lapply(singleHintOutput$hint.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
+    #                                      do.call(rbind, lapply(singleHintOutput$registration.date, function(x) log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(x)))))))* weight.date  )
     # 
     # singleHintOutput$order[singleHintOutput$order<0]=0
 
@@ -1345,7 +1345,7 @@ LEFT JOIN bt_date_type_list ON bt_hint_date.date_type_id = bt_date_type_list.dat
     if(any(!is.na(initialDate))){
       initialDate=initialDate[!is.na(initialDate)]
       
-      singleHintOutput$date.numeric=log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(singleHintOutput$hint.date)))+1))
+      singleHintOutput$date.numeric=log(1/(abs(as.numeric(as.Date(initialDate))-as.numeric(as.Date(singleHintOutput$registration.date)))+1))
       singleHintOutput$order=singleHintOutput$order+weight.date * singleHintOutput$date.numeric
     }
     
