@@ -1,8 +1,9 @@
-bt_evaluate_user_performance=function(){
+bt_evaluate_user_performance=function(return.xlsx = F, xlsx.path = NULL){
   
   library(gtasql)
   library(gtalibrary)
   library(pool)
+  
   gta_setwd()
   possible.statistics = c('processed_hints','validated_hints','state_two_hint_counts','accuracy_measures_relevance','accuracy_measures_jurisdiction','accuracy_measures_instrument','accuracy_measures_assessment','accuracy_measures_product','accuracy_measures_date')
   sql.call = paste0("CALL compute_user_performance_stats('",possible.statistics,"')")
@@ -15,7 +16,7 @@ bt_evaluate_user_performance=function(){
     gta_sql_pool_close()
   }
   names(result) <- possible.statistics
-  return(result)
+  if(return.xlsx==T & !is.null(xlsx.path)) openxlsx::write.xlsx(result, paste0(xlsx.path,Sys.Date(),' ricardo database statistics.xlsx')) else return(result)
 }
 
 # /* The following is an SQL script which should be ran in the database and stores a function inside the database 
