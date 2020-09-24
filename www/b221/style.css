@@ -147,19 +147,21 @@ body.freelancer #b221-leadsTable .leads-item .right-col #duplicate-of-existing {
 }
 
 #b221-leadsTable .leads-item .right-col #no-policy-mentioned span,
+#b221-leadsTable .leads-item .right-col #not-commercial-policy span,
 #b221-leadsTable .leads-item .right-col #update-to-existing span,
 #b221-leadsTable .leads-item .right-col #duplicate-of-existing span {
 	transform:rotate(-90deg);
 	color:#CCCCCC;
 	text-align: center;
 	white-space: nowrap;
-	font-size: 0.9em;
+	font-size: 0.8em;
 	font-weight: 600;
 	overflow: hidden;
 	transition:all 0.2s ease-out;
 }
 
 #b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned span,
+#b221-leadsTable .leads-item.not-commercial-policy .right-col #not-commercial-policy span,
 #b221-leadsTable .leads-item.update-to-existing .right-col #update-to-existing span,
 #b221-leadsTable .leads-item.duplicate-of-existing .right-col #duplicate-of-existing span {
 	color:#FFFFFF;
@@ -168,6 +170,7 @@ body.freelancer #b221-leadsTable .leads-item .right-col #duplicate-of-existing {
 
 #b221-leadsTable .leads-item.dismiss .right-col #discard,
 #b221-leadsTable .leads-item.no-policy-mentioned .right-col #no-policy-mentioned,
+#b221-leadsTable .leads-item.not-commercial-policy .right-col #not-commercial-policy,
 #b221-leadsTable .leads-item.update-to-existing .right-col #update-to-existing,
 #b221-leadsTable .leads-item.duplicate-of-existing .right-col #duplicate-of-existing {
 	background-color:#ee3e3e;

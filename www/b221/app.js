@@ -66,13 +66,18 @@ function checkLeadsManual() {
         removeValClasses(changeEl);
         $(changeEl).addClass('no-policy-mentioned');
         collectData(`#${elementID}`,'no-policy-mentioned');
+      } 
+      else if (elementType == "not-commercial-policy" && ! $(this).hasClass('not-commercial-policy')) {
+        removeValClasses(changeEl);
+        $(changeEl).addClass('not-commercial-policy');
+        collectData(`#${elementID}`,'not-commercial-policy');
       }
-      else if (elementType == "update-to-existing" && ! $(this).hasClass('no-policy-mentioned')) {
+      else if (elementType == "update-to-existing" && ! $(this).hasClass('update-to-existing')) {
         removeValClasses(changeEl);
         $(changeEl).addClass('update-to-existing');
         collectData(`#${elementID}`,'update-to-existing');
       }
-      else if (elementType == "duplicate-of-existing" && ! $(this).hasClass('no-policy-mentioned')) {
+      else if (elementType == "duplicate-of-existing" && ! $(this).hasClass('duplicate-of-existing')) {
         removeValClasses(changeEl);
         $(changeEl).addClass('duplicate-of-existing');
         collectData(`#${elementID}`,'duplicate-of-existing');
@@ -86,6 +91,7 @@ function removeValClasses(el) {
   $(el).removeClass('reactivate');
   $(el).removeClass('dismiss');
   $(el).removeClass('no-policy-mentioned');
+  $(el).removeClass('not-commercial-policy');
   $(el).removeClass('update-to-existing');
   $(el).removeClass('duplicate-of-existing');
 }
@@ -386,7 +392,13 @@ function collectData(type='', state=''){
       Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
       $(`${type}`).addClass('no-policy-mentioned');
       $(`${type}`).removeClass('show-submission');
-    } else if (state == 'update-to-existing') {
+    } else if (state == 'not-commercial-policy') {
+      output[0].discard_reasons = "not a commercial policy";
+      console.log(output);
+      Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
+      $(`${type}`).addClass('not-commercial-policy');
+      $(`${type}`).removeClass('show-submission');
+    }else if (state == 'update-to-existing') {
       output[0].discard_reasons = "update to existing intervention";
       console.log(output);
       Shiny.setInputValue("b221-collectedData", JSON.stringify(output), {priority: "event"});
