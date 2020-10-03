@@ -156,14 +156,14 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           
                           DELETE b221_hint_assessment, b221_hint_product_group, b221_hint_intervention, bt_hint_jurisdiction, bt_hint_relevance, bt_hint_date, bt_hint_url, bt_hint_discard_reason
                           FROM (SELECT * FROM b221_temp_changes_data_",user.id,") changes
-                          LEFT JOIN b221_hint_assessment ON changes.hint_id = b221_hint_assessment.hint_id AND b221_hint_assessment.validation_classification IS NULL AND changes.in_collection = 0
-                          LEFT JOIN b221_hint_product_group ON changes.hint_id = b221_hint_product_group.hint_id AND b221_hint_product_group.validation_classification IS NULL AND changes.in_collection = 0
-                          LEFT JOIN b221_hint_intervention ON changes.hint_id = b221_hint_intervention.hint_id AND b221_hint_intervention.validation_classification IS NULL AND changes.in_collection = 0
-                          LEFT JOIN bt_hint_jurisdiction ON changes.hint_id = bt_hint_jurisdiction.hint_id AND bt_hint_jurisdiction.validation_classification IS NULL AND changes.in_collection = 0
-                          LEFT JOIN bt_hint_relevance ON changes.hint_id = bt_hint_relevance.hint_id AND bt_hint_relevance.validation_classification IS NULL AND changes.in_collection = 0
-                          LEFT JOIN bt_hint_date ON changes.hint_id = bt_hint_date.hint_id AND bt_hint_date.validation_classification IS NULL
-                          LEFT JOIN bt_hint_url ON changes.hint_id = bt_hint_url.hint_id AND bt_hint_url.validation_classification IS NULL
-                          LEFT JOIN bt_hint_discard_reason ON changes.hint_id = bt_hint_discard_reason.hint_id AND bt_hint_discard_reason.validation_classification IS NULL
+                          LEFT JOIN b221_hint_assessment ON changes.hint_id = b221_hint_assessment.hint_id AND b221_hint_assessment.validation_classification IS NULL AND changes.in_collection = 0 LEFT JOIN bt_classification_log ass_user ON b221_hint_assessment.classification_id = ass_user.classification_id AND ass_user.user_id = ",user.id,"
+                          LEFT JOIN b221_hint_product_group ON changes.hint_id = b221_hint_product_group.hint_id AND b221_hint_product_group.validation_classification IS NULL AND changes.in_collection = 0 LEFT JOIN bt_classification_log prod_user ON b221_hint_product_group.classification_id = prod_user.classification_id AND prod_user.user_id = ",user.id,"
+                          LEFT JOIN b221_hint_intervention ON changes.hint_id = b221_hint_intervention.hint_id AND b221_hint_intervention.validation_classification IS NULL AND changes.in_collection = 0 LEFT JOIN bt_classification_log int_user ON b221_hint_intervention.classification_id = int_user.classification_id AND int_user.user_id = ",user.id,"
+                          LEFT JOIN bt_hint_jurisdiction ON changes.hint_id = bt_hint_jurisdiction.hint_id AND bt_hint_jurisdiction.validation_classification IS NULL AND changes.in_collection = 0 LEFT JOIN bt_classification_log jur_user ON bt_hint_jurisdiction.classification_id = jur_user.classification_id AND jur_user.user_id = ",user.id,"
+                          LEFT JOIN bt_hint_relevance ON changes.hint_id = bt_hint_relevance.hint_id AND bt_hint_relevance.validation_classification IS NULL AND changes.in_collection = 0 LEFT JOIN bt_classification_log rel_user ON bt_hint_relevance.classification_id = rel_user.classification_id AND rel_user.user_id = ",user.id,"
+                          LEFT JOIN bt_hint_date ON changes.hint_id = bt_hint_date.hint_id AND bt_hint_date.validation_classification IS NULL LEFT JOIN bt_classification_log date_user ON bt_hint_date.classification_id = date_user.classification_id AND date_user.user_id = ",user.id,"
+                          LEFT JOIN bt_hint_url ON changes.hint_id = bt_hint_url.hint_id AND bt_hint_url.validation_classification IS NULL LEFT JOIN bt_classification_log url_user ON bt_hint_url.classification_id = url_user.classification_id AND url_user.user_id = ",user.id,"
+                          LEFT JOIN bt_hint_discard_reason ON changes.hint_id = bt_hint_discard_reason.hint_id AND bt_hint_discard_reason.validation_classification IS NULL LEFT JOIN bt_classification_log discard_rsn_user ON bt_hint_discard_reason.classification_id = discard_rsn_user.classification_id AND discard_rsn_user.user_id = ",user.id,"
                           WHERE 1 = 1;
 
                           INSERT INTO b221_hint_assessment(hint_id, classification_id, assessment_id, assessment_accepted, validation_classification)
@@ -228,12 +228,31 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN bt_discard_reason_list dis_list ON changes.discard_reason = dis_list.discard_reason_name 
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason dis_hint WHERE dis_hint.hint_id = changes.hint_id AND dis_hint.discard_reason_id = dis_list.discard_reason_id AND dis_hint.discard_reason_comment <=> changes.discard_reason_comment AND dis_hint.validation_classification IS NULL)
-                          AND changes.in_collection = 0 AND changes.relevance = 0;
-                          
-                          UPDATE bt_hint_log
-                          JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id
-                          SET bt_hint_log.hint_state_id = (CASE WHEN changes.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk') ELSE 
-                          (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+                          AND changes.in_collection = 0 AND changes.relevance = 0;")
+    
+    # retrieve whether the newly submitted hint by the freelancer is relevant
+    rlvc.decision = b221_freelancer_attribute_picking(hint.vector=unique(processed.rows$hint.id), only.relevance = T)
+    rlvc.promotion = subset(rlvc.decision,promotion=1)
+    rlvc.trash = subset(rlvc.decision,promotion=-1)
+    
+    if(nrow(rlvc.promotion)>0){
+      promotion.hint.sql=paste("SELECT",rlvc.promotion$hint.id[1],"AS hint_id")
+      if(nrow(rlvc.promotion)>1) promotion.hint.sql = paste(promotion.hint.sql, paste(rlvc.promotion$hint.id[2:nrow(rlvc.promotion)], collapse = " UNION SELECT "), sep =" UNION SELECT ")
+      promotion.hint.sql = paste0("UPDATE bt_hint_log
+                              JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
+                              SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk');")
+      push.updates = paste(push.updates, promotion.hint.sql)
+    }
+    
+    if(nrow(rlvc.trash)>0){
+      trash.hint.sql=paste("SELECT",rlvc.trash$hint.id[1],"AS hint_id")
+      if(nrow(rlvc.trash)>1) promotion.hint.sql = paste(promotion.hint.sql, rlvc.trash$hint.id[2:nrow(rlvc.trash)], sep=" UNION SELECT ")
+      trash.hint.sql = paste0("UPDATE bt_hint_log
+                              JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
+                              SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk');")
+      push.updates = paste(push.updates, trash.hint.sql)
+    }
+    
   } else {
     confirm_status = ifelse(is.null(is.superuser) || is.superuser == FALSE, 0, 1)
     if(confirm_status == 0){
