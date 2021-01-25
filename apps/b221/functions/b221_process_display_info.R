@@ -228,31 +228,11 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           FROM b221_temp_changes_data_",user.id," changes
                           JOIN bt_discard_reason_list dis_list ON changes.discard_reason = dis_list.discard_reason_name 
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_discard_reason dis_hint WHERE dis_hint.hint_id = changes.hint_id AND dis_hint.discard_reason_id = dis_list.discard_reason_id AND dis_hint.discard_reason_comment <=> changes.discard_reason_comment AND dis_hint.validation_classification IS NULL)
-                          AND changes.in_collection = 0 AND changes.relevance = 0;")
-    
-    # retrieve whether the newly submitted hint by the freelancer is relevant
-    rlvc.decision = b221_freelancer_attribute_picking(hint.vector=unique(processed.rows$hint.id), only.relevance = T)
-    rlvc.promotion = subset(rlvc.decision,promotion=1)
-    rlvc.trash = subset(rlvc.decision,promotion=-1)
-    
-    if(nrow(rlvc.promotion)>0){
-      promotion.hint.sql=paste("SELECT",rlvc.promotion$hint.id[1],"AS hint_id")
-      if(nrow(rlvc.promotion)>1) promotion.hint.sql = paste(promotion.hint.sql, paste(rlvc.promotion$hint.id[2:nrow(rlvc.promotion)], collapse = " UNION SELECT "), sep =" UNION SELECT ")
-      promotion.hint.sql = paste0("UPDATE bt_hint_log
-                              JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
-                              SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk');")
-      push.updates = paste(push.updates, promotion.hint.sql)
-    }
-    
-    if(nrow(rlvc.trash)>0){
-      trash.hint.sql=paste("SELECT",rlvc.trash$hint.id[1],"AS hint_id")
-      if(nrow(rlvc.trash)>1) promotion.hint.sql = paste(promotion.hint.sql, rlvc.trash$hint.id[2:nrow(rlvc.trash)], sep=" UNION SELECT ")
-      trash.hint.sql = paste0("UPDATE bt_hint_log
-                              JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
-                              SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk');")
-      push.updates = paste(push.updates, trash.hint.sql)
-    }
-    
+                          AND changes.in_collection = 0 AND changes.relevance = 0;
+                          
+                          UPDATE bt_hint_log
+                          JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id AND changes.relevance = 0
+                          SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered');")
   } else {
     confirm_status = ifelse(is.null(is.superuser) || is.superuser == FALSE, 0, 1)
     if(confirm_status == 0){
@@ -442,5 +422,38 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
   
   gta_sql_multiple_queries(push.updates, output.queries = 1, show.time = T, db.connection = 'pool')
   # gta_sql_get_value(paste0("DROP TABLE IF EXISTS ",gsub('\\.','_',temp.changes.name),";"),db.connection = 'pool')
+  
+  if(is.freelancer==T){
+    # relevance decision for freelancer hints
+    # retrieve whether the newly submitted hint by the freelancer is relevant
+    rlvc.decision = b221_freelancer_relevance_decision(hint.vector=unique(processed.rows$hint.id))
+    rlvc.promotion = subset(rlvc.decision,prediction=1)
+    rlvc.trash = subset(rlvc.decision,prediction=-1)
+    
+    decision.sql = ""
+    
+    if(nrow(rlvc.promotion)>0){
+      promotion.hint.sql=paste("SELECT",rlvc.promotion$hint.id[1],"AS hint_id")
+      if(nrow(rlvc.promotion)>1) promotion.hint.sql = paste(promotion.hint.sql, paste(rlvc.promotion$hint.id[2:nrow(rlvc.promotion)], collapse = " UNION SELECT "), sep =" UNION SELECT ")
+      promotion.hint.sql = paste0("UPDATE bt_hint_log
+                                JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
+                                SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk');")
+      
+      decision.sql = paste(decision.sql, promotion.hint.sql)
+    }
+    
+    if(nrow(rlvc.trash)>0){
+      trash.hint.sql=paste("SELECT",rlvc.trash$hint.id[1],"AS hint_id")
+      if(nrow(rlvc.trash)>1) promotion.hint.sql = paste(promotion.hint.sql, rlvc.trash$hint.id[2:nrow(rlvc.trash)], sep=" UNION SELECT ")
+      trash.hint.sql = paste0("UPDATE bt_hint_log
+                                JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
+                                SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered');")
+      
+      decision.sql = paste(decision.sql, trash.hint.sql)
+    }
+    
+    if(nchar(decision.sql) > 0) gta_sql_multiple_queries(decision.sql, output.queries = 1, show.time = T, db.connection = 'pool')
+    
+  }  
   
 }

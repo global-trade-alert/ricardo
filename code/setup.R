@@ -23,6 +23,11 @@ for(fct in list.files(paste0(path,"code/functions/"), pattern = ".R", full.names
   source(fct)
 }
 
+# IMPORT PROMOTION/TRASH CLASSIFIER
+for(fct in list.files(paste0(path, "apps/b221/promotion-demotion-classifier/"), pattern = ".R$", full.names=T)){
+  source(fct)
+}
+
 # IMPORT MODULES
 # source(paste0(path,"code/modules/pop_up.R"))
 
