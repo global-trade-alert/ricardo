@@ -426,9 +426,11 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
   if(is.freelancer==T){
     # relevance decision for freelancer hints
     # retrieve whether the newly submitted hint by the freelancer is relevant
-    rlvc.decision = b221_freelancer_relevance_decision(hint.vector=unique(processed.rows$hint.id))
-    rlvc.promotion = subset(rlvc.decision,prediction=1)
-    rlvc.trash = subset(rlvc.decision,prediction=-1)
+    rlvc.decision = unique(b221_freelancer_relevance_decision(hint.vector=unique(processed.rows$hint.id)))
+    if(nrow(rlvc.decision)>0){
+      rlvc.promotion = subset(rlvc.decision,prediction==1)
+      rlvc.trash = subset(rlvc.decision,prediction==-1)
+    }
     
     decision.sql = ""
     
@@ -440,17 +442,21 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                                 SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - editor desk');")
       
       decision.sql = paste(decision.sql, promotion.hint.sql)
+      
     }
     
     if(nrow(rlvc.trash)>0){
       trash.hint.sql=paste("SELECT",rlvc.trash$hint.id[1],"AS hint_id")
       if(nrow(rlvc.trash)>1) promotion.hint.sql = paste(promotion.hint.sql, rlvc.trash$hint.id[2:nrow(rlvc.trash)], sep=" UNION SELECT ")
       trash.hint.sql = paste0("UPDATE bt_hint_log
-                                JOIN (",promotion.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
+                                JOIN (",trash.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
                                 SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered');")
       
       decision.sql = paste(decision.sql, trash.hint.sql)
+      
     }
+    
+    cat(decision.sql)
     
     if(nchar(decision.sql) > 0) gta_sql_multiple_queries(decision.sql, output.queries = 1, show.time = T, db.connection = 'pool')
     

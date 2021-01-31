@@ -1,6 +1,6 @@
 b221_ichini_classifier = function(hint.vector,
                                   for.training = F){
-  
+  print('ichiniclassifier')
   library(gtabastiat)
   library(gtasql)
   

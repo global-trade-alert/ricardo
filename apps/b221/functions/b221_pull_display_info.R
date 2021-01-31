@@ -15,7 +15,7 @@ b221_pull_display_info = function(is.freelancer = NULL, user.id = NULL){
   }
   
   hints.sql=paste("SELECT",pulled.hints[1],"AS hint_id")
-  if (length(pulled.hints)>1) paste(hints.sql, paste(pulled.hints[2:length(pulled.hints)], collapse = " UNION SELECT "), sep =" UNION SELECT ")
+  if (length(pulled.hints)>1) hints.sql = paste(hints.sql, paste(pulled.hints[2:length(pulled.hints)], collapse = " UNION SELECT "), sep =" UNION SELECT ")
   
   # pulls those attributes which are null validation
   pull.display = paste0("SELECT DISTINCT GROUP_CONCAT(DISTINCT(jur_list.jurisdiction_name) ORDER BY jur_list.jurisdiction_name ASC SEPARATOR ' ; ') AS jurisdiction_name, ht_log.acting_agency, ht_log.registration_date, ht_log.hint_date, 

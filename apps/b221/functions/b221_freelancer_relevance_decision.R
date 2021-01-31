@@ -1,4 +1,4 @@
-b221_freelancer_relevance_decision=function(hint.vector=NULL){
+b221_freelancer_relevance_decision=function(hint.vector=NULL, model.folder="0 dev/ricardo-freelancer-checks/apps/b221/promotion-demotion-classifier/"){
   "
   Function which decides if hints are relevant or not
   Input expects a hint id
@@ -6,7 +6,7 @@ b221_freelancer_relevance_decision=function(hint.vector=NULL){
   "
   if (is.null(hint.vector)) return('You must enter a vector containing which hints the attributes should be decided for')
   
-  trash.or.promote = b221_ichini_classifier(hint.vector, for.training = F)
+  trash.or.promote = b221_ichini_classifier(hint.vector, for.training = F, model.folder=model.folder)
   print(trash.or.promote)
   
   return(trash.or.promote)

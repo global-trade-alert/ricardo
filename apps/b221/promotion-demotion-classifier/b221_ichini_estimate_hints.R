@@ -1,6 +1,6 @@
 b221_ichini_estimate_hints = function (input.df,
                                        confidence.threshold = 0.2){
-  
+  print('ichiniestimates')
   library(keras)
   library(dplyr)
   library(purrr)
