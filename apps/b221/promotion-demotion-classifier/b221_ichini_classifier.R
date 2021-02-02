@@ -7,7 +7,7 @@ b221_ichini_classifier = function(hint.vector,
   library(stringr)
   
   #sometimes too many connections causing failure
-  init.db.connections = gta_sql_count_connections()
+  # init.db.connections = gta_sql_count_connections()
   
   #get the current wd in case it all goes wrong
   current.wd = getwd()
@@ -30,19 +30,19 @@ b221_ichini_classifier = function(hint.vector,
       
       library(gtabastiat)
       library(pool)
-      
-      #open db connection
-      source("setup/keys/ric.R")
-      pool <<- pool::dbPool(
-        drv = RMySQL::MySQL(),
-        host = db.host,
-        username = db.user,
-        password = db.password,
-        dbname=db.name
-      )
-      rm(db.host, db.user, db.password, db.name)
-      session.prefix="bt_"
-      
+      # 
+      # #open db connection
+      # source("setup/keys/ric.R")
+      # pool <<- pool::dbPool(
+      #   drv = RMySQL::MySQL(),
+      #   host = db.host,
+      #   username = db.user,
+      #   password = db.password,
+      #   dbname=db.name
+      # )
+      # rm(db.host, db.user, db.password, db.name)
+      # session.prefix="bt_"
+      # 
       #required for bastiat to work
       source("code/daily/infrastructure/Bastiat base.R")
       
@@ -68,18 +68,19 @@ b221_ichini_classifier = function(hint.vector,
                                 sep =" UNION SELECT ")
       }
       
+      
       #notice COUNT(...)>2 at the end
       hint.classify = gta_sql_get_value(query = paste0(
         "SELECT changed_hints.hint_id AS valid_hints
-    FROM (", select.hint.sql, " as hint_id) changed_hints
-    JOIN bt_hint_relevance bhr ON bhr.hint_id = changed_hints.hint_id AND bhr.validation_classification IS NULL
-    JOIN bt_classification_log bcl ON bcl.classification_id = bhr.classification_id
-    JOIN bt_hint_log bhl ON bhl.hint_id = changed_hints.hint_id AND bhl.hint_state_id < 3
-    GROUP BY bhr.hint_id, bcl.classification_id HAVING COUNT(bcl.classification_id)>2;"))
+        FROM (", select.hint.sql,") changed_hints
+        JOIN bt_hint_relevance bhr ON bhr.hint_id = changed_hints.hint_id AND bhr.validation_classification IS NULL
+        JOIN bt_classification_log bcl ON bcl.classification_id = bhr.classification_id
+        JOIN bt_hint_log bhl ON bhl.hint_id = changed_hints.hint_id
+        GROUP BY bhr.hint_id HAVING COUNT(bcl.classification_id)>2;"))
       
       
       #only begin classification procedure if required
-      if(!is.na(hint.classify)){
+      if(1<2){#(!is.na(hint.classify)){
 
         hint.not.ready = hint.vector[-hint.classify]
         
@@ -311,7 +312,7 @@ b221_ichini_classifier = function(hint.vector,
     # },
     finally = {
       setwd(current.wd)
-      gta_sql_kill_connections(keep.x.first.connections = init.db.connections) 
+      # gta_sql_kill_connections(keep.x.first.connections = init.db.connections) 
     }
   )
   
