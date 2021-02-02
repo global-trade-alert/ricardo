@@ -30,19 +30,19 @@ b221_ichini_classifier = function(hint.vector,
       
       library(gtabastiat)
       library(pool)
-      # 
-      # #open db connection
-      # source("setup/keys/ric.R")
-      # pool <<- pool::dbPool(
-      #   drv = RMySQL::MySQL(),
-      #   host = db.host,
-      #   username = db.user,
-      #   password = db.password,
-      #   dbname=db.name
-      # )
-      # rm(db.host, db.user, db.password, db.name)
-      # session.prefix="bt_"
-      # 
+# 
+#       #open db connection
+#       source("setup/keys/ric.R")
+#       pool <<- pool::dbPool(
+#         drv = RMySQL::MySQL(),
+#         host = db.host,
+#         username = db.user,
+#         password = db.password,
+#         dbname=db.name
+#       )
+#       rm(db.host, db.user, db.password, db.name)
+#       session.prefix="bt_"
+
       #required for bastiat to work
       source("code/daily/infrastructure/Bastiat base.R")
       
@@ -81,8 +81,13 @@ b221_ichini_classifier = function(hint.vector,
       
       #only begin classification procedure if required
       if(1<2){#(!is.na(hint.classify)){
+        
+        
+        if(is.na(hint.classify)){hint.classify = hint.vector}#for testing purposes. this line can't be reached IRL due to the !is.na() above.
+        #if we don't put a value in hint.classify, the SQL below will fail.
 
-        hint.not.ready = hint.vector[-hint.classify]
+        #not needed at the moment
+        #hint.not.ready = hint.vector[-hint.classify]
         
         #generate a leads.core style df for Mrs H to use
         hint.classify.string = paste(hint.classify, collapse = ", ")
@@ -117,11 +122,12 @@ b221_ichini_classifier = function(hint.vector,
         #send GN leads to Mrs Hudson for assessment
         leads.core.news = subset(leads.core, grepl("NEWS-", leads.core$bid))
         
+        print('does it die here?')
         # K: It dies here
         if(nrow(leads.core.news)>0){
           leads.core.news$mrs.hudson.score = bt_estimate_news_leads(leads.core.news, binary.prediction = F)
         }
-        
+        print('no it does not')
         
         #prevent too many connections causing failure
         current.db.connections = gta_sql_count_connections()
@@ -303,6 +309,7 @@ b221_ichini_classifier = function(hint.vector,
     },
     error = function(e.msg){
       message("Ichini classifier error:")
+      message(traceback())
       print(e.msg)
     },
     # one of Bastiat's classifiers always generates a warning :)
