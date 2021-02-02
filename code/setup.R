@@ -15,6 +15,7 @@ library(splitstackshape)
 library(gtasql)
 library(sodium)
 library(stringi)
+library(xgboost)
 
 # DEFINE GLOBAL STARTUP VALUES
 

@@ -80,7 +80,7 @@ b221_ichini_classifier = function(hint.vector,
       
       
       #only begin classification procedure if required
-      if(1<2){#(!is.na(hint.classify)){
+      if(!is.na(hint.classify)){
         
         
         if(is.na(hint.classify)){hint.classify = hint.vector}#for testing purposes. this line can't be reached IRL due to the !is.na() above.
