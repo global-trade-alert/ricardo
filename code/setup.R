@@ -15,11 +15,17 @@ library(splitstackshape)
 library(gtasql)
 library(sodium)
 library(stringi)
+library(xgboost)
 
 # DEFINE GLOBAL STARTUP VALUES
 
 # source(paste0(path,"code/functions/functions.R"), local = F)
 for(fct in list.files(paste0(path,"code/functions/"), pattern = ".R", full.names=T)){
+  source(fct)
+}
+
+# IMPORT PROMOTION/TRASH CLASSIFIER
+for(fct in list.files(paste0(path, "apps/b221/promotion-demotion-classifier/"), pattern = ".R$", full.names=T)){
   source(fct)
 }
 
