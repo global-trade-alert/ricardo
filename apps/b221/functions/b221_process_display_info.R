@@ -284,8 +284,10 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
                           
                           UPDATE bt_hint_log
                           JOIN (SELECT DISTINCT b221_temp_changes_data_",user.id,".hint_id, relevance FROM b221_temp_changes_data_",user.id," WHERE in_collection = 0) changes ON changes.hint_id = bt_hint_log.hint_id
-                          SET bt_hint_log.hint_state_id = (CASE WHEN changes.relevance = 1 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') ELSE 
-                          (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered') END);")
+                          LEFT JOIN bt_hint_relevance bhr ON bhr.hint_id = bt_hint_log.hint_id AND bhr.validation_classification IS NULL 
+                          LEFT JOIN bt_classification_log bcl ON bcl.classification_id = bhr.classification_id AND bcl.user_id != ",user.id,"
+                          SET bt_hint_log.hint_state_id = (CASE WHEN bcl.user_id IS NULL AND changes.relevance = 0 THEN (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered')
+                          ELSE (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'B221 - freelancer desk') END);")
   } else {
     confirm_status = ifelse(is.null(is.superuser) || is.superuser == FALSE, 0, 1)
     if(confirm_status == 0){
