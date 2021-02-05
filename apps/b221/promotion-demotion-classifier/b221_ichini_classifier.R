@@ -6,9 +6,6 @@ b221_ichini_classifier = function(hint.vector,
   library(gtasql)
   library(stringr)
   
-  #sometimes too many connections causing failure
-  # init.db.connections = gta_sql_count_connections()
-  
   #get the current wd in case it all goes wrong
   current.wd = getwd()
   
@@ -30,18 +27,6 @@ b221_ichini_classifier = function(hint.vector,
       
       library(gtabastiat)
       library(pool)
-# 
-#       #open db connection
-#       source("setup/keys/ric.R")
-#       pool <<- pool::dbPool(
-#         drv = RMySQL::MySQL(),
-#         host = db.host,
-#         username = db.user,
-#         password = db.password,
-#         dbname=db.name
-#       )
-#       rm(db.host, db.user, db.password, db.name)
-#       session.prefix="bt_"
 
       #required for bastiat to work
       source("code/daily/infrastructure/Bastiat base.R")
@@ -81,13 +66,6 @@ b221_ichini_classifier = function(hint.vector,
       
       #only begin classification procedure if required
       if(!is.na(hint.classify)){
-        
-        
-        if(is.na(hint.classify)){hint.classify = hint.vector}#for testing purposes. this line can't be reached IRL due to the !is.na() above.
-        #if we don't put a value in hint.classify, the SQL below will fail.
-
-        #not needed at the moment
-        #hint.not.ready = hint.vector[-hint.classify]
         
         #generate a leads.core style df for Mrs H to use
         hint.classify.string = paste(hint.classify, collapse = ", ")
@@ -129,17 +107,8 @@ b221_ichini_classifier = function(hint.vector,
         }
         print('no it does not')
         
-        #prevent too many connections causing failure
-        current.db.connections = gta_sql_count_connections()
-        if(current.db.connections > 15){
-          gta_sql_kill_connections(keep.x.first.connections = init.db.connections)
-        }
-        
-        
-        
         leads.core = merge(leads.core, leads.core.news, all.x = T)
         
-        # K: make sure this if statement doesnt screw something else up
         if(nrow(leads.core)>0){ 
           #Mrs Hudson doesn't know how to assess non-news leads
           leads.core$mrs.hudson.score[is.na(leads.core$mrs.hudson.score)] = 1
@@ -195,15 +164,6 @@ b221_ichini_classifier = function(hint.vector,
         
         print("Bastiat finish!")
         
-        
-        #prevent too many connections causing failure
-        current.db.connections = gta_sql_count_connections()
-        if(current.db.connections > 15){
-          gta_sql_kill_connections(keep.x.first.connections = init.db.connections)
-        }
-        
-        
-        
         ###END BASTIAT CLASSIFICATION###
         
         
@@ -254,10 +214,6 @@ b221_ichini_classifier = function(hint.vector,
         
         
         ####leads.core now prepared and ready to be classified####
-        
-        
-        
-        
         
         #if we are not doing training, call the classify function, which loads the saved model and classifies the leads.
         #confidence.threshold is the cutoff for probability
@@ -312,14 +268,8 @@ b221_ichini_classifier = function(hint.vector,
       message(traceback())
       print(e.msg)
     },
-    # one of Bastiat's classifiers always generates a warning :)
-    # warning = function(w.msg){
-    #   message("Ichini classifier warning:")
-    #   print(w.msg)
-    # },
     finally = {
       setwd(current.wd)
-      # gta_sql_kill_connections(keep.x.first.connections = init.db.connections) 
     }
   )
   
