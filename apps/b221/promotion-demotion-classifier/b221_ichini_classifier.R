@@ -110,8 +110,19 @@ b221_ichini_classifier = function(hint.vector,
         leads.core = merge(leads.core, leads.core.news, all.x = T)
         
         if(nrow(leads.core)>0){ 
-          #Mrs Hudson doesn't know how to assess non-news leads
-          leads.core$mrs.hudson.score[is.na(leads.core$mrs.hudson.score)] = 1
+          #Mrs Hudson doesn't know how to assess non-news leads. Non-news leads
+          #are of a much higher quality than the news leads, so 1 is used as a
+          #placeholder score.
+          
+          #add placeholder score if the col is not present
+          if(!"mrs.hudson.score" %in% colnames(leads.core)){
+            leads.core$mrs.hudson.score = 1
+            
+          } else {
+            #else fill in placeholder score if some were already provided
+            leads.core$mrs.hudson.score[is.na(leads.core$mrs.hudson.score)] = 1
+            
+          }
         }
         
         # In comes Bastiat. He is not usually invoked on GN leads, hence why we need
