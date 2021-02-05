@@ -1,4 +1,4 @@
-b221_freelancer_relevance_decision=function(hint.vector=NULL, model.folder="0 dev/ricardo-freelancer-checks/apps/b221/promotion-demotion-classifier/"){
+b221_freelancer_relevance_decision=function(hint.vector=NULL, model.folder="17 Shiny/8 ricardo app/apps/b221/promotion-demotion-classifier/"){
   "
   Function which decides if hints are relevant or not
   Input expects a hint id
