@@ -502,7 +502,7 @@ b221_process_display_info=function(is.freelancer = NULL, is.superuser = F, user.
     
     if(nrow(rlvc.trash)>0){
       trash.hint.sql=paste("SELECT",rlvc.trash$hint.id[1],"AS hint_id")
-      if(nrow(rlvc.trash)>1) trash.hint.sql = paste(trash.hint.sql, rlvc.trash$hint.id[2:nrow(rlvc.trash)], sep=" UNION SELECT ")
+      if(nrow(rlvc.trash)>1) trash.hint.sql = paste(trash.hint.sql, paste(rlvc.trash$hint.id[2:nrow(rlvc.trash)], collapse = " UNION SELECT "), sep=" UNION SELECT ")
       trash.hint.sql = paste0("UPDATE bt_hint_log
                                 JOIN (",trash.hint.sql,") promoted_hints ON promoted_hints.hint_id = bt_hint_log.hint_id
                                 SET bt_hint_log.hint_state_id = (SELECT hint_state_id FROM bt_hint_state_list WHERE bt_hint_state_list.hint_state_name = 'trash bin - entered');")
