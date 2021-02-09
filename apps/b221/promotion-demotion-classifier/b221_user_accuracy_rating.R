@@ -4,14 +4,14 @@ b221_user_accuracy_rating = function(time.period = ""){
   library(gtasql)
   
   source("setup/keys/ric.R")
-  pool = pool::dbPool(
-    drv = RMySQL::MySQL(),
-    host = db.host,
-    username = db.user,
-    password = db.password,
-    dbname=db.name
-  )
-  rm(db.host, db.user, db.password, db.name)
+  # pool = pool::dbPool(
+  #   drv = RMySQL::MySQL(),
+  #   host = db.host,
+  #   username = db.user,
+  #   password = db.password,
+  #   dbname=db.name
+  # )
+  # rm(db.host, db.user, db.password, db.name)
   session.prefix="bt_"
   
   if(nchar(time.period)>0){
