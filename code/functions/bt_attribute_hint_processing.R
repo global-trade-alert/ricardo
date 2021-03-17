@@ -18,7 +18,7 @@ bt_attribute_hint_processing = function(user.id = NULL, hint.state = NULL, db.co
                           JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id) 
                           AND NOT EXISTS (SELECT NULL FROM bt_classification_log bcl WHERE bt_hint_relevance.classification_id = bcl.classification_id AND bcl.user_id = ",user.id,")
-                          ORDER BY FIND_IN_SET(product_group_id, '2,3,",app.id,",5') DESC, FIND_IN_SET(apparent_intervention_id, '2,3') DESC, bt_hint_relevance.relevance_probability DESC, bt_hint_log.registration_date DESC LIMIT 10) prio_hints
+                          ORDER BY FIND_IN_SET(product_group_id, '2,3,5') DESC, FIND_IN_SET(apparent_intervention_id, '2,3') DESC, bt_hint_relevance.relevance_probability DESC, bt_hint_log.registration_date DESC LIMIT 10) prio_hints
                           UNION 
                           SELECT hint_id FROM
                           (SELECT DISTINCT bt_hint_log.hint_id FROM bt_hint_log 
@@ -29,7 +29,7 @@ bt_attribute_hint_processing = function(user.id = NULL, hint.state = NULL, db.co
                           JOIN bt_hint_state_list ON bt_hint_log.hint_state_id = bt_hint_state_list.hint_state_id AND (bt_hint_state_list.hint_state_name = ",hint.state,") 
                           WHERE NOT EXISTS (SELECT NULL FROM bt_hint_processing WHERE bt_hint_log.hint_id = bt_hint_processing.hint_id)
                           AND NOT EXISTS (SELECT NULL FROM bt_classification_log bcl WHERE bt_hint_relevance.classification_id = bcl.classification_id AND bcl.user_id = ",user.id,")
-                          ORDER BY FIND_IN_SET(product_group_id, '2,3,",app.id,",5') DESC, FIND_IN_SET(apparent_intervention_id, '2,3') DESC, bt_hint_relevance.relevance_probability DESC, bt_hint_log.registration_date DESC LIMIT 10) non_prio_hints) hints LIMIT 10;")
+                          ORDER BY FIND_IN_SET(product_group_id, '2,3,5') DESC, FIND_IN_SET(apparent_intervention_id, '2,3') DESC, bt_hint_relevance.relevance_probability DESC, bt_hint_log.registration_date DESC LIMIT 10) non_prio_hints) hints LIMIT 10;")
   
   hints <<- na.omit(data.frame(hint.id = gta_sql_get_value(sql.pull.hints), user.id = user.id, start.time = substr(as.POSIXct(Sys.time(), tz = "CET"),1,19)))
 
