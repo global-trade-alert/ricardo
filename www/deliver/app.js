@@ -142,7 +142,7 @@ const buttonsClicks = {
               case 'product':
               case 'instrument':
               case 'jurisdiction':
-
+                console.log(d)
                 let data = d.data.split(',');
                 console.log(data)
                 input = $('<select />')
